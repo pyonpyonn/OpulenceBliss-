@@ -6,7 +6,20 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-
+  const PUBLIC = [
+    "/api",
+    "/login",
+    "/account",
+    "/worker",
+    "/provider",
+    "/providers",
+    "/notifications",
+    "/subscribe",
+    "/book",
+  ];
+  const publicPath = PUBLIC.some((p) =>
+    request.nextUrl.pathname.startsWith(p)
+  );
   // If the env vars are not set, skip proxy check. You can remove this
   // once you setup the project.
   if (!hasEnvVars) {
@@ -49,6 +62,7 @@ export async function updateSession(request: NextRequest) {
 
   if (
     request.nextUrl.pathname !== "/" &&
+    !publicPath &&
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")

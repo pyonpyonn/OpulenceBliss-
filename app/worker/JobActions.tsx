@@ -1,0 +1,348 @@
+"use client";
+
+// Job actions — changes with the job's stage.
+// Save at: app/worker/JobActions.tsx
+
+import { useTransition, useState } from "react";
+import {
+  acceptJob,
+  declineJob,
+  checkInJob,
+  checkOutJob,
+  rateClient,
+} from "./actions";
+
+const green: React.CSSProperties = {
+  background: "#2f4a3a",
+  color: "#fbf7f0",
+  border: "none",
+  borderRadius: 999,
+  padding: "10px 22px",
+  fontWeight: 600,
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const ghost: React.CSSProperties = {
+  background: "transparent",
+  color: "#8a4b26",
+  border: "1.5px solid #e6c4b0",
+  borderRadius: 999,
+  padding: "10px 22px",
+  fontWeight: 600,
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const apricot: React.CSSProperties = {
+  ...green,
+  background: "#cf854f",
+  color: "#fff",
+};
+
+export default function JobActions({
+  id,
+  status,
+}: {
+  id: string;
+  status: string;
+}) {
+  const [pending, start] = useTransition();
+  const [note, setNote] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<{
+    lat: number | null;
+    lng: number | null;
+  } | null>(null);
+  const dim = (s: React.CSSProperties) => ({
+    ...s,
+    opacity: pending ? 0.6 : 1,
+    cursor: pending ? ("wait" as const) : s.cursor,
+  });
+
+  if (status === "offered") {
+    return (
+      <div style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() =>
+              start(async () => {
+                const r = await acceptJob(id);
+                if (r?.taken) {
+                  setNote("Someone else took this job first.");
+                } else if (r?.error) {
+                  setNote(r.error);
+                }
+              })
+            }
+            disabled={pending}
+            style={dim(green)}
+          >
+            {pending ? "…" : "Accept"}
+          </button>
+          <button
+            onClick={() =>
+              start(async () => {
+                await declineJob(id);
+              })
+            }
+            disabled={pending}
+            style={dim(ghost)}
+          >
+            Decline
+          </button>
+        </div>
+        {note && (
+          <p
+            style={{
+              margin: "10px 0 0",
+              padding: "10px 12px",
+              borderRadius: 10,
+              fontSize: 13.5,
+              background: "#f6e7dd",
+              color: "#8a4b26",
+            }}
+          >
+            {note}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "scheduled") {
+    const run = (lat?: number | null, lng?: number | null, force = false) =>
+      start(async () => {
+        const r = await checkInJob(id, lat, lng, force);
+        setNote(r?.reason ?? null);
+        setBlocked(
+          r?.blocked ? { lat: lat ?? null, lng: lng ?? null } : null
+        );
+      });
+
+    const locate = (force = false) => {
+      setNote(null);
+      if (!navigator.geolocation) {
+        run(null, null, force);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => run(pos.coords.latitude, pos.coords.longitude, force),
+        () => run(null, null, force),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    };
+
+    const good = note?.startsWith("Location confirmed");
+
+    return (
+      <div style={{ marginTop: 16 }}>
+        <button onClick={() => locate()} disabled={pending} style={dim(green)}>
+          {pending ? "Checking location…" : "I've arrived — check in"}
+        </button>
+        <p style={{ color: "#6e7a70", fontSize: 13, margin: "10px 0 0" }}>
+          You need to be at the customer&apos;s address to check in.
+        </p>
+
+        {note && (
+          <p
+            style={{
+              margin: "10px 0 0",
+              padding: "10px 12px",
+              borderRadius: 10,
+              fontSize: 13.5,
+              background: good ? "#e7eee7" : "#f6e7dd",
+              color: good ? "#2f4a3a" : "#8a4b26",
+            }}
+          >
+            {note}
+          </p>
+        )}
+
+        {blocked && (
+          <button
+            onClick={() => run(blocked.lat, blocked.lng, true)}
+            disabled={pending}
+            style={{
+              ...dim(ghost),
+              marginTop: 10,
+              fontSize: 13,
+              padding: "8px 16px",
+            }}
+          >
+            Check in anyway (will be flagged)
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "in_progress") {
+    return (
+      <div style={{ marginTop: 16 }}>
+        <button
+          onClick={() =>
+            start(async () => {
+              const r = await checkOutJob(id);
+              setNote(
+                r?.earned
+                  ? `Job complete — the customer has been charged and £${r.earned.toFixed(
+                      2
+                    )} is on its way to you.`
+                  : "Job complete — the customer has been charged."
+              );
+            })
+          }
+          disabled={pending}
+          style={dim(apricot)}
+        >
+          {pending ? "Finishing…" : "Finish & check out"}
+        </button>
+        <p style={{ color: "#6e7a70", fontSize: 13, margin: "10px 0 0" }}>
+          Checking out completes the job and charges the customer — your share is
+          released automatically.
+        </p>
+        {note && (
+          <p
+            style={{
+              margin: "10px 0 0",
+              padding: "10px 12px",
+              borderRadius: 10,
+              fontSize: 13.5,
+              background: "#e7eee7",
+              color: "#2f4a3a",
+            }}
+          >
+            {note}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "completed") {
+    return (
+      <div style={{ marginTop: 14 }}>
+        <p
+          style={{
+            margin: "0 0 10px",
+            color: "#2f4a3a",
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          ✓ Completed — payment taken and your share sent.
+        </p>
+        <RateClientBox id={id} />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// Provider rates the client.
+function RateClientBox({ id }: { id: string }) {
+  const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [stars, setStars] = useState(0);
+  const [comment, setComment] = useState("");
+  const [done, setDone] = useState<string | null>(null);
+
+  if (done) {
+    return (
+      <p style={{ margin: 0, fontSize: 13.5, color: "#6e7a70" }}>{done}</p>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          font: "inherit",
+          fontSize: 13.5,
+          color: "#cf854f",
+          textDecoration: "underline",
+          cursor: "pointer",
+        }}
+      >
+        Rate this client
+      </button>
+    );
+  }
+
+  return (
+    <div>
+      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#6e7a70" }}>
+        How was this client? Only admins see individual ratings.
+      </p>
+      <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            onClick={() => setStars(n)}
+            aria-label={`${n} star${n > 1 ? "s" : ""}`}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 22,
+              lineHeight: 1,
+              padding: 0,
+              color: n <= stars ? "#cf854f" : "#d8cfbe",
+            }}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        rows={2}
+        placeholder="Access, clarity, anything worth noting (optional)"
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          padding: "10px 12px",
+          border: "1.5px solid #d8d2c6",
+          borderRadius: 10,
+          font: "inherit",
+          fontSize: 13.5,
+          marginBottom: 10,
+          resize: "vertical",
+        }}
+      />
+      <button
+        disabled={pending || stars === 0}
+        onClick={() =>
+          start(async () => {
+            const r = await rateClient(id, stars, comment);
+            setDone(
+              r?.error
+                ? "You've already rated this client."
+                : `Thanks — you rated this client ${stars} stars.`
+            );
+          })
+        }
+        style={{
+          background: "#2f4a3a",
+          color: "#fbf7f0",
+          border: "none",
+          borderRadius: 999,
+          padding: "9px 20px",
+          font: "inherit",
+          fontSize: 13.5,
+          fontWeight: 600,
+          cursor: pending || stars === 0 ? "not-allowed" : "pointer",
+          opacity: pending || stars === 0 ? 0.6 : 1,
+        }}
+      >
+        {pending ? "Sending…" : "Submit"}
+      </button>
+    </div>
+  );
+}

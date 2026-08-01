@@ -66,3 +66,155 @@
     @apply bg-background text-foreground;
   }
 }
+
+* {
+  -webkit-text-size-adjust: 100%;
+}
+ 
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+ 
+img {
+  max-width: 100%;
+  height: auto;
+}
+ 
+/* iOS zooms the whole page when you focus an input under 16px */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+ 
+/* Long emails, postcodes and addresses shouldn't force the page wide */
+dd,
+.facts dd,
+.summary dd {
+  overflow-wrap: anywhere;
+}
+ 
+/* ---------- Phones ---------- */
+@media (max-width: 640px) {
+  main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+ 
+  h1 {
+    font-size: 28px !important;
+    line-height: 1.15 !important;
+  }
+ 
+  h2 {
+    font-size: 21px !important;
+  }
+ 
+  h3 {
+    font-size: 18px !important;
+  }
+ 
+  /* Card padding is generous on desktop, cramped on mobile */
+  section,
+  article {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+ 
+  /* Status timelines (client visit + provider job) */
+  .track .lbl {
+    font-size: 10.5px !important;
+    text-align: center;
+    line-height: 1.2;
+  }
+ 
+  .track .pip {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+  }
+ 
+  /* Live timers */
+  .timer strong,
+  .pay strong {
+    font-size: 20px !important;
+  }
+ 
+  /* Booking funnel step labels — keep the numbers, drop the words */
+  .steps .lbl {
+    display: none;
+  }
+ 
+  /* Day / time pickers scroll rather than squash */
+  .days {
+    margin-left: -2px;
+  }
+ 
+  .times {
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important;
+  }
+ 
+  /* Support chat sits above the content, full width */
+  .panel {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    width: auto !important;
+    height: min(74vh, 540px) !important;
+  }
+ 
+  .bubble {
+    left: 12px !important;
+    bottom: 12px !important;
+    padding: 11px 18px !important;
+    font-size: 14px !important;
+  }
+ 
+  /* Toasts full width so they don't collide with the chat bubble */
+  .toaster {
+    left: 12px;
+    right: 12px !important;
+    bottom: 72px !important;
+    width: auto !important;
+  }
+ 
+  /* Rating modal breathing room */
+  .modal {
+    padding: 26px 20px !important;
+  }
+ 
+  .star {
+    font-size: 32px !important;
+  }
+}
+ 
+/* ---------- Small phones ---------- */
+@media (max-width: 400px) {
+  h1 {
+    font-size: 25px !important;
+  }
+ 
+  /* Timeline gets tight — numbers only */
+  .track .lbl {
+    display: none;
+  }
+ 
+  .tabs {
+    gap: 6px !important;
+  }
+ 
+  .tab {
+    padding: 9px 14px !important;
+    font-size: 13px !important;
+  }
+}
+ 
+/* Respect people who don't want motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
