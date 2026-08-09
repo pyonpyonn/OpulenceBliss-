@@ -13,6 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   upsertSubscription,
   subscriptionIdFromInvoice,
+  invoicePeriod,
 } from "@/lib/subscriptions";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -57,9 +58,20 @@ export async function POST(req: NextRequest) {
             : session.subscription.id;
 
         const stripeSub = await stripe.subscriptions.retrieve(subId);
+        const invoiceId =
+          typeof session.invoice === "string"
+            ? session.invoice
+            : session.invoice?.id;
+        const invoice = invoiceId
+          ? await stripe.invoices.retrieve(invoiceId)
+          : null;
         const result = await upsertSubscription(stripeSub, {
-          amountPence: session.amount_total ?? 0,
-          ref: String(session.invoice ?? session.id),
+          amountPence: invoice?.amount_paid ?? session.amount_total ?? 0,
+          ref: String(
+            (invoice as (Stripe.Invoice & { payment_intent?: string }) | null)
+              ?.payment_intent ?? invoice?.id ?? session.id
+          ),
+          ...(invoice ? invoicePeriod(invoice) : {}),
         });
         console.log("Subscription set up:", result);
       }
@@ -81,6 +93,7 @@ export async function POST(req: NextRequest) {
         ref: String(
           (invoice as { payment_intent?: string }).payment_intent ?? invoice.id
         ),
+        ...invoicePeriod(invoice),
       });
       console.log("Subscription cycle billed:", result);
     }

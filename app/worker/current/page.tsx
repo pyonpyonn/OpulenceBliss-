@@ -3,7 +3,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
-import AreaNav from "@/components/AreaNav";
 import ActiveJob, { type ActiveJobData } from "../ActiveJob";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
@@ -24,27 +23,51 @@ export default async function CurrentJobPage() {
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  // In progress first; otherwise the next confirmed job.
+  // A "current job" is simply one you've checked into. The check-in rules
+  // (same day, from 30 minutes before) are enforced at check-in, so anything
+  // in progress here is legitimately in progress.
+
+  // Only a job you've actually checked into counts as "current".
   const { data: rows } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass)"
+      "id, scheduled_at, status, address, household_notes, customer_email, provider_payout, subscription_id, packages(name, duration_minutes, price), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)"
     )
-    .in("status", ["in_progress", "scheduled"])
-    .order("scheduled_at", { ascending: true });
+    .eq("status", "in_progress")
+    .order("scheduled_at", { ascending: true })
+    .limit(1);
 
-  const list = rows ?? [];
-  const row =
-    list.find((r) => r.status === "in_progress") ?? list[0] ?? null;
+  const row = (rows ?? [])[0] ?? null;
 
   const { data: pays } = row
     ? await supabase
         .from("payments")
-        .select("split_breakdown, kind")
+        .select("split_breakdown, kind, status, gross_amount")
         .eq("booking_id", row.id)
     : { data: null };
 
   const jobPay = (pays ?? []).find((p) => p.kind !== "tip");
+  const tipTotal = (pays ?? [])
+    .filter((p) => p.kind === "tip")
+    .reduce((t, p) => t + Number(p.gross_amount ?? 0), 0);
+
+  const ci = row
+    ? (one(row.check_ins as never) as {
+        arrived_at: string | null;
+        left_at: string | null;
+        geofence_pass: boolean | null;
+        gps_lat: number | null;
+        gps_lng: number | null;
+      } | null)
+    : null;
+
+  const time = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—";
 
   const job: ActiveJobData | null = row
     ? {
@@ -84,14 +107,11 @@ export default async function CurrentJobPage() {
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: 40 }}>
-        <p style={eyebrow}>Provider area</p>
+      <div style={{ maxWidth: 760 }}>
         <h1 style={h1}>Current job</h1>
-        <p style={{ color: "#6e7a70", margin: "0 0 26px" }}>
-          Everything you need while you&apos;re working.
+        <p style={{ color: "#7A828C", margin: "0 0 24px", fontWeight: 600 }}>
+          Everything you need while you&apos;re on site.
         </p>
-
-        <AreaNav area="provider" />
 
         {blocked ? (
           <div style={empty}>
@@ -104,25 +124,101 @@ export default async function CurrentJobPage() {
           </div>
         ) : !job ? (
           <div style={empty}>
-            <p style={{ margin: "0 0 8px", fontSize: 16, color: "#2f4a3a" }}>
-              Nothing on right now.
+            <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#16202A" }}>
+              No job in progress
             </p>
-            <p style={{ margin: "0 0 18px", color: "#6e7a70", fontSize: 14.5 }}>
-              When you accept a job it&apos;ll appear here, ready to check in.
+            <p style={{ margin: "0 0 18px", color: "#7A828C", fontSize: 14.5, fontWeight: 600 }}>
+              Check in from My jobs when you arrive at the customer&apos;s home,
+              and the full job details will appear here.
             </p>
             <a href="/worker" style={btn}>
-              See new offers
+              Go to my jobs
             </a>
           </div>
         ) : (
           <>
             <ActiveJob job={job} />
-            <p style={{ marginTop: 18, display: "flex", gap: 18 }}>
-              <a href={`/worker/job/${job.id}`} style={link}>
-                Full job record
-              </a>
+
+            {/* ---- check-in record ---- */}
+            <section style={{ ...card, marginTop: 20 }}>
+              <h2 style={sectionTitle}>Check-in record</h2>
+              <dl style={grid}>
+                <Row label="Arrived" value={time(ci?.arrived_at ?? null)} />
+                <Row label="Left" value={time(ci?.left_at ?? null)} />
+                <Row
+                  label="Location check"
+                  value={
+                    ci?.geofence_pass === true
+                      ? "Confirmed at address"
+                      : ci?.geofence_pass === false
+                      ? "Flagged — away from address"
+                      : "Not verified"
+                  }
+                />
+                <Row
+                  label="Coordinates"
+                  value={
+                    ci?.gps_lat
+                      ? `${Number(ci.gps_lat).toFixed(4)}, ${Number(
+                          ci.gps_lng
+                        ).toFixed(4)}`
+                      : "—"
+                  }
+                />
+              </dl>
+            </section>
+
+            {/* ---- the client's notes in full ---- */}
+            {row.household_notes && (
+              <section style={{ ...card, marginTop: 20 }}>
+                <h2 style={sectionTitle}>What the client asked for</h2>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    lineHeight: 1.6,
+                    color: "#3A424B",
+                  }}
+                >
+                  {row.household_notes}
+                </p>
+              </section>
+            )}
+
+            {/* ---- money ---- */}
+            <section style={{ ...card, marginTop: 20 }}>
+              <h2 style={sectionTitle}>Payment</h2>
+              <dl style={grid}>
+                <Row
+                  label="You earn"
+                  value={`£${(job.earns ?? 0).toFixed(2)}`}
+                />
+                <Row
+                  label="Tips so far"
+                  value={`£${tipTotal.toFixed(2)}`}
+                />
+                <Row
+                  label="How you're paid"
+                  value={
+                    row.subscription_id
+                      ? "Transferred when you check out"
+                      : "Released when you check out"
+                  }
+                />
+                <Row
+                  label="Status"
+                  value={
+                    jobPay?.status === "succeeded"
+                      ? "Paid to you"
+                      : "Waiting on check-out"
+                  }
+                />
+              </dl>
+            </section>
+            <p style={{ marginTop: 20 }}>
               <a href="/worker" style={link}>
-                All my jobs
+                ← All my jobs
               </a>
             </p>
           </>
@@ -133,44 +229,76 @@ export default async function CurrentJobPage() {
 }
 
 const FONTS =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap";
 const wrap: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#fbf7f0",
-  color: "#26302a",
-  fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
-  padding: "0 20px 80px",
+  background: "transparent",
+  color: "#16202A",
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  padding: 0,
 };
 const empty: React.CSSProperties = {
   background: "#fff",
-  border: "1.5px dashed #d8cfbe",
+  border: "1.5px dashed #E5E7EA",
   borderRadius: 16,
   padding: "40px 26px",
   textAlign: "center",
-  color: "#6e7a70",
-};
-const eyebrow: React.CSSProperties = {
-  textTransform: "uppercase",
-  letterSpacing: "0.14em",
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#cf854f",
-  margin: "0 0 6px",
+  color: "#7A828C",
 };
 const h1: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 38,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 6px",
 };
 const btn: React.CSSProperties = {
   display: "inline-block",
-  background: "#2f4a3a",
-  color: "#fbf7f0",
+  background: "#16202A",
+  color: "#F7F8F9",
   padding: "12px 26px",
   borderRadius: 999,
   textDecoration: "none",
   fontWeight: 600,
 };
-const link: React.CSSProperties = { color: "#5b7a65", fontSize: 14 };
+const link: React.CSSProperties = { color: "#6D28D9", fontSize: 14 };
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt
+        style={{
+          color: "#A9AFB7",
+          fontSize: 11.5,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: "0.07em",
+          marginBottom: 3,
+        }}
+      >
+        {label}
+      </dt>
+      <dd style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{value}</dd>
+    </div>
+  );
+}
+
+const card: React.CSSProperties = {
+  background: "#fff",
+  border: "2px solid #EDEFF1",
+  borderRadius: 20,
+  padding: "20px 22px",
+};
+
+const grid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+  gap: 16,
+  margin: 0,
+};
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 17,
+  fontWeight: 900,
+  color: "#16202A",
+  margin: "0 0 14px",
+};

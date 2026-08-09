@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { upsertSubscription } from "@/lib/subscriptions";
+import { invoicePeriod, upsertSubscription } from "@/lib/subscriptions";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -78,6 +78,7 @@ export async function GET() {
             ref: String(
               (inv as { payment_intent?: string }).payment_intent ?? inv.id
             ),
+            ...invoicePeriod(inv),
           }
         : undefined
     );

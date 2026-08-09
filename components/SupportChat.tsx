@@ -1,31 +1,39 @@
 "use client";
 
-// Support chat bubble. Save at: components/SupportChat.tsx
-// Add <SupportChat /> to app/layout.tsx.
+// SETUP: mkdir -p "components" && code "components/SupportChat.tsx"
+//
+// Floating chat, bottom right.
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
+const GRAD = "linear-gradient(135deg,#F5C542,#C86FC9 55%,#7B2FF7)";
+const PURPLE = "#6D28D9";
+
 type Msg = { role: "user" | "assistant"; text: string };
 
 const SUGGESTIONS = [
-  "Do you cover IG11?",
-  "What's free on Friday in SW3?",
-  "When's my next visit?",
-  "How much have I spent?",
+  "Do you cover my postcode?",
+  "What's free this week?",
+  "When am I charged?",
+  "How do I become a provider?",
 ];
 
-// Known paths, longest first so /account/profile wins over /account.
+/* ---------- link handling ---------- */
+
 const PATHS = [
   "provider/join",
+  "account/updates",
+  "account/membership",
   "account/profile",
   "worker/availability",
   "worker/earnings",
   "worker/profile",
-  "notifications",
+  "worker/current",
   "providers",
+  "subscribe",
   "account",
   "worker",
   "login",
@@ -33,14 +41,12 @@ const PATHS = [
 ];
 
 const LINK_RE = new RegExp(
-  // [label](target)            OR   http(s)://…            OR   /path?query
   `\\[([^\\]]+)\\]\\(([^)]+)\\)|(https?://[^\\s)]+)|(/(?:${PATHS.join(
     "|"
   )})(?:\\?[^\\s)]*)?)`,
   "g"
 );
 
-// Turn any absolute URL back into a site-relative path.
 function toPath(href: string) {
   try {
     if (/^https?:\/\//.test(href)) {
@@ -61,13 +67,11 @@ function Linkified({ text }: { text: string }) {
 
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) out.push(text.slice(last, m.index));
-
     const href = toPath(m[2] ?? m[3] ?? m[4] ?? "");
     const label = m[1] ?? href;
-    const isBooking = href.startsWith("/book?");
-
+    const booking = href.startsWith("/book?");
     out.push(
-      isBooking ? (
+      booking ? (
         <a key={m.index} href={href} className="confirm">
           Confirm &amp; pay →
         </a>
@@ -80,16 +84,17 @@ function Linkified({ text }: { text: string }) {
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
-
   return <>{out}</>;
 }
+
+/* ---------- widget ---------- */
 
 export default function SupportChat() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "assistant",
-      text: "Hello — I'm the Opulence Bliss assistant. I can check whether we cover your postcode, find times that are actually free, and look up your bookings. Ask away.",
+      text: "Hi! I can check whether we cover your postcode, find times that are actually free, and look up your bookings. What do you need?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -104,13 +109,12 @@ export default function SupportChat() {
     const question = text.trim();
     if (!question || busy) return;
 
-    const history = msgs.slice(1); // drop the greeting
+    const history = msgs.slice(1);
     setMsgs((m) => [...m, { role: "user", text: question }]);
     setInput("");
     setBusy(true);
 
     try {
-      // Send our access token so the assistant can look up our own data.
       const { data: s } = await supabase.auth.getSession();
       const token = s.session?.access_token;
 
@@ -138,7 +142,7 @@ export default function SupportChat() {
         ...m,
         {
           role: "assistant",
-          text: "I couldn't reach the server. Please try again shortly.",
+          text: "I couldn't reach the server. Try again shortly.",
         },
       ]);
     } finally {
@@ -146,41 +150,143 @@ export default function SupportChat() {
     }
   }
 
+  /* ---------- closed: the floating button ---------- */
   if (!open) {
     return (
-      <button className="bubble" onClick={() => setOpen(true)} aria-label="Open support chat">
-        <span>Need a hand?</span>
+      <div className="fabWrap">
+        <span className="tip">Need a hand?</span>
+        <button
+          className="fab"
+          onClick={() => setOpen(true)}
+          aria-label="Open support chat"
+        >
+          <span className="ring" aria-hidden="true" />
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 3C6.9 3 3 6.4 3 10.6c0 2.3 1.2 4.3 3.1 5.7-.1 1-.5 2.3-1.4 3.4-.2.3.1.7.4.6 1.9-.5 3.4-1.4 4.3-2.1.8.2 1.7.3 2.6.3 5.1 0 9-3.4 9-7.9S17.1 3 12 3Z"
+            />
+            <circle cx="8.2" cy="10.6" r="1.15" fill="#fff" />
+            <circle cx="12" cy="10.6" r="1.15" fill="#fff" />
+            <circle cx="15.8" cy="10.6" r="1.15" fill="#fff" />
+          </svg>
+        </button>
+
         <style jsx>{`
-          .bubble {
+          .fabWrap {
             position: fixed;
-            left: 18px;
-            bottom: 18px;
+            right: 20px;
+            bottom: 20px;
             z-index: 9998;
-            background: #2f4a3a;
-            color: #fbf7f0;
-            border: none;
-            border-radius: 999px;
-            padding: 13px 22px;
-            font-family: "Hanken Grotesk", system-ui, sans-serif;
-            font-size: 14.5px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 28px rgba(47, 74, 58, 0.28);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: "Nunito", system-ui, sans-serif;
           }
-          .bubble:hover {
-            background: #263d30;
+          .tip {
+            background: #16202a;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+            padding: 8px 14px;
+            border-radius: 999px;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateX(8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+          }
+          .fabWrap:hover .tip {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          .fab {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: ${GRAD};
+            color: #fff;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 26px rgba(123, 47, 247, 0.34);
+            animation: float 3.4s ease-in-out infinite;
+          }
+          .fab:hover {
+            transform: scale(1.06);
+          }
+          .fab svg {
+            position: relative;
+            z-index: 1;
+          }
+          .ring {
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid rgba(123, 47, 247, 0.45);
+            animation: pulse 2.6s ease-out infinite;
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-7px);
+            }
+          }
+          @keyframes pulse {
+            0% {
+              transform: scale(0.9);
+              opacity: 0.7;
+            }
+            70% {
+              transform: scale(1.25);
+              opacity: 0;
+            }
+            100% {
+              opacity: 0;
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .fab {
+              animation: none;
+            }
+            .ring {
+              animation: none;
+              opacity: 0.4;
+            }
+          }
+          @media (max-width: 620px) {
+            .fabWrap {
+              right: 14px;
+              bottom: 76px;
+            }
+            .tip {
+              display: none;
+            }
+            .fab {
+              width: 54px;
+              height: 54px;
+            }
           }
         `}</style>
-      </button>
+      </div>
     );
   }
 
+  /* ---------- open: the panel ---------- */
   return (
     <div className="panel">
       <header>
-        <div>
-          <strong>Opulence Bliss</strong>
-          <small>Support assistant</small>
+        <div className="hwho">
+          <span className="dot" />
+          <div>
+            <strong>Opulence Bliss</strong>
+            <small>Support assistant</small>
+          </div>
         </div>
         <button onClick={() => setOpen(false)} aria-label="Close chat">
           ×
@@ -195,6 +301,7 @@ export default function SupportChat() {
             </p>
           </div>
         ))}
+
         {busy && (
           <div className="row them">
             <p className="dots">
@@ -204,6 +311,7 @@ export default function SupportChat() {
             </p>
           </div>
         )}
+
         {msgs.length === 1 && (
           <div className="chips">
             {SUGGESTIONS.map((s) => (
@@ -225,10 +333,17 @@ export default function SupportChat() {
           aria-label="Your message"
           disabled={busy}
         />
-        <button onClick={() => send(input)} disabled={busy || !input.trim()}>
-          Send
+        <button
+          onClick={() => send(input)}
+          disabled={busy || !input.trim()}
+          aria-label="Send"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M3 20.5 22 12 3 3.5l3 8.5-3 8.5Z" />
+          </svg>
         </button>
       </div>
+
       <p className="note">
         An assistant, not a person. For complaints or claims, contact the team.
       </p>
@@ -236,49 +351,75 @@ export default function SupportChat() {
       <style jsx>{`
         .panel {
           position: fixed;
-          left: 18px;
-          bottom: 18px;
+          right: 20px;
+          bottom: 20px;
           z-index: 9998;
-          width: min(370px, calc(100vw - 36px));
-          height: min(520px, calc(100vh - 100px));
-          background: #fbf7f0;
-          border: 1px solid #ece5d8;
-          border-radius: 18px;
-          box-shadow: 0 22px 54px rgba(47, 74, 58, 0.24);
+          width: min(380px, calc(100vw - 40px));
+          height: min(540px, calc(100vh - 110px));
+          background: #fff;
+          border: 2px solid #edeff1;
+          border-radius: 22px;
+          box-shadow: 0 24px 60px rgba(22, 32, 42, 0.24);
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          font-family: "Nunito", system-ui, sans-serif;
+          animation: rise 0.24s ease;
+        }
+        @keyframes rise {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: none;
+          }
         }
         header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           padding: 14px 16px;
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: ${GRAD};
+          color: #fff;
         }
-        header strong {
+        .hwho {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+        }
+        .hwho strong {
           display: block;
-          font-family: "Fraunces", serif;
-          font-size: 16px;
-          font-weight: 500;
+          font-size: 15.5px;
+          font-weight: 900;
+          letter-spacing: -0.01em;
         }
-        header small {
+        .hwho small {
           font-size: 12px;
-          opacity: 0.75;
+          font-weight: 700;
+          opacity: 0.85;
+        }
+        .dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #b6ffb0;
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
         }
         header button {
-          background: none;
+          background: rgba(255, 255, 255, 0.18);
           border: none;
-          color: #fbf7f0;
-          font-size: 24px;
+          color: #fff;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          font-size: 19px;
           line-height: 1;
           cursor: pointer;
-          opacity: 0.8;
         }
         header button:hover {
-          opacity: 1;
+          background: rgba(255, 255, 255, 0.3);
         }
         .log {
           flex: 1;
@@ -287,6 +428,7 @@ export default function SupportChat() {
           display: flex;
           flex-direction: column;
           gap: 10px;
+          background: #fbfaff;
         }
         .row {
           display: flex;
@@ -297,40 +439,38 @@ export default function SupportChat() {
         .row p {
           margin: 0;
           padding: 11px 14px;
-          border-radius: 14px;
+          border-radius: 16px;
           font-size: 14.5px;
+          font-weight: 600;
           line-height: 1.5;
-          max-width: 85%;
+          max-width: 86%;
           white-space: pre-wrap;
         }
         .row.them p {
           background: #fff;
-          border: 1px solid #ece5d8;
-          color: #26302a;
-          border-bottom-left-radius: 4px;
+          border: 1.5px solid #edeff1;
+          color: #16202a;
+          border-bottom-left-radius: 5px;
+        }
+        .row.me p {
+          background: #16202a;
+          color: #fff;
+          border-bottom-right-radius: 5px;
         }
         .row.them p :global(a) {
-          color: #cf854f;
-          font-weight: 600;
+          color: ${PURPLE};
+          font-weight: 900;
           text-decoration: underline;
         }
         .row.them p :global(a.confirm) {
           display: inline-block;
-          margin-top: 8px;
-          background: #cf854f;
+          margin-top: 9px;
+          background: ${GRAD};
           color: #fff;
-          padding: 9px 18px;
+          padding: 10px 18px;
           border-radius: 999px;
           text-decoration: none;
           font-size: 14px;
-        }
-        .row.them p :global(a.confirm:hover) {
-          background: #ba7440;
-        }
-        .row.me p {
-          background: #2f4a3a;
-          color: #fbf7f0;
-          border-bottom-right-radius: 4px;
         }
         .dots {
           display: flex;
@@ -341,7 +481,7 @@ export default function SupportChat() {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #a89f90;
+          background: #b9bec5;
           animation: blink 1.2s infinite;
         }
         .dots span:nth-child(2) {
@@ -363,64 +503,77 @@ export default function SupportChat() {
           display: flex;
           flex-wrap: wrap;
           gap: 7px;
-          margin-top: 6px;
+          margin-top: 4px;
         }
         .chips button {
           background: #fff;
-          border: 1.5px solid #ece5d8;
+          border: 1.5px solid #e8dcfa;
           border-radius: 999px;
           padding: 8px 14px;
           font: inherit;
           font-size: 13px;
-          color: #2f4a3a;
+          font-weight: 800;
+          color: ${PURPLE};
           cursor: pointer;
         }
         .chips button:hover {
-          border-color: #cf854f;
+          background: #f8f3ff;
         }
         .composer {
           display: flex;
           gap: 8px;
           padding: 12px 14px 6px;
-          border-top: 1px solid #ece5d8;
-          background: #fbf7f0;
+          border-top: 1.5px solid #edeff1;
+          background: #fff;
         }
         .composer input {
           flex: 1;
           min-width: 0;
-          border: 1.5px solid #d8d2c6;
+          border: 2px solid #edeff1;
           border-radius: 999px;
           padding: 11px 16px;
           font: inherit;
-          font-size: 14.5px;
-          background: #fff;
-          color: #26302a;
+          font-size: 15px;
+          font-weight: 600;
+          color: #16202a;
         }
         .composer input:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: ${PURPLE};
         }
         .composer button {
-          background: #cf854f;
+          background: ${GRAD};
           color: #fff;
           border: none;
-          border-radius: 999px;
-          padding: 11px 18px;
-          font: inherit;
-          font-size: 14px;
-          font-weight: 600;
+          border-radius: 50%;
+          width: 42px;
+          height: 42px;
+          display: grid;
+          place-items: center;
           cursor: pointer;
+          flex-shrink: 0;
         }
         .composer button:disabled {
-          opacity: 0.5;
+          opacity: 0.45;
           cursor: not-allowed;
         }
         .note {
           margin: 0;
           padding: 4px 14px 12px;
           font-size: 11.5px;
-          color: #a89f90;
+          font-weight: 600;
+          color: #a9afb7;
           text-align: center;
+          background: #fff;
+        }
+        @media (max-width: 620px) {
+          .panel {
+            right: 12px;
+            left: 12px;
+            bottom: 76px;
+            width: auto;
+            height: min(70vh, 520px);
+          }
         }
       `}</style>
     </div>

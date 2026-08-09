@@ -3,6 +3,7 @@
 // Log in as admin@test.com, then visit localhost:3000/admin
 
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import AdminButtons from "./AdminButtons";
 import VettingButtons from "./VettingButtons";
 import ReviewList, { type Review } from "./ReviewList";
@@ -40,14 +41,14 @@ export default async function AdminPage() {
         <div style={{ ...card, maxWidth: 440, textAlign: "center" }}>
           <p style={eyebrow}>Admin</p>
           <h1 style={{ ...h1, fontSize: 27 }}>Admins only</h1>
-          <p style={{ color: "#6e7a70", margin: "0 0 22px" }}>
+          <p style={{ color: "#7A828C", margin: "0 0 22px" }}>
             {user
               ? "This account doesn't have admin access."
               : "Log in with an admin account to continue."}
           </p>
-          <a href="/login" style={btn}>
+          <Link href="/login" style={btn}>
             Go to log in
-          </a>
+          </Link>
         </div>
       </main>
     );
@@ -84,9 +85,29 @@ export default async function AdminPage() {
       <div style={{ maxWidth: 780, margin: "0 auto", paddingTop: 40 }}>
         <p style={eyebrow}>Admin</p>
         <h1 style={h1}>Control panel</h1>
-        <p style={{ color: "#6e7a70", margin: "0 0 32px" }}>
+        <p style={{ color: "#7A828C", margin: "0 0 32px" }}>
           Signed in as {user?.email}
         </p>
+
+        <Link
+          href="/admin/review"
+          style={{
+            ...card,
+            display: "block",
+            padding: "18px 20px",
+            marginBottom: 34,
+            color: "#16202A",
+            textDecoration: "none",
+            borderColor: "#DCCCF8",
+          }}
+        >
+          <strong style={{ display: "block", fontSize: 17, marginBottom: 3 }}>
+            Resolution desk →
+          </strong>
+          <span style={{ color: "#7A828C", fontSize: 14 }}>
+            Review reconciliation findings, blocked cases, refunds and payouts.
+          </span>
+        </Link>
 
         {/* Counts */}
         <h2 style={sectionTitle}>What&apos;s in the database</h2>
@@ -108,15 +129,15 @@ export default async function AdminPage() {
             <div key={String(label)} style={{ ...card, padding: "18px 20px" }}>
               <p
                 style={{
-                  fontFamily: "'Fraunces', serif",
+                  fontFamily: "'Nunito', system-ui, sans-serif",
                   fontSize: 28,
-                  color: "#2f4a3a",
+                  color: "#16202A",
                   margin: "0 0 2px",
                 }}
               >
                 {n as number}
               </p>
-              <span style={{ color: "#6e7a70", fontSize: 13.5 }}>{label}</span>
+              <span style={{ color: "#7A828C", fontSize: 13.5 }}>{label}</span>
             </div>
           ))}
         </div>
@@ -127,7 +148,7 @@ export default async function AdminPage() {
         </h2>
         <div style={{ ...card, padding: "6px 20px", marginBottom: 34 }}>
           {pending.length === 0 ? (
-            <p style={{ color: "#6e7a70", padding: "16px 0" }}>
+            <p style={{ color: "#7A828C", padding: "16px 0" }}>
               Nothing waiting — all providers have been reviewed.
             </p>
           ) : (
@@ -145,7 +166,7 @@ export default async function AdminPage() {
                     alignItems: "center",
                     gap: 12,
                     padding: "16px 0",
-                    borderBottom: "1px solid #f0ebe0",
+                    borderBottom: "1px solid #F1F2F4",
                     flexWrap: "wrap",
                   }}
                 >
@@ -153,7 +174,7 @@ export default async function AdminPage() {
                     <strong style={{ fontSize: 15 }}>
                       {p.display_name || email}
                     </strong>
-                    <div style={{ color: "#6e7a70", fontSize: 13 }}>
+                    <div style={{ color: "#7A828C", fontSize: 13 }}>
                       {email} · {(p.services ?? []).join(", ") || "no skills"} ·{" "}
                       {p.joining_fee_paid ? "fee paid" : "fee unpaid"}
                     </div>
@@ -169,7 +190,7 @@ export default async function AdminPage() {
         <h2 style={sectionTitle}>Providers</h2>
         <div style={{ ...card, padding: "6px 20px", marginBottom: 34 }}>
           {(provRows ?? []).length === 0 ? (
-            <p style={{ color: "#6e7a70", padding: "16px 0" }}>
+            <p style={{ color: "#7A828C", padding: "16px 0" }}>
               No providers yet.
             </p>
           ) : (
@@ -187,13 +208,13 @@ export default async function AdminPage() {
                     alignItems: "center",
                     gap: 12,
                     padding: "14px 0",
-                    borderBottom: "1px solid #f0ebe0",
+                    borderBottom: "1px solid #F1F2F4",
                     flexWrap: "wrap",
                   }}
                 >
                   <div>
                     <strong style={{ fontSize: 15 }}>{email}</strong>
-                    <div style={{ color: "#6e7a70", fontSize: 13 }}>
+                    <div style={{ color: "#7A828C", fontSize: 13 }}>
                       {(p.services ?? []).join(", ") || "no skills set"} ·{" "}
                       {p.vetting_status}
                       {p.rating_avg
@@ -207,8 +228,8 @@ export default async function AdminPage() {
                       fontWeight: 600,
                       padding: "5px 12px",
                       borderRadius: 999,
-                      background: p.joining_fee_paid ? "#e7eee7" : "#f6e7dd",
-                      color: p.joining_fee_paid ? "#2f4a3a" : "#8a4b26",
+                      background: p.joining_fee_paid ? "#F4ECFE" : "#FFE6EA",
+                      color: p.joining_fee_paid ? "#16202A" : "#B0384F",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -228,15 +249,15 @@ export default async function AdminPage() {
 
         {/* Tools */}
         <h2 style={sectionTitle}>Reset tools</h2>
-        <p style={{ color: "#6e7a70", margin: "0 0 16px", fontSize: 14.5 }}>
+        <p style={{ color: "#7A828C", margin: "0 0 16px", fontSize: 14.5 }}>
           Useful between demos. Each one asks you to confirm first.
         </p>
         <AdminButtons />
 
         <p style={{ marginTop: 30 }}>
-          <a href="/" style={{ color: "#5b7a65", fontSize: 14 }}>
+          <Link href="/" style={{ color: "#6D28D9", fontSize: 14 }}>
             ← Back to site
-          </a>
+          </Link>
         </p>
       </div>
     </main>
@@ -244,20 +265,20 @@ export default async function AdminPage() {
 }
 
 const FONTS =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap";
 
 const wrap: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#fbf7f0",
-  color: "#26302a",
-  fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
+  background: "#fff",
+  color: "#16202A",
+  fontFamily: "'Nunito', system-ui, sans-serif",
   display: "grid",
   placeItems: "center",
   padding: 24,
 };
 const card: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #ece5d8",
+  border: "1px solid #EDEFF1",
   borderRadius: 16,
   padding: "28px 26px",
 };
@@ -266,27 +287,27 @@ const eyebrow: React.CSSProperties = {
   letterSpacing: "0.14em",
   fontSize: 12,
   fontWeight: 600,
-  color: "#cf854f",
+  color: "#6D28D9",
   margin: "0 0 6px",
 };
 const h1: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 38,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 6px",
 };
 const sectionTitle: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 22,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 14px",
 };
 const btn: React.CSSProperties = {
   display: "inline-block",
-  background: "#2f4a3a",
-  color: "#fbf7f0",
+  background: "#16202A",
+  color: "#FFFFFF",
   padding: "12px 26px",
   borderRadius: 999,
   textDecoration: "none",

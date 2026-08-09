@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         transfer_data: { destination },
         metadata: { kind: "tip", booking_id: bookingId },
       },
-      success_url: `${req.nextUrl.origin}/account/tip/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.nextUrl.origin}/api/tip/finalize?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.nextUrl.origin}/account`,
     });
 

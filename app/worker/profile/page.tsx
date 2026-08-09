@@ -80,7 +80,7 @@ export default function ProviderProfilePage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="inner">
@@ -172,9 +172,9 @@ export default function ProviderProfilePage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
         .inner {
@@ -187,23 +187,23 @@ export default function ProviderProfilePage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 6px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 36px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 8px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 26px;
         }
         .card {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 16px;
           padding: 24px 22px;
           margin-bottom: 20px;
@@ -215,21 +215,21 @@ export default function ProviderProfilePage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #fbf7f0;
+          background: #FFFFFF;
           border-radius: 10px;
           padding: 12px 14px;
           margin-bottom: 22px;
           font-size: 14.5px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .rating strong {
-          color: #cf854f;
+          color: #6D28D9;
           font-size: 17px;
         }
         label {
           display: block;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 6px;
         }
         input,
@@ -237,30 +237,30 @@ export default function ProviderProfilePage() {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
           background: #fff;
-          color: #26302a;
+          color: #16202A;
           margin-bottom: 18px;
           resize: vertical;
         }
         input:focus-visible,
         textarea:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: #16202A;
         }
         .preview {
           width: 84px;
           height: 84px;
           object-fit: cover;
           border-radius: 50%;
-          border: 2px solid #ece5d8;
+          border: 2px solid #EDEFF1;
         }
         .cta {
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: #16202A;
+          color: #FFFFFF;
           border: none;
           border-radius: 999px;
           padding: 13px 26px;
@@ -276,15 +276,15 @@ export default function ProviderProfilePage() {
           cursor: wait;
         }
         .msg {
-          background: #e7eee7;
-          color: #2f4a3a;
+          background: #F4ECFE;
+          color: #16202A;
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14.5px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #6e7a70;
+          color: #7A828C;
         }
         .links {
           display: flex;
@@ -293,7 +293,7 @@ export default function ProviderProfilePage() {
           margin-top: 30px;
         }
         .links a {
-          color: #5b7a65;
+          color: #6D28D9;
           font-size: 14px;
           text-decoration: none;
         }

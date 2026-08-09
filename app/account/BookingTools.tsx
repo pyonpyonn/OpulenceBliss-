@@ -4,7 +4,12 @@
 // Save at: app/account/BookingTools.tsx
 
 import { useState, useTransition } from "react";
-import { cancelBooking, rescheduleBooking, rateBooking } from "./actions";
+import {
+  cancelBooking,
+  loadRescheduleWindow,
+  rescheduleBooking,
+  rateBooking,
+} from "./actions";
 
 function label(iso: string) {
   const d = new Date(iso);
@@ -15,12 +20,12 @@ function label(iso: string) {
     d.toDateString() === today.toDateString()
       ? "Today"
       : d.toDateString() === tmr.toDateString()
-      ? "Tomorrow"
-      : d.toLocaleDateString("en-GB", {
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-        });
+        ? "Tomorrow"
+        : d.toLocaleDateString("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          });
   return `${day}, ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -47,13 +52,29 @@ export function BookingTools({
   const [pending, start] = useTransition();
   const [slots, setSlots] = useState<string[] | null>(null);
   const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [cutoff, setCutoff] = useState<string | null>(null);
 
   async function loadSlots() {
-    setOpen(true);
+    setMessage(null);
     setSlots(null);
     try {
+      const windowResult = await loadRescheduleWindow(id);
+      if (!windowResult.ok) {
+        setMessage(windowResult.message);
+        return;
+      }
+      if (!windowResult.window.can_reschedule) {
+        setMessage(
+          windowResult.window.reason ?? "This visit can no longer be changed.",
+        );
+        return;
+      }
+
+      setCutoff(windowResult.window.cutoff_at ?? null);
+      setOpen(true);
       const res = await fetch(
-        `/api/slots?postcode=${encodeURIComponent(postcode ?? "")}`
+        `/api/slots?postcode=${encodeURIComponent(postcode ?? "")}`,
       );
       const data = await res.json();
       setSlots(data.slots ?? []);
@@ -66,17 +87,21 @@ export function BookingTools({
     <div style={{ marginTop: 12 }}>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
         <button
-          style={{ ...linkBtn, color: "#5b7a65" }}
+          style={{ ...linkBtn, color: "#6D28D9" }}
           disabled={pending}
           onClick={() => (open ? setOpen(false) : loadSlots())}
         >
           {open ? "Close" : "Reschedule"}
         </button>
         <button
-          style={{ ...linkBtn, color: "#8a4b26" }}
+          style={{ ...linkBtn, color: "#B0384F" }}
           disabled={pending}
           onClick={() => {
-            if (!window.confirm("Cancel this booking? Your card won't be charged."))
+            if (
+              !window.confirm(
+                "Cancel this booking? Your card won't be charged.",
+              )
+            )
               return;
             start(() => cancelBooking(id));
           }}
@@ -85,14 +110,25 @@ export function BookingTools({
         </button>
       </div>
 
+      {message && (
+        <p style={{ color: "#B0384F", fontSize: 13.5, margin: "10px 0 0" }}>
+          {message}
+        </p>
+      )}
+
       {open && (
         <div style={{ marginTop: 12 }}>
+          {cutoff && (
+            <p style={{ color: "#7A828C", fontSize: 13, margin: "0 0 8px" }}>
+              You can change this visit until {label(cutoff)}.
+            </p>
+          )}
           {slots === null ? (
-            <p style={{ color: "#6e7a70", fontSize: 13.5, margin: 0 }}>
+            <p style={{ color: "#7A828C", fontSize: 13.5, margin: 0 }}>
               Finding available times…
             </p>
           ) : slots.length === 0 ? (
-            <p style={{ color: "#6e7a70", fontSize: 13.5, margin: 0 }}>
+            <p style={{ color: "#7A828C", fontSize: 13.5, margin: 0 }}>
               No other times available right now.
             </p>
           ) : (
@@ -107,15 +143,21 @@ export function BookingTools({
                 <button
                   key={s}
                   disabled={pending}
-                  onClick={() => start(() => rescheduleBooking(id, s))}
+                  onClick={() =>
+                    start(async () => {
+                      const result = await rescheduleBooking(id, s);
+                      setMessage(result.message);
+                      if (result.ok) setOpen(false);
+                    })
+                  }
                   style={{
-                    background: "#fbf7f0",
-                    border: "1.5px solid #ece5d8",
+                    background: "#FFFFFF",
+                    border: "1.5px solid #EDEFF1",
                     borderRadius: 10,
                     padding: "9px 10px",
                     font: "inherit",
                     fontSize: 13.5,
-                    color: "#26302a",
+                    color: "#16202A",
                     cursor: pending ? "wait" : "pointer",
                   }}
                 >
@@ -145,11 +187,11 @@ export function RateBooking({
   if (existing) {
     return (
       <p style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-        <span style={{ color: "#cf854f" }}>
+        <span style={{ color: "#6D28D9" }}>
           {"★".repeat(existing.rating)}
           {"☆".repeat(5 - existing.rating)}
         </span>{" "}
-        <span style={{ color: "#6e7a70" }}>
+        <span style={{ color: "#7A828C" }}>
           {existing.comment ? `“${existing.comment}”` : "Thanks for rating."}
         </span>
       </p>
@@ -159,7 +201,7 @@ export function RateBooking({
   if (!open) {
     return (
       <button
-        style={{ ...linkBtn, color: "#cf854f", marginTop: 12 }}
+        style={{ ...linkBtn, color: "#6D28D9", marginTop: 12 }}
         onClick={() => setOpen(true)}
       >
         Rate this visit
@@ -182,7 +224,7 @@ export function RateBooking({
               fontSize: 24,
               lineHeight: 1,
               padding: 0,
-              color: n <= stars ? "#cf854f" : "#d8cfbe",
+              color: n <= stars ? "#6D28D9" : "#E5E7EA",
             }}
           >
             ★
@@ -198,7 +240,7 @@ export function RateBooking({
           width: "100%",
           boxSizing: "border-box",
           padding: "10px 12px",
-          border: "1.5px solid #d8d2c6",
+          border: "1.5px solid #E5E7EA",
           borderRadius: 10,
           font: "inherit",
           fontSize: 14,
@@ -210,8 +252,8 @@ export function RateBooking({
         disabled={pending || stars === 0}
         onClick={() => start(() => rateBooking(id, stars, comment))}
         style={{
-          background: "#2f4a3a",
-          color: "#fbf7f0",
+          background: "#16202A",
+          color: "#FFFFFF",
           border: "none",
           borderRadius: 999,
           padding: "9px 20px",
@@ -258,7 +300,7 @@ export function TipBooking({ id }: { id: string }) {
   if (!open) {
     return (
       <button
-        style={{ ...linkBtn, color: "#5b7a65", marginTop: 10 }}
+        style={{ ...linkBtn, color: "#6D28D9", marginTop: 10 }}
         onClick={() => setOpen(true)}
       >
         Add a tip
@@ -268,7 +310,7 @@ export function TipBooking({ id }: { id: string }) {
 
   return (
     <div style={{ marginTop: 12 }}>
-      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#6e7a70" }}>
+      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#7A828C" }}>
         Tips go entirely to your provider — we take nothing.
       </p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -278,14 +320,14 @@ export function TipBooking({ id }: { id: string }) {
             disabled={busy}
             onClick={() => tip(n)}
             style={{
-              background: "#fbf7f0",
-              border: "1.5px solid #ece5d8",
+              background: "#FFFFFF",
+              border: "1.5px solid #EDEFF1",
               borderRadius: 999,
               padding: "9px 18px",
               font: "inherit",
               fontSize: 14,
               fontWeight: 600,
-              color: "#2f4a3a",
+              color: "#16202A",
               cursor: busy ? "wait" : "pointer",
               opacity: busy ? 0.6 : 1,
             }}
@@ -294,7 +336,7 @@ export function TipBooking({ id }: { id: string }) {
           </button>
         ))}
         <button
-          style={{ ...linkBtn, color: "#6e7a70" }}
+          style={{ ...linkBtn, color: "#7A828C" }}
           onClick={() => setOpen(false)}
         >
           Not now
@@ -303,8 +345,8 @@ export function TipBooking({ id }: { id: string }) {
       {err && (
         <p
           style={{
-            background: "#f6e7dd",
-            color: "#8a4b26",
+            background: "#FFE6EA",
+            color: "#B0384F",
             padding: "10px 12px",
             borderRadius: 10,
             fontSize: 13.5,

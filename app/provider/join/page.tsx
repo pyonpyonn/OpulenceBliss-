@@ -95,7 +95,7 @@ export default function ProviderJoinPage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="grid">
@@ -228,9 +228,9 @@ export default function ProviderJoinPage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 70px;
         }
         .grid {
@@ -243,10 +243,10 @@ export default function ProviderJoinPage() {
           align-items: start;
         }
         .brand {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 19px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
           text-decoration: none;
           display: inline-block;
           margin-bottom: 26px;
@@ -256,50 +256,50 @@ export default function ProviderJoinPage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 8px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: clamp(32px, 4.6vw, 46px);
           line-height: 1.06;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 14px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 24px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 20px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 17px;
           line-height: 1.6;
           margin: 0 0 26px;
         }
         .fee {
           background: #fff;
-          border: 1.5px solid #e7a579;
+          border: 1.5px solid #F5C542;
           border-radius: 18px;
           padding: 24px 26px;
           margin-bottom: 26px;
         }
         .fee-amount {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 34px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 4px;
         }
         .fee-amount span {
-          font-family: "Hanken Grotesk", sans-serif;
+          font-family: "Nunito", sans-serif;
           font-size: 14px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .fee-note {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 14px;
           margin: 0 0 16px;
         }
@@ -319,7 +319,7 @@ export default function ProviderJoinPage() {
           content: "✿";
           position: absolute;
           left: 0;
-          color: #e7a579;
+          color: #F5C542;
           font-size: 12px;
         }
         .steps {
@@ -334,7 +334,7 @@ export default function ProviderJoinPage() {
           align-items: center;
           gap: 12px;
           font-size: 15px;
-          color: #26302a;
+          color: #16202A;
         }
         .steps span {
           display: grid;
@@ -343,47 +343,47 @@ export default function ProviderJoinPage() {
           height: 28px;
           flex-shrink: 0;
           border-radius: 50%;
-          background: #e7eee7;
-          color: #2f4a3a;
-          font-family: "Fraunces", serif;
+          background: #F4ECFE;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 14px;
         }
         .already {
           font-size: 14.5px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .already a {
-          color: #2f4a3a;
+          color: #16202A;
           font-weight: 600;
         }
         .form {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 20px;
           padding: 32px 30px;
-          box-shadow: 0 16px 44px rgba(47, 74, 58, 0.09);
+          box-shadow: 0 16px 44px rgba(22,32,42, 0.09);
         }
         label {
           display: block;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 6px;
         }
         input {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
           background: #fff;
-          color: #26302a;
+          color: #16202A;
           margin-bottom: 16px;
         }
         input:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: #16202A;
         }
         .checks {
           display: flex;
@@ -392,27 +392,27 @@ export default function ProviderJoinPage() {
           margin-bottom: 18px;
         }
         .chk {
-          background: #fbf7f0;
-          border: 1.5px solid #ece5d8;
+          background: #FFFFFF;
+          border: 1.5px solid #EDEFF1;
           border-radius: 999px;
           padding: 9px 16px;
           font: inherit;
           font-size: 14px;
-          color: #26302a;
+          color: #16202A;
           cursor: pointer;
         }
         .chk:hover {
-          border-color: #cf854f;
+          border-color: #6D28D9;
         }
         .chk.on {
-          background: #e7eee7;
-          border-color: #2f4a3a;
-          color: #2f4a3a;
+          background: #F4ECFE;
+          border-color: #16202A;
+          color: #16202A;
           font-weight: 600;
         }
         .go {
           width: 100%;
-          background: #cf854f;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
           color: #fff;
           border: none;
           border-radius: 999px;
@@ -424,7 +424,7 @@ export default function ProviderJoinPage() {
           margin-top: 6px;
         }
         .go:hover:not(:disabled) {
-          background: #ba7440;
+          background: #4C1D95;
         }
         .go:disabled {
           opacity: 0.55;
@@ -432,20 +432,20 @@ export default function ProviderJoinPage() {
         }
         .small {
           font-size: 12.5px;
-          color: #6e7a70;
+          color: #7A828C;
           text-align: center;
           margin: 12px 0 0;
         }
         .err {
-          background: #f6e7dd;
-          color: #8a4b26;
+          background: #FFE6EA;
+          color: #B0384F;
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 14px;
         }
         @media (max-width: 880px) {

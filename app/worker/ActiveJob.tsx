@@ -39,12 +39,12 @@ function whenLabel(iso: string) {
     d.toDateString() === today.toDateString()
       ? "Today"
       : d.toDateString() === tmr.toDateString()
-      ? "Tomorrow"
-      : d.toLocaleDateString("en-GB", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        });
+        ? "Tomorrow"
+        : d.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
   return `${day}, ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -72,7 +72,7 @@ export default function ActiveJob({
   if (live && job.arrivedAt) {
     const secs = Math.max(
       0,
-      Math.floor((now - new Date(job.arrivedAt).getTime()) / 1000)
+      Math.floor((now - new Date(job.arrivedAt).getTime()) / 1000),
     );
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -88,7 +88,7 @@ export default function ActiveJob({
   const idx = stageIndex(job.status);
   const maps = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        job.address
+        job.address,
       )}`
     : null;
 
@@ -176,7 +176,11 @@ export default function ActiveJob({
         </p>
       )}
 
-      <JobActions id={job.id} status={job.status} />
+      <JobActions
+        id={job.id}
+        status={job.status}
+        scheduledAt={job.scheduled_at}
+      />
 
       {compact && (
         <p className="more">
@@ -187,14 +191,14 @@ export default function ActiveJob({
       <style jsx>{`
         .job {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #edeff1;
           border-radius: 20px;
           padding: 28px 28px 24px;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          font-family: "Nunito", system-ui, sans-serif;
         }
         .job.live {
-          border-color: #7fa08c;
-          box-shadow: 0 14px 36px rgba(47, 74, 58, 0.12);
+          border-color: #c86fc9;
+          box-shadow: 0 14px 36px rgba(22, 32, 42, 0.12);
         }
         .head {
           display: flex;
@@ -208,18 +212,18 @@ export default function ActiveJob({
           letter-spacing: 0.14em;
           font-size: 11.5px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6d28d9;
           margin: 0 0 6px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 27px;
-          color: #2f4a3a;
+          color: #16202a;
           margin: 0 0 4px;
         }
         .when {
-          color: #6e7a70;
+          color: #7a828c;
           font-size: 14.5px;
           margin: 0;
         }
@@ -232,21 +236,21 @@ export default function ActiveJob({
           padding: 10px 16px;
         }
         .timer {
-          background: #e7eee7;
+          background: #f4ecfe;
         }
         .pay {
-          background: #f6f1e8;
+          background: #f7f8f9;
         }
         .timer strong,
         .pay strong {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 23px;
-          color: #2f4a3a;
+          color: #16202a;
           font-variant-numeric: tabular-nums;
         }
         .timer small,
         .pay small {
-          color: #6e7a70;
+          color: #7a828c;
           font-size: 12px;
         }
         .dot {
@@ -269,14 +273,14 @@ export default function ActiveJob({
         .bar {
           position: relative;
           height: 8px;
-          background: #f0ebe0;
+          background: #f1f2f4;
           border-radius: 999px;
           margin: 20px 0 26px;
         }
         .bar span {
           display: block;
           height: 100%;
-          background: #7fa08c;
+          background: #c86fc9;
           border-radius: 999px;
           transition: width 1s linear;
         }
@@ -286,7 +290,7 @@ export default function ActiveJob({
           top: 12px;
           font-style: normal;
           font-size: 12px;
-          color: #6e7a70;
+          color: #7a828c;
         }
         .track {
           list-style: none;
@@ -302,7 +306,7 @@ export default function ActiveJob({
           align-items: center;
           gap: 7px;
           position: relative;
-          color: #a89f90;
+          color: #a9afb7;
           font-size: 12.5px;
         }
         .track li::before {
@@ -312,14 +316,14 @@ export default function ActiveJob({
           left: 0;
           right: 50%;
           height: 2px;
-          background: #f0ebe0;
+          background: #f1f2f4;
         }
         .track li:first-child::before {
           display: none;
         }
         .track li.done::before,
         .track li.at::before {
-          background: #7fa08c;
+          background: #c86fc9;
         }
         .pip {
           width: 27px;
@@ -327,7 +331,7 @@ export default function ActiveJob({
           border-radius: 50%;
           display: grid;
           place-items: center;
-          background: #f6f1e8;
+          background: #f7f8f9;
           border: 1.5px solid #e2dccf;
           font-size: 12px;
           font-weight: 600;
@@ -335,18 +339,18 @@ export default function ActiveJob({
           z-index: 1;
         }
         .track li.done .pip {
-          background: #e7eee7;
-          border-color: #7fa08c;
-          color: #2f4a3a;
+          background: #f4ecfe;
+          border-color: #c86fc9;
+          color: #16202a;
         }
         .track li.at .pip {
-          background: #2f4a3a;
-          border-color: #2f4a3a;
-          color: #fbf7f0;
+          background: #16202a;
+          border-color: #16202a;
+          color: #ffffff;
         }
         .track li.done,
         .track li.at {
-          color: #2f4a3a;
+          color: #16202a;
         }
         .track li.at {
           font-weight: 600;
@@ -357,10 +361,10 @@ export default function ActiveJob({
           gap: 16px;
           margin: 0;
           padding-top: 20px;
-          border-top: 1px solid #f0ebe0;
+          border-top: 1px solid #f1f2f4;
         }
         .facts dt {
-          color: #a89f90;
+          color: #a9afb7;
           font-size: 11.5px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -368,16 +372,16 @@ export default function ActiveJob({
         }
         .facts dd {
           margin: 0;
-          color: #26302a;
+          color: #16202a;
           font-size: 14.5px;
-          font-weight: 500;
+          font-weight: 900;
         }
         .facts a {
-          color: #5b7a65;
-          font-weight: 500;
+          color: #6d28d9;
+          font-weight: 900;
         }
         .notes {
-          background: #fbf7f0;
+          background: #ffffff;
           border-radius: 12px;
           padding: 14px 16px;
           margin-top: 20px;
@@ -387,16 +391,16 @@ export default function ActiveJob({
           font-size: 11.5px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
-          color: #a89f90;
+          color: #a9afb7;
         }
         .notes p:last-child {
           margin: 0;
           font-size: 14.5px;
-          color: #26302a;
+          color: #16202a;
         }
         .flag {
-          background: #f6e7dd;
-          color: #8a4b26;
+          background: #ffe6ea;
+          color: #b0384f;
           padding: 10px 12px;
           border-radius: 10px;
           font-size: 13.5px;
@@ -406,12 +410,12 @@ export default function ActiveJob({
           margin: 16px 0 0;
         }
         .more a {
-          color: #5b7a65;
+          color: #6d28d9;
           font-size: 14px;
           text-decoration: none;
         }
         .more a:hover {
-          color: #2f4a3a;
+          color: #16202a;
         }
       `}</style>
     </section>

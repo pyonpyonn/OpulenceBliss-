@@ -241,7 +241,7 @@ export default function RatingGate() {
           place-items: center;
           padding: 20px;
           z-index: 10000;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          font-family: "Nunito", system-ui, sans-serif;
         }
         .modal {
           background: #fff;
@@ -256,18 +256,18 @@ export default function RatingGate() {
           letter-spacing: 0.14em;
           font-size: 11.5px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 8px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 26px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 8px;
         }
         .sub {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 14.5px;
           margin: 0 0 20px;
           line-height: 1.5;
@@ -291,11 +291,11 @@ export default function RatingGate() {
           transform: scale(1.12);
         }
         .star.on {
-          color: #cf854f;
+          color: #6D28D9;
         }
         .hint {
           font-size: 13px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 8px 0 18px;
           min-height: 18px;
         }
@@ -303,22 +303,22 @@ export default function RatingGate() {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 12px;
           font: inherit;
           font-size: 14.5px;
           resize: vertical;
           margin-bottom: 16px;
-          color: #26302a;
+          color: #16202A;
         }
         textarea:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: #16202A;
         }
         .go {
           width: 100%;
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: #16202A;
+          color: #FFFFFF;
           border: none;
           border-radius: 999px;
           padding: 14px;
@@ -338,32 +338,32 @@ export default function RatingGate() {
           margin-bottom: 16px;
         }
         .tips button {
-          background: #fbf7f0;
-          border: 1.5px solid #ece5d8;
+          background: #FFFFFF;
+          border: 1.5px solid #EDEFF1;
           border-radius: 999px;
           padding: 12px 24px;
           font: inherit;
           font-size: 16px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
           cursor: pointer;
         }
         .tips button:hover {
-          border-color: #cf854f;
+          border-color: #6D28D9;
           background: #fdf6f0;
         }
         .skip {
           background: none;
           border: none;
-          color: #6e7a70;
+          color: #7A828C;
           font: inherit;
           font-size: 14px;
           text-decoration: underline;
           cursor: pointer;
         }
         .err {
-          background: #f6e7dd;
-          color: #8a4b26;
+          background: #FFE6EA;
+          color: #B0384F;
           padding: 10px 12px;
           border-radius: 10px;
           font-size: 13.5px;

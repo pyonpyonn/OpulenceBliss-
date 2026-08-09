@@ -5,26 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "../../page";
 import CurrentVisit, { type Visit } from "../../CurrentVisit";
 import { BookingTools, RateBooking, TipBooking } from "../../BookingTools";
+import VisitStatusPanel from "@/components/VisitStatusPanel";
+import { getVisitStatus } from "@/lib/visitStatus";
+import ReportNoShow from "../../ReportNoShow";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
-
-const NEXT_STEP: Record<string, string> = {
-  offered:
-    "We've sent your booking to every available provider in your area. The first to accept it becomes yours, and we'll let you know straight away.",
-  declined:
-    "We're still looking for a provider for this time. If nobody's free we'll cancel it and release the hold on your card.",
-  scheduled:
-    "Your provider is confirmed. They'll check in when they arrive, and you'll only be charged once the visit is finished.",
-  in_progress:
-    "Your provider is here and working. When they check out, the visit completes and your card is charged.",
-  completed:
-    "All done. Your card has been charged — and if you haven't yet, a rating helps other clients enormously.",
-  cancelled:
-    "This visit was cancelled and you haven't been charged. You're welcome to book another time.",
-};
 
 export default async function VisitPage({
   params,
@@ -41,7 +29,7 @@ export default async function VisitPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, package_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio), check_ins(arrived_at, left_at)"
+      "id, scheduled_at, status, address, household_notes, package_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio), check_ins(arrived_at, left_at)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -64,6 +52,8 @@ export default async function VisitPage({
       </main>
     );
   }
+
+  const status = await getVisitStatus(supabase, row.id);
 
   const { data: reviewRows } = await supabase
     .from("reviews")
@@ -110,7 +100,14 @@ export default async function VisitPage({
     arrivedAt: ci?.arrived_at ?? null,
   };
 
-  const changeable = ["offered", "declined", "scheduled"].includes(row.status);
+  const changeable =
+    status?.actions.some(
+      (action) => action.kind === "cancel" || action.kind === "reschedule",
+    ) ?? false;
+  const canRate =
+    status?.actions.some((action) => action.kind === "rate") ?? false;
+  const canTip =
+    status?.actions.some((action) => action.kind === "tip") ?? false;
   const time = (iso: string | null) =>
     iso
       ? new Date(iso).toLocaleTimeString("en-GB", {
@@ -131,13 +128,17 @@ export default async function VisitPage({
 
         <CurrentVisit visit={visit} hideLink />
 
-        {/* What happens next */}
-        <section style={{ ...card, marginBottom: 20 }}>
-          <h2 style={sectionTitle}>What happens next</h2>
-          <p style={{ margin: 0, color: "#4a544c", fontSize: 15, lineHeight: 1.6 }}>
-            {NEXT_STEP[row.status] ?? ""}
-          </p>
-        </section>
+        {status && (
+          <div style={{ marginBottom: 20 }}>
+            <VisitStatusPanel status={status} />
+            <ReportNoShow
+              bookingId={row.id}
+              scheduledAt={row.scheduled_at}
+              status={row.status}
+              hasArrived={!!ci?.arrived_at}
+            />
+          </div>
+        )}
 
         {/* Your provider */}
         {prv?.display_name && (
@@ -146,14 +147,18 @@ export default async function VisitPage({
             <p style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 600 }}>
               {prv.display_name}
               {prv.rating_avg ? (
-                <span style={{ color: "#cf854f", fontWeight: 500, fontSize: 15 }}>
+                <span
+                  style={{ color: "#cf854f", fontWeight: 500, fontSize: 15 }}
+                >
                   {" "}
                   · {Number(prv.rating_avg).toFixed(1)}★ ({prv.rating_count})
                 </span>
               ) : null}
             </p>
             {prv.bio && (
-              <p style={{ margin: "8px 0 0", color: "#6e7a70", fontSize: 14.5 }}>
+              <p
+                style={{ margin: "8px 0 0", color: "#6e7a70", fontSize: 14.5 }}
+              >
                 {prv.bio}
               </p>
             )}
@@ -192,16 +197,6 @@ export default async function VisitPage({
               }
             />
             <Row label="Tip added" value={`£${tipTotal.toFixed(2)}`} />
-            <Row
-              label="Status"
-              value={
-                jobPay?.status === "succeeded"
-                  ? "Charged"
-                  : jobPay?.status === "refunded"
-                  ? "Released — not charged"
-                  : "Held — charged after the visit"
-              }
-            />
           </dl>
         </section>
 
@@ -216,11 +211,13 @@ export default async function VisitPage({
           </section>
         )}
 
-        {row.status === "completed" && (
+        {(canRate || canTip) && (
           <section style={card}>
-            <h2 style={sectionTitle}>Rate your visit</h2>
-            <RateBooking id={row.id} existing={reviewRows ?? null} />
-            <TipBooking id={row.id} />
+            <h2 style={sectionTitle}>After your visit</h2>
+            {canRate && (
+              <RateBooking id={row.id} existing={reviewRows ?? null} />
+            )}
+            {canTip && <TipBooking id={row.id} />}
             <p style={{ margin: "14px 0 0" }}>
               <a
                 href={`/book?service=${row.package_id ?? ""}&pc=${

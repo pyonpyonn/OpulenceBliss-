@@ -36,11 +36,11 @@ export default async function JobPage({
         <link rel="stylesheet" href={FONTS} />
         <div style={{ maxWidth: 620, margin: "0 auto", paddingTop: 60 }}>
           <h1 style={h1}>Job not found</h1>
-          <p style={{ color: "#6e7a70" }}>
+          <p style={{ color: "#7A828C" }}>
             This job may have been reassigned or cancelled.
           </p>
           <p style={{ marginTop: 20 }}>
-            <a href="/worker" style={{ color: "#5b7a65" }}>
+            <a href="/worker" style={{ color: "#FF5A36" }}>
               ← Back to my jobs
             </a>
           </p>
@@ -104,7 +104,7 @@ export default async function JobPage({
       <link rel="stylesheet" href={FONTS} />
       <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: 40 }}>
         <p style={{ margin: "0 0 20px" }}>
-          <a href="/worker" style={{ color: "#5b7a65", fontSize: 14 }}>
+          <a href="/worker" style={{ color: "#FF5A36", fontSize: 14 }}>
             ← My jobs
           </a>
         </p>
@@ -170,7 +170,7 @@ function Row({ label, value }: { label: string; value: string }) {
     <div>
       <dt
         style={{
-          color: "#a89f90",
+          color: "#A9AFB7",
           fontSize: 11.5,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
@@ -185,13 +185,12 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const FONTS =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap";
 const wrap: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#fbf7f0",
+  background: "transparent",
   color: "#26302a",
-  fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
-  padding: "0 20px 80px",
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  padding: 0,
 };
 const card: React.CSSProperties = {
   background: "#fff",
@@ -206,16 +205,16 @@ const grid: React.CSSProperties = {
   margin: 0,
 };
 const h1: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 34,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 8px",
 };
 const sectionTitle: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 20,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 14px",
 };

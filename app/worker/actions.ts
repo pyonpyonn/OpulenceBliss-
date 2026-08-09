@@ -8,6 +8,15 @@ import { createClient as createAdmin } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
+import {
+  claimMoneyOperation,
+  maybeReleasePayout,
+  systemFinaliseMoneyOperation,
+  systemTransitionBooking,
+  systemTransitionPayment,
+  systemTransitionPayout,
+  transitionBooking,
+} from "@/lib/bookingState";
 
 // How close a provider must be to count as "on site".
 const GEOFENCE_METRES = 500;
@@ -135,38 +144,12 @@ export async function acceptJob(id: string) {
     .maybeSingle();
   if (!me) return { error: "Not a provider" };
 
-  // Race-safe claim: only works while nobody else has taken it.
-  const { data: claimed } = await supabase
-    .from("bookings")
-    .update({ provider_id: me.id, status: "scheduled" })
-    .eq("id", id)
-    .is("provider_id", null)
-    .eq("status", "offered")
-    .select("id");
-
-  if (!claimed?.length) {
-    // Someone beat them to it.
-    await admin
-      .from("booking_offers")
-      .update({ status: "lost" })
-      .eq("booking_id", id)
-      .eq("provider_id", me.id);
+  try {
+    await transitionBooking(supabase, id, "scheduled");
+  } catch {
     revalidatePath("/worker");
     return { taken: true };
   }
-
-  // Close the offer for everyone else.
-  await admin
-    .from("booking_offers")
-    .update({ status: "accepted" })
-    .eq("booking_id", id)
-    .eq("provider_id", me.id);
-  await admin
-    .from("booking_offers")
-    .update({ status: "lost" })
-    .eq("booking_id", id)
-    .neq("provider_id", me.id)
-    .eq("status", "open");
 
   const { customerId, service, email, scheduledAt } = await bookingContext(id);
   await notify(
@@ -233,6 +216,45 @@ export async function checkInJob(
   const supabase = await createClient();
   const ctx = await bookingContext(id);
 
+  // You can only check in on the day of the visit, from 30 minutes before.
+  //
+  // TESTING: set ALLOW_EARLY_CHECKIN=true in .env.local to skip this while
+  // you're trying the flow out. Remove it before going live.
+  const allowEarly = process.env.ALLOW_EARLY_CHECKIN === "true";
+
+  if (ctx.scheduledAt && !allowEarly) {
+    const start = new Date(ctx.scheduledAt);
+    const openFrom = new Date(start.getTime() - 30 * 60 * 1000);
+    const endOfDay = new Date(start);
+    endOfDay.setHours(23, 59, 59, 999);
+    const now = new Date();
+
+    if (now < openFrom) {
+      const when = start.toLocaleString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return {
+        blocked: true,
+        pass: null,
+        distance: null,
+        reason: `Too early — this visit is ${when}. You can check in from 30 minutes before it starts.`,
+      };
+    }
+    if (now > endOfDay) {
+      return {
+        blocked: true,
+        pass: null,
+        distance: null,
+        reason:
+          "This visit's day has passed. Contact the team so we can sort it out.",
+      };
+    }
+  }
+
   // Geofence check: is the provider actually near the address?
   let pass: boolean | null = null;
   let distance: number | null = null;
@@ -262,10 +284,18 @@ export async function checkInJob(
     return { blocked: true, pass, distance, reason };
   }
 
-  await supabase
-    .from("bookings")
-    .update({ status: "in_progress" })
-    .eq("id", id);
+  try {
+    await transitionBooking(supabase, id, "in_progress", {
+      meta: { geofence_pass: pass, distance_metres: distance, forced: force },
+    });
+  } catch (e) {
+    return {
+      blocked: true,
+      pass,
+      distance,
+      reason: e instanceof Error ? e.message : "Could not start this job.",
+    };
+  }
 
   await supabase.from("check_ins").insert({
     booking_id: id,
@@ -294,11 +324,10 @@ export async function checkInJob(
   return { blocked: false, pass, distance, reason };
 }
 
-// Job finished — complete it AND capture the held payment.
+// Job finished — complete it AND settle the money.
 export async function checkOutJob(id: string) {
   const supabase = await createClient();
-
-  await supabase.from("bookings").update({ status: "completed" }).eq("id", id);
+  await transitionBooking(supabase, id, "completed");
 
   await supabase
     .from("check_ins")
@@ -306,43 +335,254 @@ export async function checkOutJob(id: string) {
     .eq("booking_id", id)
     .is("left_at", null);
 
-  // This is the moment the customer is actually charged.
-  const { data: pays } = await admin
-    .from("payments")
-    .select("id, stripe_payment_ref, status, split_breakdown")
-    .eq("booking_id", id)
-    .limit(1);
+  // Is this a one-off visit or part of a membership?
+  const { data: bk } = await admin
+    .from("bookings")
+    .select("subscription_id, provider_id, provider_payout, membership_fee_deducted")
+    .eq("id", id)
+    .maybeSingle();
 
-  const pay = pays?.[0];
   let earned = 0;
-  if (pay?.stripe_payment_ref && pay.status !== "succeeded") {
-    earned = Number(
-      (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0
-    );
-    try {
-      await stripe.paymentIntents.capture(pay.stripe_payment_ref);
-      await admin
-        .from("payments")
-        .update({ status: "succeeded" })
-        .eq("id", pay.id);
-    } catch {
-      // Already captured, or capture failed — leave the record as-is.
+  let paymentSettled = Boolean(bk?.subscription_id);
+
+  if (bk?.subscription_id) {
+    // Membership visit: create the durable payout in not_ready, then let the
+    // database release it only when both work and covering funds are present.
+    const payout = Number(bk.provider_payout ?? 0);
+    earned = payout;
+
+    const { data: existing } = await admin
+      .from("payouts")
+      .select("id, status")
+      .eq("booking_id", id)
+      .maybeSingle();
+
+    let payoutId = existing?.id ?? null;
+    if (!payoutId && payout > 0 && bk.provider_id) {
+      const { data: created } = await admin.from("payouts").insert({
+        provider_id: bk.provider_id,
+        booking_id: id,
+        amount: payout,
+        status: "not_ready",
+        note:
+          Number(bk.membership_fee_deducted ?? 0) > 0
+            ? `Membership fee of £${Number(
+                bk.membership_fee_deducted
+              ).toFixed(2)} deducted`
+            : null,
+      }).select("id").single();
+      payoutId = created?.id ?? null;
+    }
+
+    if (payoutId && payout > 0 && bk.provider_id) {
+      await maybeReleasePayout(admin, id);
+      const { data: ready } = await admin
+        .from("payouts")
+        .select("status")
+        .eq("id", payoutId)
+        .maybeSingle();
+
+      if (ready?.status === "pending") {
+        const operationKey = `transfer:booking:${id}:provider:${bk.provider_id}`;
+        const op = await claimMoneyOperation(admin, {
+          operationKey,
+          operationType: "transfer",
+          bookingId: id,
+          amount: payout,
+        });
+
+        if (op.should_run) {
+          const { data: prov } = await admin
+            .from("providers")
+            .select("stripe_account_id")
+            .eq("id", bk.provider_id)
+            .maybeSingle();
+          const destination =
+            prov?.stripe_account_id ?? process.env.PROVIDER_TEST_ACCOUNT;
+
+          if (!destination) {
+            await systemTransitionPayout(admin, payoutId, "held", {
+              reason: "Provider payout account is not configured",
+            });
+          } else {
+            await systemTransitionPayout(admin, payoutId, "processing");
+            let transfer: Stripe.Transfer | null = null;
+            try {
+              transfer = await stripe.transfers.create(
+                {
+                  amount: Math.round(payout * 100),
+                  currency: "gbp",
+                  destination,
+                  metadata: {
+                    booking_id: id,
+                    kind: "membership_visit",
+                    operation_key: operationKey,
+                  },
+                },
+                { idempotencyKey: operationKey }
+              );
+            } catch (e) {
+              const reason =
+                e instanceof Error ? e.message : "Stripe transfer failed";
+              const definite = e instanceof Stripe.errors.StripeInvalidRequestError;
+              await systemFinaliseMoneyOperation(
+                admin,
+                op.id,
+                definite ? "failed" : "ambiguous",
+                { error: reason },
+              );
+              if (definite) {
+                await systemTransitionPayout(admin, payoutId, "failed", { reason });
+              }
+            }
+
+            if (transfer) {
+              // Stripe's result is the durable fact. Record it before updating
+              // local payout details so a later local failure cannot downgrade it.
+              await systemFinaliseMoneyOperation(admin, op.id, "succeeded", {
+                stripeObjectId: transfer.id,
+              });
+              const { error: referenceError } = await admin
+                .from("payouts")
+                .update({ stripe_transfer_ref: transfer.id })
+                .eq("id", payoutId);
+              if (referenceError) throw new Error(referenceError.message);
+              await systemTransitionPayout(admin, payoutId, "paid");
+            }
+          }
+        } else if (op.status === "succeeded") {
+          await systemTransitionPayout(admin, payoutId, "processing");
+          await systemTransitionPayout(admin, payoutId, "paid");
+        }
+      }
+    }
+  } else {
+    // ---- One-off visit: capture the held payment; Stripe splits it.
+    const { data: pays } = await admin
+      .from("payments")
+      .select("id, stripe_payment_ref, status, split_breakdown, gross_amount")
+      .eq("booking_id", id)
+      .limit(1);
+
+    const pay = pays?.[0];
+    if (
+      pay?.stripe_payment_ref &&
+      ["authorised", "capture_failed"].includes(pay.status)
+    ) {
+      earned = Number(
+        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0
+      );
+      const operationKey = `capture:booking:${id}`;
+      await systemTransitionPayment(admin, pay.id, "capturing");
+      const op = await claimMoneyOperation(admin, {
+        operationKey,
+        operationType: "capture",
+        bookingId: id,
+        amount: Number(pay.gross_amount ?? 0),
+      });
+      if (op.should_run) {
+        let intent: Stripe.PaymentIntent | null = null;
+        try {
+          intent = await stripe.paymentIntents.capture(
+            pay.stripe_payment_ref,
+            {},
+            { idempotencyKey: operationKey }
+          );
+        } catch (e) {
+          const reason = e instanceof Error ? e.message : "Capture failed";
+          const definite =
+            e instanceof Stripe.errors.StripeCardError ||
+            e instanceof Stripe.errors.StripeInvalidRequestError;
+          await systemFinaliseMoneyOperation(
+            admin,
+            op.id,
+            definite ? "failed" : "ambiguous",
+            { error: reason },
+          );
+          if (definite) {
+            await systemTransitionPayment(admin, pay.id, "capture_failed", {
+              reason,
+            });
+          }
+          await systemTransitionBooking(
+            admin,
+            id,
+            "needs_review",
+            "Payment capture failed after completion",
+            { payment_id: pay.id, operation_id: op.id }
+          );
+          await admin.rpc("open_review_case", {
+            p_booking_id: id,
+            p_category: "payment_failure",
+            p_priority: "urgent",
+            p_blocks_payment: true,
+            p_blocks_payout: true,
+            p_notes: reason,
+            p_created_by: null,
+          });
+        }
+
+        if (intent) {
+          await systemFinaliseMoneyOperation(admin, op.id, "succeeded", {
+            stripeObjectId: intent.id,
+          });
+          await systemTransitionPayment(admin, pay.id, "succeeded");
+          paymentSettled = true;
+        }
+      } else if (op.status === "ambiguous") {
+        await systemTransitionBooking(
+          admin,
+          id,
+          "needs_review",
+          "Payment capture outcome is ambiguous",
+          { payment_id: pay.id, operation_id: op.id }
+        );
+        await admin.rpc("open_review_case", {
+          p_booking_id: id,
+          p_category: "payment_failure",
+          p_priority: "urgent",
+          p_blocks_payment: true,
+          p_blocks_payout: true,
+          p_notes: "Capture outcome is ambiguous; reconciliation required",
+          p_created_by: null,
+        });
+      } else if (op.status === "succeeded") {
+        await systemTransitionPayment(admin, pay.id, "succeeded");
+        paymentSettled = true;
+      }
+    } else if (pay?.status === "succeeded") {
+      paymentSettled = true;
+      earned = Number(
+        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0
+      );
     }
   }
 
   const { customerId, service, email } = await bookingContext(id);
   await notify(
     customerId,
-    "Visit completed",
-    `${service} — all done. Your card has now been charged.`,
+    paymentSettled ? "Visit completed" : "Visit completed — payment under review",
+    bk?.subscription_id
+      ? `${service} — all done. This visit is covered by your membership.`
+      : paymentSettled
+        ? `${service} — all done. Your card has now been charged.`
+        : `${service} — all done. We are checking the payment and you do not need to retry anything.`,
     "/account"
   );
   await sendEmail({
     to: email,
-    subject: "Your visit is complete",
+    subject: paymentSettled
+      ? "Your visit is complete"
+      : "Your visit is complete — payment under review",
     title: "All done",
-    body: `<p>Your <strong>${service}</strong> is complete and your card has now been charged.</p>
-           <p>If you have a moment, we'd love a quick rating for your provider.</p>`,
+    body: bk?.subscription_id
+      ? `<p>Your <strong>${service}</strong> is complete and covered by your membership.</p>
+         <p>If you have a moment, we'd love a quick rating for your provider.</p>`
+      : paymentSettled
+        ? `<p>Your <strong>${service}</strong> is complete and your card has now been charged.</p>
+           <p>If you have a moment, we'd love a quick rating for your provider.</p>`
+        : `<p>Your <strong>${service}</strong> is complete, but its payment needs a manual check.</p>
+           <p>You do not need to pay or retry anything. The team will review it.</p>`,
     cta: { text: "Rate your visit", url: "/account" },
   });
 

@@ -9,6 +9,12 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email";
+import {
+  claimMoneyOperation,
+  systemFinaliseMoneyOperation,
+  systemTransitionBooking,
+  systemTransitionPayment,
+} from "@/lib/bookingState";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -42,7 +48,12 @@ export async function GET(req: NextRequest) {
       (Array.isArray(pkg) ? pkg[0]?.name : pkg?.name) ?? "your booking";
 
     // 1. Cancel the booking
-    await admin.from("bookings").update({ status: "cancelled" }).eq("id", b.id);
+    await systemTransitionBooking(
+      admin,
+      b.id,
+      "cancelled",
+      "Offer expired with nobody accepting"
+    );
 
     // 2. Close the outstanding offers
     await admin
@@ -54,20 +65,50 @@ export async function GET(req: NextRequest) {
     // 3. Release the card hold — they were never charged
     const { data: pays } = await admin
       .from("payments")
-      .select("id, stripe_payment_ref, status")
+      .select("id, stripe_payment_ref, status, gross_amount")
       .eq("booking_id", b.id)
       .limit(1);
 
     const pay = pays?.[0];
-    if (pay?.stripe_payment_ref && pay.status === "pending") {
+    if (pay?.stripe_payment_ref && pay.status === "authorised") {
+      const operationKey = `release:booking:${b.id}`;
       try {
-        await stripe.paymentIntents.cancel(pay.stripe_payment_ref);
-        await admin
-          .from("payments")
-          .update({ status: "refunded" })
-          .eq("id", pay.id);
-      } catch {
-        // Already released or captured — leave it.
+        await systemTransitionPayment(admin, pay.id, "cancelling");
+        const op = await claimMoneyOperation(admin, {
+          operationKey,
+          operationType: "release",
+          bookingId: b.id,
+          amount: Number(pay.gross_amount ?? 0),
+        });
+        if (op.should_run) {
+          const intent = await stripe.paymentIntents.cancel(
+            pay.stripe_payment_ref,
+            {},
+            { idempotencyKey: operationKey }
+          );
+          await systemFinaliseMoneyOperation(admin, op.id, "succeeded", {
+            stripeObjectId: intent.id,
+          });
+          await systemTransitionPayment(admin, pay.id, "cancelled");
+        } else if (op.status === "succeeded") {
+          await systemTransitionPayment(admin, pay.id, "cancelled");
+        } else if (op.status === "ambiguous") {
+          throw new Error("Hold release outcome is ambiguous");
+        }
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : "Hold release failed";
+        await systemTransitionPayment(admin, pay.id, "authorised", {
+          reason,
+        }).catch(() => undefined);
+        await admin.rpc("open_review_case", {
+          p_booking_id: b.id,
+          p_category: "payment_failure",
+          p_priority: "high",
+          p_blocks_payment: true,
+          p_blocks_payout: true,
+          p_notes: reason,
+          p_created_by: null,
+        });
       }
     }
 

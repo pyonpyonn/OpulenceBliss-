@@ -114,13 +114,10 @@ export default function SubscribePage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="inner">
-        <a className="brand" href="/">
-          Opulence&nbsp;Bliss
-        </a>
         <p className="eyebrow">Memberships</p>
         <h1>Regular care, handled</h1>
         <p className="lede">
@@ -281,9 +278,9 @@ export default function SubscribePage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
         .inner {
@@ -292,10 +289,10 @@ export default function SubscribePage() {
           padding-top: 40px;
         }
         .brand {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 19px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
           text-decoration: none;
           display: inline-block;
           margin-bottom: 26px;
@@ -305,18 +302,18 @@ export default function SubscribePage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 8px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: clamp(32px, 5vw, 46px);
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 12px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 17px;
           max-width: 52ch;
           margin: 0 0 34px;
@@ -330,7 +327,7 @@ export default function SubscribePage() {
         .plan {
           position: relative;
           background: #fff;
-          border: 1.5px solid #ece5d8;
+          border: 1.5px solid #EDEFF1;
           border-radius: 18px;
           padding: 26px 24px;
           cursor: pointer;
@@ -339,21 +336,21 @@ export default function SubscribePage() {
           transition: border-color 0.16s ease, transform 0.16s ease;
         }
         .plan:hover {
-          border-color: #cf854f;
+          border-color: #6D28D9;
           transform: translateY(-2px);
         }
         .plan.featured {
-          border-color: #e7a579;
+          border-color: #F5C542;
         }
         .plan.on {
-          border-color: #2f4a3a;
-          box-shadow: 0 12px 32px rgba(47, 74, 58, 0.12);
+          border-color: #16202A;
+          box-shadow: 0 12px 32px rgba(22,32,42, 0.12);
         }
         .pill {
           position: absolute;
           top: -11px;
           left: 22px;
-          background: #cf854f;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
           color: #fff;
           font-size: 11px;
           font-weight: 600;
@@ -363,30 +360,30 @@ export default function SubscribePage() {
           border-radius: 999px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 22px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 6px;
         }
         .price {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 28px;
           margin: 0 0 2px;
         }
         .price span {
-          font-family: "Hanken Grotesk", sans-serif;
+          font-family: "Nunito", sans-serif;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .visits {
           font-size: 13.5px;
-          color: #5b7a65;
+          color: #6D28D9;
           margin: 0 0 12px;
         }
         .desc {
           font-size: 14.5px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 14px;
         }
         .sub-head {
@@ -394,7 +391,7 @@ export default function SubscribePage() {
           font-weight: 600;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 14px 0 8px;
         }
         ul {
@@ -413,11 +410,11 @@ export default function SubscribePage() {
           content: "·";
           position: absolute;
           left: 5px;
-          color: #cf854f;
+          color: #6D28D9;
           font-weight: 700;
         }
         ul.know li {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 13px;
         }
         .choose {
@@ -425,11 +422,11 @@ export default function SubscribePage() {
           padding-top: 16px;
           font-size: 14px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
         }
         .setup {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 20px;
           padding: 30px 28px;
           margin-top: 30px;
@@ -442,7 +439,7 @@ export default function SubscribePage() {
         label {
           display: block;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 18px 0 8px;
         }
         .row {
@@ -453,16 +450,16 @@ export default function SubscribePage() {
           flex: 1;
           min-width: 0;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
           text-transform: uppercase;
-          color: #26302a;
+          color: #16202A;
         }
         input:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: #16202A;
         }
         .chips {
           display: flex;
@@ -470,25 +467,25 @@ export default function SubscribePage() {
           gap: 7px;
         }
         .chip {
-          background: #fbf7f0;
-          border: 1.5px solid #ece5d8;
+          background: #FFFFFF;
+          border: 1.5px solid #EDEFF1;
           border-radius: 999px;
           padding: 8px 14px;
           font: inherit;
           font-size: 13.5px;
-          color: #26302a;
+          color: #16202A;
           cursor: pointer;
         }
         .chip.on {
-          background: #2f4a3a;
-          border-color: #2f4a3a;
-          color: #fbf7f0;
+          background: #16202A;
+          border-color: #16202A;
+          color: #FFFFFF;
           font-weight: 600;
         }
         .ghost {
           background: none;
-          border: 1.5px solid #2f4a3a;
-          color: #2f4a3a;
+          border: 1.5px solid #16202A;
+          color: #16202A;
           border-radius: 12px;
           padding: 12px 18px;
           font: inherit;
@@ -503,16 +500,16 @@ export default function SubscribePage() {
           margin: 10px 0 0;
         }
         .ok {
-          background: #e7eee7;
-          color: #2f4a3a;
+          background: #F4ECFE;
+          color: #16202A;
           font-weight: 600;
         }
         .no {
-          background: #f6e7dd;
-          color: #8a4b26;
+          background: #FFE6EA;
+          color: #B0384F;
         }
         .summary {
-          background: #fbf7f0;
+          background: #FFFFFF;
           border-radius: 14px;
           padding: 6px 18px;
           margin: 24px 0 20px;
@@ -522,13 +519,13 @@ export default function SubscribePage() {
           justify-content: space-between;
           gap: 12px;
           padding: 12px 0;
-          border-bottom: 1px solid #ece5d8;
+          border-bottom: 1px solid #EDEFF1;
         }
         .summary > div:last-child {
           border-bottom: none;
         }
         .summary dt {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 13.5px;
         }
         .summary dd {
@@ -539,8 +536,8 @@ export default function SubscribePage() {
         }
         .go {
           width: 100%;
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          color: #fff;
           border: none;
           border-radius: 999px;
           padding: 15px;
@@ -555,21 +552,21 @@ export default function SubscribePage() {
         }
         .small {
           font-size: 12.5px;
-          color: #6e7a70;
+          color: #7A828C;
           text-align: center;
           margin: 12px 0 0;
         }
         .alt {
           margin-top: 34px;
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 15px;
         }
         .alt a {
-          color: #2f4a3a;
+          color: #16202A;
           font-weight: 600;
         }
         .muted {
-          color: #6e7a70;
+          color: #7A828C;
         }
       `}</style>
     </main>

@@ -5,6 +5,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { rescheduleBookingState } from "@/lib/bookingState";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -25,12 +26,26 @@ async function requireAdmin() {
 
 const ALL = "00000000-0000-0000-0000-000000000000"; // sentinel for "match everything"
 
+/**
+ * Destructive tools are for demo data only.
+ *
+ * Deleting local financial records while Stripe keeps the charges and
+ * transfers permanently destroys our ability to reconcile real money.
+ */
+function assertTestMode(tool: string) {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (key.startsWith("sk_live_")) {
+    throw new Error(
+      `"${tool}" is disabled in live mode. Deleting financial records while ` +
+        `Stripe retains the charges would make reconciliation impossible. ` +
+        `Correct data through the resolution desk instead.`,
+    );
+  }
+}
+
 export async function approveProvider(id: string) {
   const s = await requireAdmin();
-  await s
-    .from("providers")
-    .update({ vetting_status: "approved" })
-    .eq("id", id);
+  await s.from("providers").update({ vetting_status: "approved" }).eq("id", id);
 
   // Let them know
   const { data: p } = await s
@@ -52,10 +67,7 @@ export async function approveProvider(id: string) {
 
 export async function rejectProvider(id: string) {
   const s = await requireAdmin();
-  await s
-    .from("providers")
-    .update({ vetting_status: "rejected" })
-    .eq("id", id);
+  await s.from("providers").update({ vetting_status: "rejected" }).eq("id", id);
   revalidatePath("/admin");
   revalidatePath("/worker");
 }
@@ -69,15 +81,14 @@ export async function deleteReview(id: string) {
 
 export async function wipeReviews() {
   const s = await requireAdmin();
+  assertTestMode("Clear all reviews");
   await s.from("reviews").delete().neq("id", ALL);
   await recalcRatings(s);
   revalidatePath("/admin");
 }
 
 // Reset cached rating figures after deletions.
-async function recalcRatings(
-  s: Awaited<ReturnType<typeof requireAdmin>>
-) {
+async function recalcRatings(s: Awaited<ReturnType<typeof requireAdmin>>) {
   await s
     .from("providers")
     .update({ rating_avg: null, rating_count: 0 })
@@ -88,29 +99,48 @@ async function recalcRatings(
     .neq("id", ALL);
 }
 
-export async function wipeBookings() {
+export async function bringBookingToNow() {
   const s = await requireAdmin();
-  // payments reference bookings, so clear them first
-  await s.from("payments").delete().neq("id", ALL);
-  await s.from("check_ins").delete().neq("id", ALL);
-  await s.from("bookings").delete().neq("id", ALL);
+  const { data: next } = await s
+    .from("bookings")
+    .select("id, status, scheduled_at")
+    .in("status", ["offered", "declined", "scheduled"])
+    .gte("scheduled_at", new Date().toISOString())
+    .order("scheduled_at", { ascending: true })
+    .limit(1);
+  const booking = next?.[0];
+  if (!booking) {
+    revalidatePath("/admin");
+    return { moved: false, message: "No upcoming bookings to move." };
+  }
+  const when = new Date(Date.now() + 2 * 60 * 1000);
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+  await rescheduleBookingState(s, booking.id, when.toISOString(), {
+    reason: "Admin test tool moved the next booking to now",
+    meta: {
+      source: "admin_test_tool",
+      offer_expires_at: expires.toISOString(),
+    },
+  });
   revalidatePath("/admin");
-}
-
-export async function wipePayments() {
-  const s = await requireAdmin();
-  await s.from("payments").delete().neq("id", ALL);
-  revalidatePath("/admin");
+  revalidatePath("/worker");
+  revalidatePath("/account");
+  return {
+    moved: true,
+    message: `Moved a booking to ${when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} today.`,
+  };
 }
 
 export async function wipeAvailability() {
   const s = await requireAdmin();
+  assertTestMode("Clear all availability");
   await s.from("provider_availability").delete().neq("id", ALL);
   revalidatePath("/admin");
 }
 
 export async function resetJoiningFees() {
   const s = await requireAdmin();
+  assertTestMode("Reset joining fees");
   await s
     .from("providers")
     .update({
@@ -119,15 +149,5 @@ export async function resetJoiningFees() {
       joining_fee_at: null,
     })
     .neq("id", ALL);
-  revalidatePath("/admin");
-}
-
-export async function wipeEverything() {
-  const s = await requireAdmin();
-  await s.from("payments").delete().neq("id", ALL);
-  await s.from("check_ins").delete().neq("id", ALL);
-  await s.from("reviews").delete().neq("id", ALL);
-  await s.from("bookings").delete().neq("id", ALL);
-  await s.from("subscriptions").delete().neq("id", ALL);
   revalidatePath("/admin");
 }

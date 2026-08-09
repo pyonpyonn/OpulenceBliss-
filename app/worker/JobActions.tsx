@@ -11,10 +11,11 @@ import {
   checkOutJob,
   rateClient,
 } from "./actions";
+import JobExceptions from "./JobExceptions";
 
 const green: React.CSSProperties = {
-  background: "#2f4a3a",
-  color: "#fbf7f0",
+  background: "#16202A",
+  color: "#FFFFFF",
   border: "none",
   borderRadius: 999,
   padding: "10px 22px",
@@ -25,8 +26,8 @@ const green: React.CSSProperties = {
 
 const ghost: React.CSSProperties = {
   background: "transparent",
-  color: "#8a4b26",
-  border: "1.5px solid #e6c4b0",
+  color: "#B0384F",
+  border: "1.5px solid #F3CBD4",
   borderRadius: 999,
   padding: "10px 22px",
   fontWeight: 600,
@@ -36,16 +37,18 @@ const ghost: React.CSSProperties = {
 
 const apricot: React.CSSProperties = {
   ...green,
-  background: "#cf854f",
+  background: "#6D28D9",
   color: "#fff",
 };
 
 export default function JobActions({
   id,
   status,
+  scheduledAt,
 }: {
   id: string;
   status: string;
+  scheduledAt: string;
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
@@ -98,8 +101,8 @@ export default function JobActions({
               padding: "10px 12px",
               borderRadius: 10,
               fontSize: 13.5,
-              background: "#f6e7dd",
-              color: "#8a4b26",
+              background: "#FFE6EA",
+              color: "#B0384F",
             }}
           >
             {note}
@@ -114,9 +117,7 @@ export default function JobActions({
       start(async () => {
         const r = await checkInJob(id, lat, lng, force);
         setNote(r?.reason ?? null);
-        setBlocked(
-          r?.blocked ? { lat: lat ?? null, lng: lng ?? null } : null
-        );
+        setBlocked(r?.blocked ? { lat: lat ?? null, lng: lng ?? null } : null);
       });
 
     const locate = (force = false) => {
@@ -128,7 +129,7 @@ export default function JobActions({
       navigator.geolocation.getCurrentPosition(
         (pos) => run(pos.coords.latitude, pos.coords.longitude, force),
         () => run(null, null, force),
-        { enableHighAccuracy: true, timeout: 8000 }
+        { enableHighAccuracy: true, timeout: 8000 },
       );
     };
 
@@ -139,7 +140,7 @@ export default function JobActions({
         <button onClick={() => locate()} disabled={pending} style={dim(green)}>
           {pending ? "Checking location…" : "I've arrived — check in"}
         </button>
-        <p style={{ color: "#6e7a70", fontSize: 13, margin: "10px 0 0" }}>
+        <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
           You need to be at the customer&apos;s address to check in.
         </p>
 
@@ -150,8 +151,8 @@ export default function JobActions({
               padding: "10px 12px",
               borderRadius: 10,
               fontSize: 13.5,
-              background: good ? "#e7eee7" : "#f6e7dd",
-              color: good ? "#2f4a3a" : "#8a4b26",
+              background: good ? "#F4ECFE" : "#FFE6EA",
+              color: good ? "#16202A" : "#B0384F",
             }}
           >
             {note}
@@ -172,6 +173,11 @@ export default function JobActions({
             Check in anyway (will be flagged)
           </button>
         )}
+        <JobExceptions
+          bookingId={id}
+          status={status}
+          scheduledAt={scheduledAt}
+        />
       </div>
     );
   }
@@ -186,9 +192,9 @@ export default function JobActions({
               setNote(
                 r?.earned
                   ? `Job complete — the customer has been charged and £${r.earned.toFixed(
-                      2
+                      2,
                     )} is on its way to you.`
-                  : "Job complete — the customer has been charged."
+                  : "Job complete — the customer has been charged.",
               );
             })
           }
@@ -197,9 +203,9 @@ export default function JobActions({
         >
           {pending ? "Finishing…" : "Finish & check out"}
         </button>
-        <p style={{ color: "#6e7a70", fontSize: 13, margin: "10px 0 0" }}>
-          Checking out completes the job and charges the customer — your share is
-          released automatically.
+        <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
+          Checking out completes the job and charges the customer — your share
+          is released automatically.
         </p>
         {note && (
           <p
@@ -208,13 +214,18 @@ export default function JobActions({
               padding: "10px 12px",
               borderRadius: 10,
               fontSize: 13.5,
-              background: "#e7eee7",
-              color: "#2f4a3a",
+              background: "#F4ECFE",
+              color: "#16202A",
             }}
           >
             {note}
           </p>
         )}
+        <JobExceptions
+          bookingId={id}
+          status={status}
+          scheduledAt={scheduledAt}
+        />
       </div>
     );
   }
@@ -225,7 +236,7 @@ export default function JobActions({
         <p
           style={{
             margin: "0 0 10px",
-            color: "#2f4a3a",
+            color: "#16202A",
             fontSize: 14,
             fontWeight: 600,
           }}
@@ -250,7 +261,7 @@ function RateClientBox({ id }: { id: string }) {
 
   if (done) {
     return (
-      <p style={{ margin: 0, fontSize: 13.5, color: "#6e7a70" }}>{done}</p>
+      <p style={{ margin: 0, fontSize: 13.5, color: "#7A828C" }}>{done}</p>
     );
   }
 
@@ -264,7 +275,7 @@ function RateClientBox({ id }: { id: string }) {
           padding: 0,
           font: "inherit",
           fontSize: 13.5,
-          color: "#cf854f",
+          color: "#6D28D9",
           textDecoration: "underline",
           cursor: "pointer",
         }}
@@ -276,7 +287,7 @@ function RateClientBox({ id }: { id: string }) {
 
   return (
     <div>
-      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#6e7a70" }}>
+      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#7A828C" }}>
         How was this client? Only admins see individual ratings.
       </p>
       <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
@@ -292,7 +303,7 @@ function RateClientBox({ id }: { id: string }) {
               fontSize: 22,
               lineHeight: 1,
               padding: 0,
-              color: n <= stars ? "#cf854f" : "#d8cfbe",
+              color: n <= stars ? "#6D28D9" : "#E5E7EA",
             }}
           >
             ★
@@ -308,7 +319,7 @@ function RateClientBox({ id }: { id: string }) {
           width: "100%",
           boxSizing: "border-box",
           padding: "10px 12px",
-          border: "1.5px solid #d8d2c6",
+          border: "1.5px solid #E5E7EA",
           borderRadius: 10,
           font: "inherit",
           fontSize: 13.5,
@@ -324,13 +335,13 @@ function RateClientBox({ id }: { id: string }) {
             setDone(
               r?.error
                 ? "You've already rated this client."
-                : `Thanks — you rated this client ${stars} stars.`
+                : `Thanks — you rated this client ${stars} stars.`,
             );
           })
         }
         style={{
-          background: "#2f4a3a",
-          color: "#fbf7f0",
+          background: "#16202A",
+          color: "#FFFFFF",
           border: "none",
           borderRadius: 999,
           padding: "9px 20px",

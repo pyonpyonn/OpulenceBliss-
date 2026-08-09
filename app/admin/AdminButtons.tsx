@@ -4,12 +4,10 @@
 
 import { useTransition, useState } from "react";
 import {
-  wipeBookings,
-  wipePayments,
+  bringBookingToNow,
   wipeAvailability,
   wipeReviews,
   resetJoiningFees,
-  wipeEverything,
 } from "./actions";
 
 type Job = {
@@ -26,16 +24,10 @@ export default function AdminButtons() {
 
   const jobs: Job[] = [
     {
-      label: "Clear all bookings",
-      hint: "Deletes bookings, their payments and check-ins. Services, providers and accounts stay.",
-      confirm: "Delete ALL bookings, payments and check-ins?",
-      run: wipeBookings,
-    },
-    {
-      label: "Clear payment records",
-      hint: "Deletes payment rows only (Stripe itself is untouched).",
-      confirm: "Delete all payment records?",
-      run: wipePayments,
+      label: "Move next booking to now",
+      hint: "For testing: pulls the soonest upcoming visit forward a couple of minutes so you can check in and out straight away. Real rules still apply.",
+      confirm: "Move the next upcoming booking to right now?",
+      run: async () => { await bringBookingToNow(); },
     },
     {
       label: "Clear all availability",
@@ -54,13 +46,6 @@ export default function AdminButtons() {
       hint: "Marks every provider as unpaid, so you can re-test the £150 paywall.",
       confirm: "Reset all providers to unpaid?",
       run: resetJoiningFees,
-    },
-    {
-      label: "Reset all activity",
-      hint: "Bookings, payments, check-ins, reviews and subscriptions. A clean slate for a demo.",
-      confirm: "Wipe ALL activity data? This cannot be undone.",
-      run: wipeEverything,
-      danger: true,
     },
   ];
 

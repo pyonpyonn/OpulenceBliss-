@@ -3,10 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
-import AreaNav from "@/components/AreaNav";
 import JobActions from "./JobActions";
-import JoinButton from "./JoinButton";
-import ActiveJob, { type ActiveJobData } from "./ActiveJob";
 
 type Row = {
   id: string;
@@ -16,19 +13,28 @@ type Row = {
   household_notes: string | null;
   customer_email: string | null;
   offer_expires_at?: string | null;
+  provider_payout?: number | null;
   packages:
     | { name: string; duration_minutes: number | null }
     | { name: string; duration_minutes: number | null }[]
     | null;
   check_ins:
-    | { arrived_at: string | null; left_at: string | null; geofence_pass: boolean | null }
-    | { arrived_at: string | null; left_at: string | null; geofence_pass: boolean | null }[]
+    | {
+        arrived_at: string | null;
+        left_at: string | null;
+        geofence_pass: boolean | null;
+      }
+    | {
+        arrived_at: string | null;
+        left_at: string | null;
+        geofence_pass: boolean | null;
+      }[]
     | null;
 };
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
 function when(iso: string) {
@@ -61,7 +67,9 @@ export default async function WorkerPage() {
 
   const { data: prov } = await supabase
     .from("providers")
-    .select("id, display_name, joining_fee_paid, vetting_status, rating_avg, rating_count")
+    .select(
+      "id, display_name, joining_fee_paid, vetting_status, rating_avg, rating_count",
+    )
     .eq("profile_id", user.id)
     .maybeSingle();
 
@@ -71,7 +79,7 @@ export default async function WorkerPage() {
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass)"
+      "id, scheduled_at, status, address, household_notes, customer_email, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass)",
     )
     .order("scheduled_at", { ascending: true });
 
@@ -83,19 +91,18 @@ export default async function WorkerPage() {
     const { data: offerRows } = await supabase
       .from("booking_offers")
       .select(
-        "booking_id, bookings(id, scheduled_at, status, address, household_notes, customer_email, offer_expires_at, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass))"
+        "booking_id, bookings(id, scheduled_at, status, address, household_notes, customer_email, offer_expires_at, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass))",
       )
       .eq("provider_id", prov.id)
       .eq("status", "open");
 
     offers = (offerRows ?? [])
       .map((o) => one(o.bookings as never) as unknown as Row | null)
-      .filter(
-        (b): b is Row => !!b && b.status === "offered"
-      )
+      .filter((b): b is Row => !!b && b.status === "offered")
       .sort(
         (a, b) =>
-          new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+          new Date(a.scheduled_at).getTime() -
+          new Date(b.scheduled_at).getTime(),
       );
   }
 
@@ -107,29 +114,18 @@ export default async function WorkerPage() {
   for (const p of paysData ?? []) {
     if (p.kind === "tip" || !p.booking_id) continue;
     const share = Number(
-      (p.split_breakdown as { provider?: number } | null)?.provider ?? 0
+      (p.split_breakdown as { provider?: number } | null)?.provider ?? 0,
     );
     earnMap.set(p.booking_id as string, share);
   }
-
-  const toJob = (r: Row): ActiveJobData => {
-    const pkg = one(r.packages);
-    const ci = one(r.check_ins);
-    return {
-      id: r.id,
-      status: r.status,
-      scheduled_at: r.scheduled_at,
-      address: r.address,
-      notes: r.household_notes,
-      client: r.customer_email,
-      service: pkg?.name ?? "Service",
-      durationMinutes: pkg?.duration_minutes ?? null,
-      earns: earnMap.get(r.id) ?? null,
-      arrivedAt: ci?.arrived_at ?? null,
-      leftAt: ci?.left_at ?? null,
-      geofencePass: ci?.geofence_pass ?? null,
-    };
-  };
+  // Membership visits carry their payout on the booking itself.
+  for (const r of [...rows, ...offers]) {
+    const own = (r as unknown as { provider_payout?: number | null })
+      .provider_payout;
+    if (own !== null && own !== undefined) {
+      earnMap.set(r.id, Number(own));
+    }
+  }
 
   const running = rows.find((r) => r.status === "in_progress");
   const upcoming = rows.filter((r) => r.status === "scheduled");
@@ -137,82 +133,39 @@ export default async function WorkerPage() {
     .filter((r) => ["completed", "cancelled", "declined"].includes(r.status))
     .reverse();
 
+  // What clients said about finished work
+  const pastIds = rows.filter((r) => r.status === "completed").map((r) => r.id);
+  const reviewMap = new Map<
+    string,
+    { rating: number; comment: string | null }
+  >();
+  if (pastIds.length) {
+    const { data: revs } = await supabase
+      .from("reviews")
+      .select("booking_id, rating, comment")
+      .eq("reviewer", "client")
+      .in("booking_id", pastIds);
+    for (const r of revs ?? []) {
+      reviewMap.set(r.booking_id as string, {
+        rating: r.rating as number,
+        comment: (r.comment as string | null) ?? null,
+      });
+    }
+  }
+
   const todayCount = upcoming.filter(
-    (r) => new Date(r.scheduled_at).toDateString() === new Date().toDateString()
+    (r) =>
+      new Date(r.scheduled_at).toDateString() === new Date().toDateString(),
   ).length;
   const dueTotal = upcoming.reduce((s, r) => s + (earnMap.get(r.id) ?? 0), 0);
 
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 780, margin: "0 auto", paddingTop: 40 }}>
-        <p style={eyebrow}>Provider area</p>
-        <h1 style={h1}>
-          {prov?.display_name ? `Hello, ${prov.display_name.split(" ")[0]}` : "Your jobs"}
-        </h1>
-        <p style={{ color: "#6e7a70", margin: "0 0 26px" }}>
-          {user.email}
-          {prov?.rating_avg
-            ? ` · ${Number(prov.rating_avg).toFixed(1)}★ (${prov.rating_count})`
-            : ""}
-        </p>
+      <div style={{ maxWidth: 780 }}>
+        <h1 style={h1}>Jobs</h1>
 
-        <AreaNav area="provider" />
-
-        {/* ---- Gates ---- */}
-        {!prov && (
-          <Gate
-            tag="No provider profile"
-            title="You're not registered as a provider yet"
-            body="Register to start receiving jobs. It takes a couple of minutes and a one-off £150 joining fee."
-          >
-            <a href="/provider/join" style={{ ...btn, background: "#cf854f" }}>
-              Register as a provider
-            </a>
-          </Gate>
-        )}
-
-        {prov && !active && (
-          <Gate
-            tag="Account not active"
-            title="One step before you can work"
-            body="A one-off £150 joining fee activates your account. Paid once — not a subscription. After that you keep your full agreed rate on every job."
-          >
-            <JoinButton />
-          </Gate>
-        )}
-
-        {prov && active && !approved && (
-          <Gate
-            tag={
-              prov.vetting_status === "rejected"
-                ? "Application declined"
-                : "Awaiting approval"
-            }
-            title={
-              prov.vetting_status === "rejected"
-                ? "We couldn't approve your account"
-                : "We're reviewing your application"
-            }
-            body={
-              prov.vetting_status === "rejected"
-                ? "Please get in touch if you think this is a mistake."
-                : "Your fee is paid and your details are with our team. Jobs arrive as soon as you're approved. Meanwhile, set your availability and fill in your profile."
-            }
-          />
-        )}
-
-        {/* ---- 1. Happening now ---- */}
-        {running && active && (
-          <>
-            <h2 style={sectionTitle}>Happening now</h2>
-            <div style={{ marginBottom: 34 }}>
-              <ActiveJob job={toJob(running)} compact />
-            </div>
-          </>
-        )}
-
-        {/* ---- Summary ---- */}
+        {/* ---- Summary, straight at the top ---- */}
         {active && approved && (
           <div style={statGrid}>
             <Stat label="Jobs today" value={String(todayCount)} />
@@ -222,12 +175,29 @@ export default async function WorkerPage() {
           </div>
         )}
 
+        {/* ---- In progress: short view only ---- */}
+        {running && active && (
+          <a href={`/worker/current`} style={liveStrip}>
+            <span style={liveDot} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <strong style={liveTitle}>
+                {one(running.packages)?.name ?? "Service"} — in progress
+              </strong>
+              <span style={liveMeta}>
+                {running.customer_email ?? "Client"}
+                {running.address ? ` · ${running.address}` : ""}
+              </span>
+            </span>
+            <span style={liveGo}>Open →</span>
+          </a>
+        )}
+
         {/* ---- 2. New offers ---- */}
         <h2 style={sectionTitle}>
           New offers{offers.length > 0 ? ` (${offers.length})` : ""}
         </h2>
         {offers.length === 0 ? (
-          <p style={{ color: "#6e7a70", margin: "0 0 34px" }}>
+          <p style={{ color: "#7A828C", margin: "0 0 34px" }}>
             Nothing waiting right now.
           </p>
         ) : (
@@ -236,11 +206,15 @@ export default async function WorkerPage() {
               const pkg = one(r.packages);
               const earns = earnMap.get(r.id);
               return (
-                <article key={r.id} style={{ ...card, borderColor: "#e6c4b0" }}>
+                <article key={r.id} style={{ ...card, borderColor: "#F3CBD4" }}>
                   <div style={rowHead}>
                     <h3 style={cardTitle}>{pkg?.name ?? "Service"}</h3>
                     <span
-                      style={{ ...badge, background: "#f6e7dd", color: "#8a4b26" }}
+                      style={{
+                        ...badge,
+                        background: "#FFE6EA",
+                        color: "#B0384F",
+                      }}
                     >
                       {timeLeft(r.offer_expires_at) ?? "New offer"}
                     </span>
@@ -249,7 +223,7 @@ export default async function WorkerPage() {
                     style={{
                       margin: "-6px 0 14px",
                       fontSize: 13,
-                      color: "#6e7a70",
+                      color: "#7A828C",
                     }}
                   >
                     Offered to several providers — first to accept gets it.
@@ -262,9 +236,15 @@ export default async function WorkerPage() {
                     notes={r.household_notes}
                   />
                   {active ? (
-                    <JobActions id={r.id} status={r.status} />
+                    <JobActions
+                      id={r.id}
+                      status={r.status}
+                      scheduledAt={r.scheduled_at}
+                    />
                   ) : (
-                    <p style={{ marginTop: 14, color: "#8a4b26", fontSize: 14 }}>
+                    <p
+                      style={{ marginTop: 14, color: "#B0384F", fontSize: 14 }}
+                    >
                       Pay the joining fee above to accept this job.
                     </p>
                   )}
@@ -277,7 +257,7 @@ export default async function WorkerPage() {
         {/* ---- 3. Coming up ---- */}
         <h2 style={sectionTitle}>Coming up</h2>
         {upcoming.length === 0 ? (
-          <p style={{ color: "#6e7a70", margin: "0 0 34px" }}>
+          <p style={{ color: "#7A828C", margin: "0 0 34px" }}>
             Nothing scheduled. Check your availability is up to date.
           </p>
         ) : (
@@ -289,7 +269,11 @@ export default async function WorkerPage() {
                   <div style={rowHead}>
                     <h3 style={cardTitle}>{pkg?.name ?? "Service"}</h3>
                     <span
-                      style={{ ...badge, background: "#e7eee7", color: "#2f4a3a" }}
+                      style={{
+                        ...badge,
+                        background: "#F4ECFE",
+                        color: "#16202A",
+                      }}
                     >
                       Confirmed
                     </span>
@@ -301,14 +285,13 @@ export default async function WorkerPage() {
                     earns={earnMap.get(r.id)}
                     notes={r.household_notes}
                   />
-                  <p style={{ margin: "12px 0 0" }}>
-                    <a
-                      href={`/worker/job/${r.id}`}
-                      style={{ color: "#2f4a3a", fontWeight: 600, fontSize: 13.5 }}
-                    >
-                      Open job →
-                    </a>
-                  </p>
+                  {active && (
+                    <JobActions
+                      id={r.id}
+                      status={r.status}
+                      scheduledAt={r.scheduled_at}
+                    />
+                  )}
                 </article>
               );
             })}
@@ -318,7 +301,7 @@ export default async function WorkerPage() {
         {/* ---- 4. History ---- */}
         <h2 style={sectionTitle}>Recent history</h2>
         {past.length === 0 ? (
-          <p style={{ color: "#6e7a70" }}>Nothing yet.</p>
+          <p style={{ color: "#7A828C" }}>Nothing yet.</p>
         ) : (
           <div style={{ ...card, padding: "6px 22px" }}>
             {past.slice(0, 12).map((r) => {
@@ -332,21 +315,21 @@ export default async function WorkerPage() {
                     alignItems: "center",
                     gap: 12,
                     padding: "14px 0",
-                    borderBottom: "1px solid #f0ebe0",
+                    borderBottom: "1px solid #F1F2F4",
                     flexWrap: "wrap",
                   }}
                 >
                   <div>
-                    <strong style={{ fontSize: 14.5, color: "#2f4a3a" }}>
+                    <strong style={{ fontSize: 14.5, color: "#16202A" }}>
                       {pkg?.name ?? "Service"}
                     </strong>
-                    <div style={{ color: "#6e7a70", fontSize: 13 }}>
+                    <div style={{ color: "#7A828C", fontSize: 13 }}>
                       {when(r.scheduled_at)} · {r.status}
                     </div>
                   </div>
                   <a
                     href={`/worker/job/${r.id}`}
-                    style={{ color: "#5b7a65", fontSize: 13.5 }}
+                    style={{ color: "#6D28D9", fontSize: 13.5 }}
                   >
                     Details
                   </a>
@@ -410,57 +393,15 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div style={{ ...card, padding: "18px 20px" }}>
       <p
         style={{
-          fontFamily: "'Fraunces', serif",
+          fontFamily: "'Nunito', system-ui, sans-serif",
           fontSize: 25,
-          color: "#2f4a3a",
+          color: "#16202A",
           margin: "0 0 2px",
         }}
       >
         {value}
       </p>
-      <span style={{ color: "#6e7a70", fontSize: 13 }}>{label}</span>
-    </div>
-  );
-}
-
-function Gate({
-  tag,
-  title,
-  body,
-  children,
-}: {
-  tag: string;
-  title: string;
-  body: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        background: "#fff",
-        border: "1.5px solid #e6c4b0",
-        borderRadius: 16,
-        padding: "24px 26px",
-        marginBottom: 32,
-      }}
-    >
-      <p
-        style={{
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          fontSize: 11.5,
-          fontWeight: 600,
-          color: "#cf854f",
-          margin: "0 0 8px",
-        }}
-      >
-        {tag}
-      </p>
-      <h2 style={{ ...sectionTitle, margin: "0 0 8px" }}>{title}</h2>
-      <p style={{ color: "#6e7a70", margin: children ? "0 0 18px" : 0, fontSize: 15 }}>
-        {body}
-      </p>
-      {children}
+      <span style={{ color: "#7A828C", fontSize: 13 }}>{label}</span>
     </div>
   );
 }
@@ -468,19 +409,57 @@ function Gate({
 /* ---------- styles ---------- */
 
 const FONTS =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap";
 const wrap: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#fbf7f0",
-  color: "#26302a",
-  fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
-  padding: "0 20px 80px",
+  background: "transparent",
+  color: "#16202A",
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  padding: 0,
 };
 const card: React.CSSProperties = {
   background: "#fff",
-  border: "1px solid #ece5d8",
+  border: "1px solid #EDEFF1",
   borderRadius: 16,
   padding: "22px 24px",
+};
+const liveStrip: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  background: "#F7F3FF",
+  border: "2px solid #E3D6FB",
+  borderRadius: 16,
+  padding: "14px 16px",
+  marginBottom: 30,
+  textDecoration: "none",
+  color: "#16202A",
+};
+const liveDot: React.CSSProperties = {
+  width: 10,
+  height: 10,
+  borderRadius: "50%",
+  background: "#6D28D9",
+  flexShrink: 0,
+};
+const liveTitle: React.CSSProperties = {
+  display: "block",
+  fontSize: 15.5,
+  fontWeight: 900,
+};
+const liveMeta: React.CSSProperties = {
+  display: "block",
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#7A828C",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+const liveGo: React.CSSProperties = {
+  fontSize: 13.5,
+  fontWeight: 900,
+  color: "#6D28D9",
+  whiteSpace: "nowrap",
 };
 const statGrid: React.CSSProperties = {
   display: "grid",
@@ -502,7 +481,7 @@ const factGrid: React.CSSProperties = {
   margin: 0,
 };
 const dt: React.CSSProperties = {
-  color: "#a89f90",
+  color: "#A9AFB7",
   fontSize: 11.5,
   textTransform: "uppercase",
   letterSpacing: "0.08em",
@@ -510,12 +489,12 @@ const dt: React.CSSProperties = {
 };
 const dd: React.CSSProperties = {
   margin: 0,
-  color: "#26302a",
+  color: "#16202A",
   fontSize: 14.5,
-  fontWeight: 500,
+  fontWeight: 900,
 };
 const notesBox: React.CSSProperties = {
-  background: "#fbf7f0",
+  background: "transparent",
   borderRadius: 12,
   padding: "12px 14px",
   marginTop: 16,
@@ -525,35 +504,27 @@ const notesH: React.CSSProperties = {
   fontSize: 11.5,
   textTransform: "uppercase",
   letterSpacing: "0.08em",
-  color: "#a89f90",
-};
-const eyebrow: React.CSSProperties = {
-  textTransform: "uppercase",
-  letterSpacing: "0.14em",
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#cf854f",
-  margin: "0 0 6px",
+  color: "#A9AFB7",
 };
 const h1: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 38,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 6px",
 };
 const sectionTitle: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 22,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: "0 0 14px",
 };
 const cardTitle: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  fontWeight: 900,
   fontSize: 21,
-  color: "#2f4a3a",
+  color: "#16202A",
   margin: 0,
 };
 const badge: React.CSSProperties = {
@@ -562,13 +533,4 @@ const badge: React.CSSProperties = {
   padding: "5px 12px",
   borderRadius: 999,
   whiteSpace: "nowrap",
-};
-const btn: React.CSSProperties = {
-  display: "inline-block",
-  background: "#2f4a3a",
-  color: "#fbf7f0",
-  padding: "12px 26px",
-  borderRadius: 999,
-  textDecoration: "none",
-  fontWeight: 600,
 };

@@ -63,6 +63,21 @@ export async function generateBookings(subId: string, cycleStart: Date) {
   const gapDays = visits >= 4 ? 7 : 14;
   const hour = sub.preferred_hour ?? 10;
 
+  // What each visit pays the provider, from the split spec.
+  const { data: cfg } = await admin
+    .from("split_config")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const hourly = Number(cfg?.cleaner_hourly_rate ?? 15);
+  const flat = Number(cfg?.therapist_flat_fee ?? 45);
+  const membership = Number(cfg?.membership_fee_monthly ?? 30);
+
+  const isMassage = (pkg?.service_type ?? "").includes("massage");
+  const hours = (pkg?.duration_minutes ?? 120) / 60;
+  const perVisit = isMassage ? flat : Number((hours * hourly).toFixed(2));
+
   const start = new Date(cycleStart);
   if (sub.preferred_weekday !== null && sub.preferred_weekday !== undefined) {
     let guard = 0;
@@ -110,10 +125,16 @@ export async function generateBookings(subId: string, cycleStart: Date) {
   }
 
   let created = 0;
+  let feeTaken = false;
   for (let i = 0; i < visits; i++) {
     const at = new Date(start);
     at.setDate(start.getDate() + i * gapDays);
     if (sub.paused_until && at <= new Date(sub.paused_until)) continue;
+
+    // The monthly membership fee comes out of the first visit of the cycle.
+    const deduct = feeTaken ? 0 : Math.min(membership, perVisit);
+    const payout = Number((perVisit - deduct).toFixed(2));
+    if (deduct > 0) feeTaken = true;
 
     const { data: booking } = await admin
       .from("bookings")
@@ -125,6 +146,8 @@ export async function generateBookings(subId: string, cycleStart: Date) {
         scheduled_at: at.toISOString(),
         status: "offered",
         address: sub.postcode,
+        provider_payout: payout,
+        membership_fee_deducted: deduct,
         offer_expires_at: new Date(
           at.getTime() - 2 * 60 * 60 * 1000
         ).toISOString(),
@@ -163,7 +186,12 @@ export async function generateBookings(subId: string, cycleStart: Date) {
  */
 export async function upsertSubscription(
   stripeSub: Stripe.Subscription,
-  payment?: { amountPence: number; ref: string }
+  payment?: {
+    amountPence: number;
+    ref: string;
+    periodStart?: string | null;
+    periodEnd?: string | null;
+  }
 ) {
   const m = stripeSub.metadata ?? {};
   const periodEnd = (stripeSub as { current_period_end?: number })
@@ -250,6 +278,8 @@ export async function upsertSubscription(
     split_breakdown: split,
     stripe_payment_ref: payment.ref,
     status: "succeeded",
+    period_start: payment.periodStart ?? null,
+    period_end: payment.periodEnd ?? null,
   });
 
   const gen = await generateBookings(ourId, new Date());
@@ -266,6 +296,16 @@ export async function upsertSubscription(
   }
 
   return { id: ourId, created: gen.created, recorded: true };
+}
+
+export function invoicePeriod(invoice: Stripe.Invoice) {
+  const period = invoice.lines?.data?.[0]?.period;
+  return {
+    periodStart: period?.start
+      ? new Date(period.start * 1000).toISOString()
+      : null,
+    periodEnd: period?.end ? new Date(period.end * 1000).toISOString() : null,
+  };
 }
 
 /** Pull the subscription id out of an invoice, whichever shape Stripe sends. */

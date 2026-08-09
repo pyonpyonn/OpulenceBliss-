@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
           discount: String(discount),
         },
       },
-      success_url: `${req.nextUrl.origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.nextUrl.origin}/api/book/finalize?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.nextUrl.origin}/book?canceled=1`,
     });
 

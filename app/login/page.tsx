@@ -34,7 +34,9 @@ export default function LoginPage() {
       setBusy(false);
       return;
     }
-    window.location.href = dest;
+    // If they were sent here mid-booking, put them back.
+    const next = new URLSearchParams(window.location.search).get("next");
+    window.location.href = next || dest;
   }
 
   function submit() {
@@ -46,7 +48,7 @@ export default function LoginPage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="card">
@@ -134,27 +136,27 @@ export default function LoginPage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           display: grid;
           place-items: center;
           padding: 32px 20px;
         }
         .card {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 20px;
           padding: 34px 32px;
           width: 100%;
           max-width: 470px;
-          box-shadow: 0 16px 44px rgba(47, 74, 58, 0.1);
+          box-shadow: 0 16px 44px rgba(22,32,42, 0.1);
         }
         .brand {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 19px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
           text-decoration: none;
           display: inline-block;
           margin-bottom: 22px;
@@ -164,18 +166,18 @@ export default function LoginPage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 6px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 30px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 6px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 15px;
           margin: 0 0 22px;
         }
@@ -186,8 +188,8 @@ export default function LoginPage() {
           margin-bottom: 24px;
         }
         .tab {
-          background: #fbf7f0;
-          border: 1.5px solid #ece5d8;
+          background: #FFFFFF;
+          border: 1.5px solid #EDEFF1;
           border-radius: 14px;
           padding: 14px 14px;
           text-align: left;
@@ -196,20 +198,20 @@ export default function LoginPage() {
           transition: border-color 0.16s ease, background 0.16s ease;
         }
         .tab:hover {
-          border-color: #cf854f;
+          border-color: #6D28D9;
         }
         .tab.on {
-          border-color: #2f4a3a;
-          background: #e7eee7;
+          border-color: #16202A;
+          background: #F4ECFE;
         }
         .tab strong {
           display: block;
-          color: #2f4a3a;
+          color: #16202A;
           font-size: 15px;
           margin-bottom: 2px;
         }
         .tab small {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 12.5px;
           line-height: 1.35;
           display: block;
@@ -217,29 +219,29 @@ export default function LoginPage() {
         label {
           display: block;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 6px;
         }
         input {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
           background: #fff;
-          color: #26302a;
+          color: #16202A;
           margin-bottom: 16px;
         }
         input:focus-visible {
           outline: none;
-          border-color: #2f4a3a;
+          border-color: #16202A;
         }
         .go {
           width: 100%;
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          color: #fff;
           border: none;
           border-radius: 999px;
           padding: 13px;
@@ -250,15 +252,15 @@ export default function LoginPage() {
           margin-top: 4px;
         }
         .go:hover {
-          background: #263d30;
+          background: #4C1D95;
         }
         .go:disabled {
           opacity: 0.65;
           cursor: wait;
         }
         .err {
-          background: #f6e7dd;
-          color: #8a4b26;
+          background: #FFE6EA;
+          color: #B0384F;
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14px;
@@ -271,14 +273,14 @@ export default function LoginPage() {
           flex-wrap: wrap;
           margin-top: 22px;
           padding-top: 18px;
-          border-top: 1px solid #f0ebe0;
+          border-top: 1px solid #F1F2F4;
           font-size: 13px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .fill {
           background: none;
           border: none;
-          color: #5b7a65;
+          color: #6D28D9;
           font: inherit;
           font-size: 13px;
           text-decoration: underline;
@@ -286,12 +288,12 @@ export default function LoginPage() {
           padding: 0;
         }
         .fill:hover {
-          color: #2f4a3a;
+          color: #16202A;
         }
         .home {
           display: inline-block;
           margin-top: 18px;
-          color: #5b7a65;
+          color: #6D28D9;
           font-size: 14px;
           text-decoration: none;
         }

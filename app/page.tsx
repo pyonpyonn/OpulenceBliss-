@@ -1,83 +1,65 @@
 "use client";
 
-// Opulence Bliss — landing page (home).
-// Save at: app/page.tsx  (replaces the Supabase starter homepage)
+// SETUP: code "app/page.tsx"
+//
+// Landing page — two-level nav, hero, coloured service bands.
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
-);
+const supabase = createClient();
 
-type Pkg = {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  service_type: string | null;
-};
-
-const money = (n: number) =>
-  "£" + Number(n).toLocaleString("en-GB", { maximumFractionDigits: 0 });
+type Pkg = { price: number; service_type: string | null; billing_type: string };
 
 export default function Home() {
-  const [packages, setPackages] = useState<Pkg[]>([]);
+  const [from, setFrom] = useState<{ clean: number; massage: number }>({
+    clean: 0,
+    massage: 0,
+  });
   const [postcode, setPostcode] = useState("");
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("packages")
-        .select("id, name, description, price, service_type")
+        .select("price, service_type, billing_type")
         .eq("active", true)
-        .order("price");
-      setPackages(data ?? []);
+        .eq("billing_type", "per_visit");
+
+      const list = (data ?? []) as Pkg[];
+      const min = (t: string) => {
+        const p = list
+          .filter((x) => (x.service_type ?? "").includes(t))
+          .map((x) => Number(x.price));
+        return p.length ? Math.min(...p) : 0;
+      };
+      setFrom({ clean: min("clean"), massage: min("massage") });
     })();
   }, []);
+
+  const bookLink = postcode
+    ? `/book?pc=${encodeURIComponent(postcode)}`
+    : "/book";
 
   return (
     <div className="site">
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
-
-      {/* ---------- NAV ---------- */}
-      <nav className="nav">
-        <a href="/" className="brand">
-          Opulence&nbsp;Bliss
-        </a>
-        <div className="nav-links">
-          <a href="#cleaning">Cleaning</a>
-          <a href="#massage">Massage</a>
-          <a href="#how">How it works</a>
-          <a href="#packages">Prices</a>
-          <a href="/providers">Our pros</a>
-          <a href="/account">My account</a>
-          <a href="/provider/join">Work with us</a>
-          <a href="/book" className="nav-cta">
-            Book now
-          </a>
-        </div>
-      </nav>
 
       {/* ---------- HERO ---------- */}
       <header className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Home &amp; wellness care, London</p>
+        <div className="hero-inner">
           <h1>
-            A home that cares
+            You do the living,
             <br />
-            for you back.
+            we&apos;ll handle the rest
           </h1>
           <p className="lede">
-            Vetted cleaners and massage therapists, at your door when you want
-            them. Book a single visit or come back whenever — pay per visit, no
-            membership.
+            Vetted cleaners and massage therapists across London. Book a single
+            visit or a monthly membership — your call.
           </p>
 
           <div className="composer">
@@ -87,42 +69,54 @@ export default function Home() {
               onChange={(e) => setPostcode(e.target.value)}
               aria-label="Postcode"
             />
-            <a
-              className="btn"
-              href={`/book${postcode ? `?pc=${encodeURIComponent(postcode)}` : ""}`}
-            >
-              Check availability
+            <a className="btn" href={bookLink}>
+              Book my cleaning
             </a>
           </div>
           <p className="micro">
-            Covering Central, North &amp; West London · pay per visit · no
-            membership, no lock-in
+            Central, North &amp; West London · pay per visit or subscribe
           </p>
         </div>
-
-        <aside className="hero-card">
-          <span className="tag">Popular</span>
-          <p className="hero-card-title">Two-hour clean, whenever you need it</p>
-          <p className="hero-card-price">
-            from £69 <span>per visit</span>
-          </p>
-          <ul>
-            <li>Book a single visit or return anytime</li>
-            <li>Eco-friendly products included</li>
-            <li>Request your favourite pro again</li>
-          </ul>
-          <a className="btn wide" href="/book">
-            Book a service
-          </a>
-        </aside>
       </header>
 
-      {/* ---------- TRUST STRIP ---------- */}
+      {/* ---------- SERVICE BANDS ---------- */}
+      <section className="bands" id="services">
+        <a className="band clean" href="/services/cleaning">
+          <div>
+            <h2>Cleaning</h2>
+            <p>and ironing, at home</p>
+            {from.clean > 0 && <span className="from">from £{from.clean}</span>}
+          </div>
+          <span className="arrow">→</span>
+        </a>
+
+        <a className="band massage" href="/services/massage">
+          <div>
+            <h2>Massage</h2>
+            <p>at home</p>
+            {from.massage > 0 && (
+              <span className="from">from £{from.massage}</span>
+            )}
+          </div>
+          <span className="arrow">→</span>
+        </a>
+
+        <a className="band member" href="/subscribe">
+          <div>
+            <h2>Memberships</h2>
+            <p>regular visits, handled for you</p>
+            <span className="from">from £189 / month</span>
+          </div>
+          <span className="arrow">→</span>
+        </a>
+      </section>
+
+      {/* ---------- TRUST ---------- */}
       <section className="strip">
         {[
           ["Vetted & insured", "Every provider background-checked"],
-          ["Clear per-visit price", "No hourly haggling, no membership"],
-          ["Request your pro", "Loved them? Ask for them next time"],
+          ["Clear pricing", "No hourly haggling, no hidden fees"],
+          ["Your regular pro", "Ask for them again next time"],
           ["Book in 2 hours", "Same-day slots when pros are free"],
         ].map(([t, s]) => (
           <div key={t}>
@@ -132,178 +126,65 @@ export default function Home() {
         ))}
       </section>
 
-      {/* ---------- SERVICES ---------- */}
-      <section id="services" className="band">
-        <p className="eyebrow center">What we do</p>
-        <h2 className="center">Two services, one standard</h2>
-        <div className="two">
-          <article className="svc">
-            <span className="ico">✿</span>
-            <h3>Home cleaning</h3>
-            <p>
-              Fortnightly or weekly cleans by a professional who learns your home —
-              your products, your preferences, your rhythm.
-            </p>
-            <ul>
-              <li>Kitchens, bathrooms, living spaces</li>
-              <li>Eco products as standard</li>
-              <li>Seasonal deep clean on higher tiers</li>
-            </ul>
-          </article>
-          <article className="svc">
-            <span className="ico">❋</span>
-            <h3>In-home massage</h3>
-            <p>
-              Qualified therapists bringing the treatment room to you — no traffic,
-              no waiting room, no rushing home afterwards.
-            </p>
-            <ul>
-              <li>Deep tissue, Swedish, or relaxation</li>
-              <li>60 or 90 minute sessions</li>
-              <li>Table and linens provided</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
       {/* ---------- HOW IT WORKS ---------- */}
-      <section id="how" className="band alt">
-        <p className="eyebrow center">How it works</p>
-        <h2 className="center">Four steps, then it just happens</h2>
-        <ol className="steps">
-          {[
-            ["Choose your service", "Pick the visit that suits you."],
-            ["Confirm your area", "We check a provider covers your postcode."],
-            ["We match your pro", "A vetted professional accepts your booking."],
-            ["Sit back", "They arrive, check in, and take care of it."],
-          ].map(([t, s], i) => (
-            <li key={t}>
-              <span className="num">{i + 1}</span>
-              <div>
-                <strong>{t}</strong>
-                <p>{s}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* ---------- SERVICES & PRICES ---------- */}
-      <section id="packages" className="band">
-        <p className="eyebrow center">Services &amp; prices</p>
-        <h2 className="center">Simple, per-visit pricing</h2>
-        <p className="center sub">
-          Pay for the visit you book. No membership, no lock-in.
-        </p>
-
-        {packages.length === 0 ? (
-          <p className="center muted">Loading services…</p>
-        ) : (
-          <>
-            {/* Cleaning */}
-            <div id="cleaning" className="svc-block">
-              <div className="svc-head">
-                <span className="ico">✿</span>
+      <section id="how" className="band-alt">
+        <div className="inner">
+          <p className="eyebrow center">How it works</p>
+          <h2 className="center big">Four steps, then it just happens</h2>
+          <ol className="steps">
+            {[
+              ["Enter your postcode", "We check we cover you."],
+              ["Choose your service", "See the price before you commit."],
+              ["Pick a time", "Only times a pro is genuinely free."],
+              ["Sit back", "They arrive, check in, and take care of it."],
+            ].map(([t, s], i) => (
+              <li key={t}>
+                <span className="num">{i + 1}</span>
                 <div>
-                  <h3>Home cleaning</h3>
-                  <p>
-                    A vetted cleaner who learns your home. Products and equipment
-                    included.
-                  </p>
+                  <strong>{t}</strong>
+                  <p>{s}</p>
                 </div>
-              </div>
-              <div className="pkgs">
-                {packages
-                  .filter((p) => (p.service_type ?? "").includes("clean"))
-                  .map((p, i) => (
-                    <article
-                      key={p.id}
-                      className={i === 0 ? "pkg featured" : "pkg"}
-                    >
-                      {i === 0 && <span className="pill">Most booked</span>}
-                      <h4>{p.name}</h4>
-                      <p className="pkg-price">
-                        {money(p.price)} <span>per visit</span>
-                      </p>
-                      <p className="pkg-desc">{p.description}</p>
-                      <a className="btn ghost" href="/book">
-                        Book this
-                      </a>
-                    </article>
-                  ))}
-              </div>
-            </div>
-
-            {/* Massage */}
-            <div id="massage" className="svc-block">
-              <div className="svc-head">
-                <span className="ico">❋</span>
-                <div>
-                  <h3>Massage therapy</h3>
-                  <p>
-                    A qualified therapist brings the treatment room to you — table
-                    and fresh linens provided.
-                  </p>
-                </div>
-              </div>
-              <div className="pkgs">
-                {packages
-                  .filter((p) => (p.service_type ?? "").includes("massage"))
-                  .map((p, i) => (
-                    <article
-                      key={p.id}
-                      className={i === 1 ? "pkg featured" : "pkg"}
-                    >
-                      {i === 1 && <span className="pill">Best value</span>}
-                      <h4>{p.name}</h4>
-                      <p className="pkg-price">
-                        {money(p.price)} <span>per visit</span>
-                      </p>
-                      <p className="pkg-desc">{p.description}</p>
-                      <a className="btn ghost" href="/book">
-                        Book this
-                      </a>
-                    </article>
-                  ))}
-              </div>
-            </div>
-          </>
-        )}
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       {/* ---------- TESTIMONIALS ---------- */}
-      <section className="band alt">
-        <p className="eyebrow center">From our members</p>
-        <h2 className="center">Quietly, reliably better</h2>
-        <div className="quotes">
-          {[
-            [
-              "The same cleaner every fortnight has changed how our home feels. I no longer think about it — it's simply handled.",
-              "Eleanor R. · Kensington",
-            ],
-            [
-              "Having a therapist come to the house after a long week is the single best thing I've added to my routine.",
-              "James T. · Hampstead",
-            ],
-            [
-              "Booking took two minutes and the standard has never slipped. That's all I wanted.",
-              "Priya M. · Chiswick",
-            ],
-          ].map(([q, who]) => (
-            <blockquote key={who}>
-              <p>{q}</p>
-              <footer>{who}</footer>
-            </blockquote>
-          ))}
+      <section className="quotes-wrap">
+        <div className="inner">
+          <p className="eyebrow center">From our members</p>
+          <h2 className="center big">Quietly, reliably better</h2>
+          <div className="quotes">
+            {[
+              [
+                "The same cleaner every fortnight has changed how our home feels. I no longer think about it.",
+                "Eleanor R. · Kensington",
+              ],
+              [
+                "Having a therapist come to the house after a long week is the best thing I've added to my routine.",
+                "James T. · Hampstead",
+              ],
+              [
+                "Booking took two minutes and the standard has never slipped. That's all I wanted.",
+                "Priya M. · Chiswick",
+              ],
+            ].map(([q, who]) => (
+              <blockquote key={who}>
+                <p>{q}</p>
+                <footer>{who}</footer>
+              </blockquote>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ---------- FINAL CTA ---------- */}
+      {/* ---------- CTA ---------- */}
       <section className="cta-band">
         <h2>Ready to hand it over?</h2>
-        <p>Pick a service and a time — we&apos;ll match you with a pro.</p>
+        <p>Enter your postcode and see what&apos;s free this week.</p>
         <a className="btn light" href="/book">
-          Book your first visit
+          Book a service
         </a>
       </section>
 
@@ -314,34 +195,35 @@ export default function Home() {
           <p>Premium home &amp; wellness care, London.</p>
         </div>
         <div className="foot-links">
-          <a href="/book">Book</a>
-          <a href="/account">My account</a>
-          <a href="/provider/join">Become a provider</a>
+          <a href="/services/cleaning">Cleaning</a>
+          <a href="/services/massage">Massage</a>
+          <a href="/subscribe">Memberships</a>
+          <a href="/provider/join">Work with us</a>
           <a href="/worker">Provider login</a>
         </div>
       </footer>
 
       <style jsx>{`
         .site {
-          --cream: #fbf7f0;
-          --green: #2f4a3a;
-          --green-mid: #5b7a65;
-          --green-pale: #e7eee7;
-          --apricot: #e7a579;
-          --apricot-deep: #cf854f;
-          --ink: #26302a;
-          --muted: #6e7a70;
-          --line: #ece5d8;
+          --cream: #ffffff;
+          --green: #16202A;
+          --green-mid: #6D28D9;
+          --green-pale: #F4ECFE;
+          --apricot: #F5C542;
+          --apricot-deep: #6D28D9;
+          --ink: #16202A;
+          --muted: #7A828C;
+          --line: #EDEFF1;
           background: var(--cream);
           color: var(--ink);
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          font-family: "Nunito", system-ui, sans-serif;
           overflow-x: hidden;
         }
         h1,
         h2,
         h3 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           color: var(--green);
         }
         .center {
@@ -355,87 +237,100 @@ export default function Home() {
           color: var(--apricot-deep);
           margin: 0 0 8px;
         }
-        .muted {
-          color: var(--muted);
+        .inner {
+          max-width: 1080px;
+          margin: 0 auto;
         }
 
-        /* NAV */
-        .nav {
-          position: sticky;
-          top: 0;
-          z-index: 20;
-          background: rgba(251, 247, 240, 0.92);
-          backdrop-filter: blur(8px);
-          border-bottom: 1px solid var(--line);
+        /* TOP BAR */
+        .topbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 16px 28px;
-          gap: 20px;
+          padding: 18px 28px;
+          background: #fff;
+          border-bottom: 1px solid var(--line);
         }
-        .brand {
-          font-family: "Fraunces", serif;
-          font-size: 21px;
+        .logo {
+          font-family: "Nunito", system-ui, sans-serif;
+          font-size: 24px;
           font-weight: 600;
           color: var(--green);
           text-decoration: none;
+          letter-spacing: -0.01em;
         }
-        .nav-links {
+        .top-right {
           display: flex;
           align-items: center;
-          gap: 26px;
+          gap: 22px;
         }
-        .nav-links a {
+        .jobs {
+          color: var(--ink);
+          font-size: 15px;
+          font-weight: 600;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+        .icon {
+          color: var(--green);
+          font-size: 20px;
+          text-decoration: none;
+        }
+
+        /* SERVICE NAV */
+        .servicenav {
+          display: flex;
+          gap: 30px;
+          padding: 0 28px;
+          background: #fff;
+          border-bottom: 1px solid var(--line);
+          overflow-x: auto;
+        }
+        .servicenav a {
           color: var(--ink);
           text-decoration: none;
-          font-size: 15px;
-        }
-        .nav-links a:hover {
-          color: var(--apricot-deep);
-        }
-        .nav-cta {
-          background: var(--green);
-          color: var(--cream) !important;
-          padding: 9px 18px;
-          border-radius: 999px;
+          font-size: 16px;
           font-weight: 600;
+          padding: 15px 0;
+          border-bottom: 3px solid transparent;
+          white-space: nowrap;
         }
-        .nav-cta:hover {
-          background: #263d30;
+        .servicenav a:hover {
+          color: var(--apricot-deep);
+          border-bottom-color: var(--apricot);
         }
 
         /* HERO */
         .hero {
-          max-width: 1120px;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          padding: 84px 28px 92px;
+        }
+        .hero-inner {
+          max-width: 1080px;
           margin: 0 auto;
-          padding: 76px 28px 64px;
-          display: grid;
-          grid-template-columns: 1.15fr 0.85fr;
-          gap: 56px;
-          align-items: center;
         }
         h1 {
-          font-size: clamp(42px, 6.4vw, 72px);
+          color: #fff;
+          font-size: clamp(38px, 6.5vw, 74px);
           line-height: 1.02;
-          letter-spacing: -0.01em;
+          letter-spacing: -0.015em;
           margin: 0 0 18px;
         }
         .lede {
+          color: rgba(255, 255, 255, 0.9);
           font-size: 18px;
-          color: var(--muted);
           line-height: 1.6;
-          max-width: 46ch;
+          max-width: 44ch;
           margin: 0 0 30px;
         }
         .composer {
           display: flex;
           gap: 10px;
           background: #fff;
-          border: 1px solid var(--line);
           border-radius: 999px;
-          padding: 7px 7px 7px 20px;
-          max-width: 460px;
-          box-shadow: 0 10px 30px rgba(47, 74, 58, 0.07);
+          padding: 7px 7px 7px 22px;
+          max-width: 500px;
+          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
         }
         .composer input {
           flex: 1;
@@ -449,99 +344,83 @@ export default function Home() {
           min-width: 0;
         }
         .btn {
-          background: var(--green);
-          color: var(--cream);
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          color: #fff;
           text-decoration: none;
           border-radius: 999px;
-          padding: 12px 22px;
-          font-weight: 600;
-          font-size: 15px;
+          padding: 13px 26px;
+          font-weight: 700;
+          font-size: 15.5px;
           white-space: nowrap;
           display: inline-block;
-          transition: background 0.18s ease;
         }
         .btn:hover {
-          background: #263d30;
-        }
-        .btn.wide {
-          display: block;
-          text-align: center;
-          margin-top: 4px;
-        }
-        .btn.ghost {
-          background: transparent;
-          color: var(--green);
-          border: 1.5px solid var(--green);
-        }
-        .btn.ghost:hover {
-          background: var(--green-pale);
+          filter: brightness(1.06);
         }
         .btn.light {
           background: var(--cream);
           color: var(--green);
         }
-        .btn.light:hover {
-          background: #fff;
-        }
         .micro {
+          color: rgba(255, 255, 255, 0.8);
           font-size: 13.5px;
-          color: var(--muted);
           margin: 14px 0 0;
         }
 
-        .hero-card {
-          background: #fff;
-          border: 1px solid var(--line);
-          border-radius: 22px;
-          padding: 30px 28px;
-          box-shadow: 0 20px 50px rgba(47, 74, 58, 0.1);
+        /* SERVICE BANDS */
+        .bands {
+          max-width: 1080px;
+          margin: 0 auto;
+          padding: 44px 28px 10px;
+          display: grid;
+          gap: 16px;
         }
-        .tag {
-          display: inline-block;
-          background: var(--green-pale);
+        .band {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          min-height: 168px;
+          padding: 30px 34px;
+          border-radius: 18px;
+          text-decoration: none;
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .band:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 16px 40px rgba(22,32,42, 0.16);
+        }
+        .band h2 {
+          font-size: clamp(30px, 4.4vw, 46px);
+          margin: 0 0 4px;
           color: var(--green);
-          font-size: 11.5px;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          padding: 5px 12px;
+        }
+        .band p {
+          margin: 0 0 10px;
+          font-size: 16px;
+          color: rgba(38, 48, 42, 0.72);
+        }
+        .from {
+          display: inline-block;
+          background: rgba(255, 255, 255, 0.8);
+          color: var(--green);
+          font-size: 13.5px;
+          font-weight: 700;
+          padding: 6px 14px;
           border-radius: 999px;
         }
-        .hero-card-title {
-          font-family: "Fraunces", serif;
-          font-size: 22px;
-          color: var(--green);
-          margin: 16px 0 6px;
-          line-height: 1.2;
-        }
-        .hero-card-price {
-          font-family: "Fraunces", serif;
+        .arrow {
           font-size: 30px;
-          margin: 0 0 18px;
+          color: var(--green);
+          opacity: 0.6;
         }
-        .hero-card-price span {
-          font-family: "Hanken Grotesk", sans-serif;
-          font-size: 14px;
-          color: var(--muted);
+        .band.clean {
+          background: linear-gradient(100deg,#F6F1FF,#EDE4FB);
         }
-        .hero-card ul {
-          list-style: none;
-          padding: 0;
-          margin: 0 0 22px;
-          display: grid;
-          gap: 10px;
+        .band.massage {
+          background: linear-gradient(100deg,#FFF8E6,#FDEEC4);
         }
-        .hero-card li {
-          font-size: 14.5px;
-          padding-left: 22px;
-          position: relative;
-        }
-        .hero-card li::before {
-          content: "✿";
-          position: absolute;
-          left: 0;
-          color: var(--apricot);
-          font-size: 12px;
+        .band.member {
+          background: linear-gradient(100deg,#F7F8F9,#ECEEF1);
         }
 
         /* TRUST STRIP */
@@ -551,8 +430,8 @@ export default function Home() {
           background: #fff;
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          max-width: 1120px;
-          margin: 0 auto;
+          max-width: 1080px;
+          margin: 44px auto 0;
         }
         .strip > div {
           padding: 26px 24px;
@@ -572,84 +451,20 @@ export default function Home() {
           color: var(--muted);
         }
 
-        /* BANDS */
-        .band {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 82px 28px;
+        /* BANDS / SECTIONS */
+        .band-alt {
+          background: #F7F8F9;
+          padding: 78px 28px;
+          margin-top: 0;
         }
-        .band.alt {
-          max-width: none;
-          background: #f6f1e8;
+        .quotes-wrap {
+          padding: 78px 28px;
         }
-        .band.alt > * {
-          max-width: 1120px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .band h2 {
+        .big {
           font-size: clamp(30px, 4.4vw, 44px);
           margin: 0 0 12px;
           line-height: 1.1;
         }
-        .sub {
-          color: var(--muted);
-          margin: 0 0 40px;
-        }
-
-        .two {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 26px;
-          margin-top: 40px;
-        }
-        .svc {
-          background: #fff;
-          border: 1px solid var(--line);
-          border-radius: 20px;
-          padding: 34px 32px;
-        }
-        .ico {
-          display: grid;
-          place-items: center;
-          width: 46px;
-          height: 46px;
-          border-radius: 50%;
-          background: var(--green-pale);
-          color: var(--green);
-          font-size: 20px;
-          margin-bottom: 16px;
-        }
-        .svc h3 {
-          font-size: 25px;
-          margin: 0 0 10px;
-        }
-        .svc p {
-          color: var(--muted);
-          line-height: 1.6;
-          margin: 0 0 18px;
-        }
-        .svc ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: grid;
-          gap: 9px;
-        }
-        .svc li {
-          font-size: 14.5px;
-          padding-left: 20px;
-          position: relative;
-        }
-        .svc li::before {
-          content: "·";
-          position: absolute;
-          left: 6px;
-          color: var(--apricot-deep);
-          font-weight: 700;
-        }
-
-        /* STEPS */
         .steps {
           list-style: none;
           padding: 0;
@@ -670,7 +485,7 @@ export default function Home() {
           border-radius: 50%;
           background: var(--green);
           color: var(--cream);
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 17px;
         }
         .steps strong {
@@ -683,93 +498,6 @@ export default function Home() {
           margin: 6px 0 0;
           line-height: 1.55;
         }
-
-        /* PACKAGES */
-        .svc-block {
-          margin-top: 44px;
-        }
-        .svc-head {
-          display: flex;
-          gap: 16px;
-          align-items: flex-start;
-          margin-bottom: 22px;
-          padding-bottom: 18px;
-          border-bottom: 1px solid var(--line);
-        }
-        .svc-head h3 {
-          font-size: 26px;
-          margin: 0 0 4px;
-        }
-        .svc-head p {
-          color: var(--muted);
-          font-size: 15px;
-          margin: 0;
-          max-width: 52ch;
-        }
-        .pkg h4 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
-          font-size: 21px;
-          color: var(--green);
-          margin: 0 0 6px;
-        }
-        .pkgs {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
-          gap: 20px;
-        }
-        .pkg {
-          background: #fff;
-          border: 1px solid var(--line);
-          border-radius: 20px;
-          padding: 30px 26px;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-        }
-        .pkg.featured {
-          border-color: var(--apricot);
-          box-shadow: 0 16px 40px rgba(207, 133, 79, 0.14);
-        }
-        .pill {
-          position: absolute;
-          top: -11px;
-          left: 26px;
-          background: var(--apricot-deep);
-          color: #fff;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          padding: 4px 12px;
-          border-radius: 999px;
-        }
-        .pkg h3 {
-          font-size: 22px;
-          margin: 0 0 6px;
-        }
-        .pkg-price {
-          font-family: "Fraunces", serif;
-          font-size: 28px;
-          margin: 0 0 12px;
-        }
-        .pkg-price span {
-          font-family: "Hanken Grotesk", sans-serif;
-          font-size: 13.5px;
-          color: var(--muted);
-        }
-        .pkg-desc {
-          color: var(--muted);
-          font-size: 14.5px;
-          line-height: 1.55;
-          margin: 0 0 22px;
-        }
-        .pkg .btn {
-          margin-top: auto;
-          text-align: center;
-        }
-
-        /* QUOTES */
         .quotes {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -784,7 +512,7 @@ export default function Home() {
           margin: 0;
         }
         blockquote p {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 17.5px;
           line-height: 1.5;
           color: var(--ink);
@@ -814,7 +542,7 @@ export default function Home() {
 
         /* FOOTER */
         .foot {
-          max-width: 1120px;
+          max-width: 1080px;
           margin: 0 auto;
           padding: 40px 28px 60px;
           display: flex;
@@ -823,7 +551,7 @@ export default function Home() {
           flex-wrap: wrap;
         }
         .foot strong {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 18px;
           color: var(--green);
         }
@@ -835,7 +563,7 @@ export default function Home() {
         .foot-links {
           display: flex;
           gap: 22px;
-          align-items: flex-start;
+          flex-wrap: wrap;
         }
         .foot-links a {
           color: var(--green-mid);
@@ -848,11 +576,6 @@ export default function Home() {
 
         /* RESPONSIVE */
         @media (max-width: 900px) {
-          .hero {
-            grid-template-columns: 1fr;
-            padding-top: 52px;
-            gap: 36px;
-          }
           .strip,
           .steps,
           .quotes {
@@ -861,14 +584,26 @@ export default function Home() {
           .strip > div:nth-child(2) {
             border-right: none;
           }
-          .two {
-            grid-template-columns: 1fr;
-          }
-          .nav-links a:not(.nav-cta) {
-            display: none;
-          }
         }
-        @media (max-width: 560px) {
+        @media (max-width: 620px) {
+          .topbar,
+          .servicenav {
+            padding-left: 16px;
+            padding-right: 16px;
+          }
+          .servicenav {
+            gap: 20px;
+          }
+          .hero {
+            padding: 54px 16px 62px;
+          }
+          .bands {
+            padding: 30px 16px 4px;
+          }
+          .band {
+            min-height: 130px;
+            padding: 22px 22px;
+          }
           .strip,
           .steps,
           .quotes {
@@ -882,9 +617,6 @@ export default function Home() {
             flex-direction: column;
             border-radius: 18px;
             padding: 14px;
-          }
-          .composer input {
-            padding: 6px 4px;
           }
         }
       `}</style>

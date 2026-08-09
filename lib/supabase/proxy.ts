@@ -6,16 +6,17 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-  const PUBLIC = [
+ const PUBLIC = [
     "/api",
     "/login",
+    "/book",
+    "/services",
+    "/subscribe",
+    "/providers",
+    "/provider",
     "/account",
     "/worker",
-    "/provider",
-    "/providers",
     "/notifications",
-    "/subscribe",
-    "/book",
   ];
   const publicPath = PUBLIC.some((p) =>
     request.nextUrl.pathname.startsWith(p)

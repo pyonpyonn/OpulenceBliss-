@@ -117,7 +117,7 @@ export default function AvailabilityPage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="inner">
@@ -201,9 +201,9 @@ export default function AvailabilityPage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
         .inner {
@@ -216,23 +216,23 @@ export default function AvailabilityPage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 6px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 36px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 8px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           margin: 0 0 26px;
         }
         .card {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 16px;
           padding: 6px 22px;
           margin-bottom: 22px;
@@ -247,7 +247,7 @@ export default function AvailabilityPage() {
           justify-content: space-between;
           gap: 14px;
           padding: 14px 0;
-          border-bottom: 1px solid #f0ebe0;
+          border-bottom: 1px solid #F1F2F4;
           flex-wrap: wrap;
         }
         .row:last-child {
@@ -263,12 +263,12 @@ export default function AvailabilityPage() {
         .toggle input {
           width: 17px;
           height: 17px;
-          accent-color: #2f4a3a;
+          accent-color: #16202A;
           cursor: pointer;
         }
         .row.on .toggle span {
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
         }
         .hours {
           display: flex;
@@ -276,26 +276,26 @@ export default function AvailabilityPage() {
           gap: 8px;
         }
         .hours select {
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid #E5E7EA;
           border-radius: 10px;
           padding: 7px 10px;
           font: inherit;
           font-size: 14.5px;
           background: #fff;
-          color: #26302a;
+          color: #16202A;
         }
         .hours em {
           font-style: normal;
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 14px;
         }
         .off {
-          color: #a89f90;
+          color: #A9AFB7;
           font-size: 14px;
         }
         .cta {
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: #16202A;
+          color: #FFFFFF;
           border: none;
           border-radius: 999px;
           padding: 13px 26px;
@@ -307,28 +307,28 @@ export default function AvailabilityPage() {
           display: inline-block;
         }
         .cta:hover {
-          background: #263d30;
+          background: #4C1D95;
         }
         .cta:disabled {
           opacity: 0.65;
           cursor: wait;
         }
         .msg {
-          background: #e7eee7;
-          color: #2f4a3a;
+          background: #F4ECFE;
+          color: #16202A;
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14.5px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #6e7a70;
+          color: #7A828C;
         }
         .links {
           margin-top: 30px;
         }
         .links a {
-          color: #5b7a65;
+          color: #6D28D9;
           font-size: 14px;
           text-decoration: none;
         }

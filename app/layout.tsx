@@ -1,53 +1,58 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
+// SETUP: code "app/layout.tsx"
+//
+// Root layout — fonts, metadata, and the components that appear on every page.
+
+import type { Metadata, Viewport } from "next";
+import { Nunito } from "next/font/google";
 import "./globals.css";
+
 import TopBar from "@/components/TopBar";
+import SiteHeader from "@/components/SiteHeader";
 import Toaster from "@/components/Toaster";
 import RatingGate from "@/components/RatingGate";
 import SupportChat from "@/components/SupportChat";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+// Self-hosted by Next, so no extra request to Google and no flash of
+// unstyled text. Components ask for "Nunito" by name and get this.
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-nunito",
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ),
+  title: "Opulence Bliss — home cleaning & massage in London",
+  description:
+    "Vetted cleaners and massage therapists at your home across London. Book a single visit or a monthly membership. Pay after the visit.",
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
-});
-
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TopBar />
-          {children}
-          <Toaster />
-          <RatingGate />
-          <SupportChat />
-        </ThemeProvider>
+    <html
+      lang="en"
+      className={`${nunito.className} ${nunito.variable}`}
+      suppressHydrationWarning
+    >
+      <body>
+        <TopBar />
+        <SiteHeader />
+        {children}
+        <Toaster />
+        <RatingGate />
+        <SupportChat />
       </body>
     </html>
   );

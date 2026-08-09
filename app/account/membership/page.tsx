@@ -4,7 +4,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "../page";
-import AreaNav from "@/components/AreaNav";
 import MembershipCard, { type Membership } from "../MembershipCard";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
@@ -44,8 +43,7 @@ export default async function MembershipPage() {
         <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: 40 }}>
           <p style={eyebrow}>Your account</p>
           <h1 style={h1}>Membership</h1>
-          <AreaNav area="client" />
-          <div style={{ ...card, textAlign: "center", padding: "40px 26px" }}>
+            <div style={{ ...card, textAlign: "center", padding: "40px 26px" }}>
             <h2 style={{ ...sectionTitle, margin: "0 0 8px" }}>
               You don&apos;t have a membership
             </h2>
@@ -136,8 +134,6 @@ export default async function MembershipPage() {
         <p style={eyebrow}>Your account</p>
         <h1 style={h1}>Membership</h1>
         <p style={{ color: "#6e7a70", margin: "0 0 26px" }}>{user.email}</p>
-
-        <AreaNav area="client" />
 
         <MembershipCard m={membership} />
 
@@ -255,11 +251,9 @@ export default async function MembershipPage() {
 const FONTS =
   "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
 const wrap: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "#fbf7f0",
   color: "#26302a",
   fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
-  padding: "0 20px 80px",
+  padding: 0,
 };
 const card: React.CSSProperties = {
   background: "#fff",

@@ -47,14 +47,10 @@ export default function ProvidersPage() {
     <main className="wrap">
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
       />
 
       <div className="inner">
-        <a className="brand" href="/">
-          Opulence&nbsp;Bliss
-        </a>
-
         <p className="eyebrow">Our professionals</p>
         <h1>The people who&apos;ll be in your home</h1>
         <p className="lede">
@@ -127,9 +123,9 @@ export default function ProvidersPage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          background: #fff;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
         .inner {
@@ -138,10 +134,10 @@ export default function ProvidersPage() {
           padding-top: 40px;
         }
         .brand {
-          font-family: "Fraunces", serif;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 19px;
           font-weight: 600;
-          color: #2f4a3a;
+          color: #16202A;
           text-decoration: none;
           display: inline-block;
           margin-bottom: 26px;
@@ -151,19 +147,19 @@ export default function ProvidersPage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: #6D28D9;
           margin: 0 0 8px;
         }
         h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: clamp(30px, 4.6vw, 44px);
           line-height: 1.08;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 12px;
         }
         .lede {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 17px;
           line-height: 1.6;
           max-width: 54ch;
@@ -176,7 +172,7 @@ export default function ProvidersPage() {
         }
         .card {
           background: #fff;
-          border: 1px solid #ece5d8;
+          border: 1px solid #EDEFF1;
           border-radius: 18px;
           padding: 24px 24px;
         }
@@ -196,52 +192,52 @@ export default function ProvidersPage() {
         .initials {
           display: grid;
           place-items: center;
-          background: #e7eee7;
-          color: #2f4a3a;
-          font-family: "Fraunces", serif;
+          background: #F4ECFE;
+          color: #16202A;
+          font-family: "Nunito", system-ui, sans-serif;
           font-size: 26px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
+          font-family: "Nunito", system-ui, sans-serif;
+          font-weight: 900;
           font-size: 21px;
-          color: #2f4a3a;
+          color: #16202A;
           margin: 0 0 4px;
         }
         .meta {
-          color: #6e7a70;
+          color: #7A828C;
           font-size: 13.5px;
           margin: 0 0 6px;
         }
         .stars {
           margin: 0;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .stars span {
-          color: #cf854f;
+          color: #6D28D9;
           letter-spacing: 1px;
         }
         .stars .new {
-          color: #a89f90;
+          color: #A9AFB7;
           letter-spacing: 0;
         }
         .bio {
-          color: #26302a;
+          color: #16202A;
           font-size: 14.5px;
           line-height: 1.6;
           margin: 16px 0 0;
         }
         .empty {
           background: #fff;
-          border: 1.5px dashed #d8cfbe;
+          border: 1.5px dashed #E5E7EA;
           border-radius: 14px;
           padding: 30px 24px;
           text-align: center;
-          color: #6e7a70;
+          color: #7A828C;
         }
         .empty a {
-          color: #2f4a3a;
+          color: #16202A;
           font-weight: 600;
         }
         .cta-row {
@@ -259,15 +255,15 @@ export default function ProvidersPage() {
           font-size: 15px;
         }
         .cta {
-          background: #2f4a3a;
-          color: #fbf7f0;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          color: #fff;
         }
         .ghost {
-          border: 1.5px solid #2f4a3a;
-          color: #2f4a3a;
+          border: 1.5px solid #16202A;
+          color: #16202A;
         }
         .muted {
-          color: #6e7a70;
+          color: #7A828C;
         }
       `}</style>
     </main>

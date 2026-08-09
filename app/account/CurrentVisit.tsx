@@ -1,7 +1,6 @@
 "use client";
 
-// The client's current / next visit, with live status and timer.
-// Save at: app/account/CurrentVisit.tsx
+// SETUP: code "app/account/CurrentVisit.tsx"
 
 import { useEffect, useState } from "react";
 
@@ -17,12 +16,7 @@ export type Visit = {
   arrivedAt: string | null;
 };
 
-const STAGES = [
-  { key: "booked", label: "Booked" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "arrived", label: "Arrived" },
-  { key: "complete", label: "Complete" },
-];
+const STAGES = ["Booked", "Confirmed", "Arrived", "Done"];
 
 function stageIndex(status: string) {
   switch (status) {
@@ -68,8 +62,7 @@ function countdown(iso: string) {
   if (mins < 60) return `in ${mins} min`;
   const hrs = Math.round(mins / 60);
   if (hrs < 24) return `in ${hrs} hour${hrs === 1 ? "" : "s"}`;
-  const days = Math.round(hrs / 24);
-  return `in ${days} day${days === 1 ? "" : "s"}`;
+  return `in ${Math.round(hrs / 24)} day${Math.round(hrs / 24) === 1 ? "" : "s"}`;
 }
 
 export default function CurrentVisit({
@@ -81,6 +74,7 @@ export default function CurrentVisit({
 }) {
   const [now, setNow] = useState(() => Date.now());
   const live = visit.status === "in_progress";
+  const idx = stageIndex(visit.status);
 
   useEffect(() => {
     if (!live) return;
@@ -88,37 +82,41 @@ export default function CurrentVisit({
     return () => clearInterval(t);
   }, [live]);
 
-  const idx = stageIndex(visit.status);
-
-  // Live timer
   let elapsed = "";
   let progress = 0;
   if (live && visit.arrivedAt) {
-    const secs = Math.max(0, Math.floor((now - new Date(visit.arrivedAt).getTime()) / 1000));
+    const secs = Math.max(
+      0,
+      Math.floor((now - new Date(visit.arrivedAt).getTime()) / 1000)
+    );
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
     elapsed =
       (h > 0 ? `${h}:` : "") +
       `${String(m).padStart(h > 0 ? 2 : 1, "0")}:${String(s).padStart(2, "0")}`;
-    if (visit.durationMinutes) {
+    if (visit.durationMinutes)
       progress = Math.min(100, (secs / (visit.durationMinutes * 60)) * 100);
-    }
   }
 
   const soon = idx <= 1 ? countdown(visit.scheduled_at) : null;
 
+  const tag =
+    idx === 0
+      ? { text: "Finding your pro", bg: "#FFF1D6", fg: "#8A5A00" }
+      : idx === 1
+      ? { text: "Confirmed", bg: "#DFF5E8", fg: "#137B4E" }
+      : idx === 2
+      ? { text: "Happening now", bg: "#DDEDFB", fg: "#1B5E9E" }
+      : { text: "Completed", bg: "#EFEFF1", fg: "#4B5563" };
+
   return (
     <section className={live ? "visit live" : "visit"}>
-      <div className="head">
+      <div className="top">
         <div>
-          <p className="eyebrow">
-            {live
-              ? "Happening now"
-              : idx === 3
-              ? "Last visit"
-              : "Your next visit"}
-          </p>
+          <span className="tag" style={{ background: tag.bg, color: tag.fg }}>
+            {tag.text}
+          </span>
           <h2>{visit.service}</h2>
           <p className="when">
             {whenLabel(visit.scheduled_at)}
@@ -138,123 +136,117 @@ export default function CurrentVisit({
       {live && visit.durationMinutes && (
         <div className="bar">
           <span style={{ width: `${progress}%` }} />
-          <em>
-            {Math.round(progress)}% of {visit.durationMinutes} min
-          </em>
         </div>
       )}
 
       <ol className="track">
         {STAGES.map((s, i) => (
-          <li
-            key={s.key}
-            className={i < idx ? "done" : i === idx ? "at" : ""}
-          >
+          <li key={s} className={i < idx ? "done" : i === idx ? "at" : ""}>
             <span className="pip">{i < idx ? "✓" : i + 1}</span>
-            <span className="lbl">{s.label}</span>
+            <span className="lbl">{s}</span>
           </li>
         ))}
       </ol>
 
-      <dl className="facts">
-        <div>
-          <dt>Provider</dt>
-          <dd>
-            {visit.providerName ?? "Being matched"}
+      <div className="facts">
+        <div className="fact mint">
+          <span>Your pro</span>
+          <strong>
+            {visit.providerName ?? "Matching…"}
             {visit.providerRating
-              ? ` · ${Number(visit.providerRating).toFixed(1)}★`
+              ? ` ${Number(visit.providerRating).toFixed(1)}★`
               : ""}
-          </dd>
+          </strong>
         </div>
-        <div>
-          <dt>Where</dt>
-          <dd>{visit.address ?? "—"}</dd>
+        <div className="fact sky">
+          <span>Where</span>
+          <strong>{visit.address ?? "—"}</strong>
         </div>
-        <div>
-          <dt>Duration</dt>
-          <dd>
-            {visit.durationMinutes ? `${visit.durationMinutes} minutes` : "—"}
-          </dd>
+        <div className="fact butter">
+          <span>How long</span>
+          <strong>
+            {visit.durationMinutes ? `${visit.durationMinutes} min` : "—"}
+          </strong>
         </div>
-        <div>
-          <dt>Payment</dt>
-          <dd>
-            {idx === 3 ? "Charged" : "Held — charged after the visit"}
-          </dd>
+        <div className="fact blush">
+          <span>Payment</span>
+          <strong>{idx === 3 ? "Charged" : "Held"}</strong>
         </div>
-      </dl>
+      </div>
 
       {!hideLink && (
-        <p className="more">
-          <a href={`/account/visit/${visit.id}`}>See full details →</a>
-        </p>
+        <a className="more" href={`/account/visit/${visit.id}`}>
+          See full details →
+        </a>
       )}
 
       <style jsx>{`
         .visit {
           background: #fff;
-          border: 1px solid #ece5d8;
-          border-radius: 20px;
-          padding: 28px 28px 24px;
-          margin-bottom: 28px;
-          font-family: "Hanken Grotesk", system-ui, sans-serif;
+          border: 2px solid #f1f1f2;
+          border-radius: 24px;
+          padding: 26px 26px 22px;
+          margin-bottom: 22px;
+          font-family: "Nunito", system-ui, sans-serif;
         }
         .visit.live {
-          border-color: #7fa08c;
-          box-shadow: 0 14px 36px rgba(47, 74, 58, 0.12);
+          border-color: #b9dcf7;
+          box-shadow: 0 14px 34px rgba(27, 94, 158, 0.1);
         }
-        .head {
+        .top {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 20px;
+          gap: 18px;
           flex-wrap: wrap;
         }
-        .eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          font-size: 11.5px;
-          font-weight: 600;
-          color: #cf854f;
-          margin: 0 0 6px;
+        .tag {
+          display: inline-block;
+          font-size: 12px;
+          font-weight: 800;
+          padding: 5px 12px;
+          border-radius: 999px;
+          margin-bottom: 10px;
         }
         h2 {
-          font-family: "Fraunces", serif;
-          font-weight: 500;
           font-size: 27px;
-          color: #2f4a3a;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          color: #1f2933;
           margin: 0 0 4px;
         }
         .when {
-          color: #6e7a70;
-          font-size: 14.5px;
+          color: #6b7280;
+          font-size: 15px;
+          font-weight: 600;
           margin: 0;
         }
         .timer {
           display: flex;
           align-items: baseline;
-          gap: 7px;
-          background: #e7eee7;
-          border-radius: 12px;
-          padding: 10px 16px;
+          gap: 8px;
+          background: #ddedfb;
+          border-radius: 16px;
+          padding: 11px 16px;
         }
         .timer strong {
-          font-family: "Fraunces", serif;
           font-size: 24px;
-          color: #2f4a3a;
+          font-weight: 900;
+          color: #1b5e9e;
           font-variant-numeric: tabular-nums;
         }
         .timer small {
-          color: #6e7a70;
+          color: #4b7fae;
           font-size: 12px;
+          font-weight: 700;
         }
         .dot {
-          width: 8px;
-          height: 8px;
+          width: 9px;
+          height: 9px;
           border-radius: 50%;
-          background: #4b8c68;
-          animation: pulse 1.6s ease-in-out infinite;
+          background: #2f9e6e;
           align-self: center;
+          animation: pulse 1.5s ease-in-out infinite;
         }
         @keyframes pulse {
           0%,
@@ -262,130 +254,137 @@ export default function CurrentVisit({
             opacity: 1;
           }
           50% {
-            opacity: 0.3;
+            opacity: 0.25;
           }
         }
         .bar {
-          position: relative;
-          height: 8px;
-          background: #f0ebe0;
+          height: 10px;
+          background: #f1f1f2;
           border-radius: 999px;
-          margin: 20px 0 6px;
+          margin: 20px 0 4px;
+          overflow: hidden;
         }
         .bar span {
           display: block;
           height: 100%;
-          background: #7fa08c;
+          background: linear-gradient(90deg,#F5C542,#C86FC9 55%,#7B2FF7);
           border-radius: 999px;
           transition: width 1s linear;
-        }
-        .bar em {
-          position: absolute;
-          right: 0;
-          top: 12px;
-          font-style: normal;
-          font-size: 12px;
-          color: #6e7a70;
         }
         .track {
           list-style: none;
           display: flex;
-          gap: 6px;
+          gap: 4px;
           padding: 0;
-          margin: 26px 0 22px;
+          margin: 24px 0 22px;
         }
         .track li {
           flex: 1;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 7px;
+          gap: 8px;
           position: relative;
-          color: #a89f90;
+          color: #9ca3af;
           font-size: 12.5px;
+          font-weight: 700;
         }
         .track li::before {
           content: "";
           position: absolute;
-          top: 13px;
+          top: 15px;
           left: 0;
           right: 50%;
-          height: 2px;
-          background: #f0ebe0;
+          height: 4px;
+          background: #f1f1f2;
         }
         .track li:first-child::before {
           display: none;
         }
         .track li.done::before,
         .track li.at::before {
-          background: #7fa08c;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
         }
         .pip {
-          width: 27px;
-          height: 27px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
           display: grid;
           place-items: center;
-          background: #f6f1e8;
-          border: 1.5px solid #e2dccf;
-          font-size: 12px;
-          font-weight: 600;
+          background: #f6f6f7;
+          font-size: 13px;
+          font-weight: 900;
           position: relative;
           z-index: 1;
+          color: #9ca3af;
         }
         .track li.done .pip {
-          background: #e7eee7;
-          border-color: #7fa08c;
-          color: #2f4a3a;
+          background: #E9DDFD;
+          color: #6D28D9;
         }
         .track li.at .pip {
-          background: #2f4a3a;
-          border-color: #2f4a3a;
-          color: #fbf7f0;
+          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          color: #fff;
         }
         .track li.done,
         .track li.at {
-          color: #2f4a3a;
-        }
-        .track li.at {
-          font-weight: 600;
+          color: #1f2933;
         }
         .facts {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 16px;
-          margin: 0;
-          padding-top: 20px;
-          border-top: 1px solid #f0ebe0;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 10px;
         }
-        .facts dt {
-          color: #a89f90;
+        .fact {
+          border-radius: 16px;
+          padding: 14px 16px;
+        }
+        .fact span {
+          display: block;
           font-size: 11.5px;
+          font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-bottom: 4px;
+          letter-spacing: 0.06em;
+          opacity: 0.7;
+          margin-bottom: 3px;
         }
-        .facts dd {
-          margin: 0;
-          color: #26302a;
-          font-size: 14.5px;
-          font-weight: 500;
+        .fact strong {
+          font-size: 15px;
+          font-weight: 800;
+          color: #1f2933;
+          overflow-wrap: anywhere;
+        }
+        .mint {
+          background: #e4f6ec;
+          color: #137b4e;
+        }
+        .sky {
+          background: #e3f0fb;
+          color: #1b5e9e;
+        }
+        .butter {
+          background: #fff3d6;
+          color: #8a5a00;
+        }
+        .blush {
+          background: #ffe6ea;
+          color: #b0384f;
         }
         .more {
-          margin: 20px 0 0;
-          padding-top: 16px;
-          border-top: 1px solid #f0ebe0;
-        }
-        .more a {
-          color: #2f4a3a;
-          font-size: 14px;
-          font-weight: 600;
+          display: inline-block;
+          margin-top: 18px;
+          color: #6D28D9;
+          font-weight: 800;
+          font-size: 14.5px;
           text-decoration: none;
         }
-        .more a:hover {
-          color: #cf854f;
+        .more:hover {
+          text-decoration: underline;
         }
         @media (max-width: 520px) {
+          h2 {
+            font-size: 23px;
+          }
           .track .lbl {
             font-size: 11px;
           }
