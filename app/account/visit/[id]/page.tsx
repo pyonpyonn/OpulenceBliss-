@@ -121,132 +121,178 @@ export default async function VisitPage({
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: 40 }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", paddingTop: 40 }}>
         <p style={{ margin: "0 0 20px" }}>
           <a href="/account" style={link}>
             ← My bookings
           </a>
         </p>
 
-        <CurrentVisit visit={visit} hideLink />
+        <div className="visit-workspace">
+          <div className="visit-details">
+            <CurrentVisit visit={visit} hideLink />
 
-        {status && (
-          <div style={{ marginBottom: 20 }}>
-            <VisitStatusPanel status={status} />
-            <ReportNoShow
-              bookingId={row.id}
-              scheduledAt={row.scheduled_at}
-              status={row.status}
-              hasArrived={!!ci?.arrived_at}
-            />
-          </div>
-        )}
+            {status && (
+              <div style={{ marginBottom: 20 }}>
+                <VisitStatusPanel status={status} />
+                <ReportNoShow
+                  bookingId={row.id}
+                  scheduledAt={row.scheduled_at}
+                  status={row.status}
+                  hasArrived={!!ci?.arrived_at}
+                />
+              </div>
+            )}
 
-        {/* Your provider */}
-        {prv?.display_name && (
-          <section style={{ ...card, marginBottom: 20 }}>
-            <h2 style={sectionTitle}>Your provider</h2>
-            <p style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 600 }}>
-              {prv.display_name}
-              {prv.rating_avg ? (
-                <span
-                  style={{ color: "#cf854f", fontWeight: 500, fontSize: 15 }}
+            {/* Your provider */}
+            {prv?.display_name && (
+              <section style={{ ...card, marginBottom: 20 }}>
+                <h2 style={sectionTitle}>Your provider</h2>
+                <p style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 600 }}>
+                  {prv.display_name}
+                  {prv.rating_avg ? (
+                    <span
+                      style={{
+                        color: "#cf854f",
+                        fontWeight: 500,
+                        fontSize: 15,
+                      }}
+                    >
+                      {" "}
+                      · {Number(prv.rating_avg).toFixed(1)}★ ({prv.rating_count}
+                      )
+                    </span>
+                  ) : null}
+                </p>
+                {prv.bio && (
+                  <p
+                    style={{
+                      margin: "8px 0 0",
+                      color: "#6e7a70",
+                      fontSize: 14.5,
+                    }}
+                  >
+                    {prv.bio}
+                  </p>
+                )}
+              </section>
+            )}
+
+            {/* Details */}
+            <section style={{ ...card, marginBottom: 20 }}>
+              <h2 style={sectionTitle}>Details</h2>
+              <dl style={grid}>
+                <Row label="Service" value={pkg?.name ?? "—"} />
+                <Row
+                  label="Price"
+                  value={pkg ? `£${Number(pkg.price).toFixed(2)}` : "—"}
+                />
+                <Row label="Postcode" value={row.address ?? "—"} />
+                <Row
+                  label="Your notes"
+                  value={row.household_notes || "None added"}
+                />
+                {ci?.arrived_at && (
+                  <Row label="Arrived" value={time(ci.arrived_at)} />
+                )}
+                {ci?.left_at && (
+                  <Row label="Finished" value={time(ci.left_at)} />
+                )}
+              </dl>
+            </section>
+
+            {/* Payment */}
+            <section style={{ ...card, marginBottom: 20 }}>
+              <h2 style={sectionTitle}>Payment</h2>
+              <dl style={grid}>
+                <Row
+                  label="Total"
+                  value={
+                    jobPay ? `£${Number(jobPay.gross_amount).toFixed(2)}` : "—"
+                  }
+                />
+                <Row label="Tip added" value={`£${tipTotal.toFixed(2)}`} />
+              </dl>
+            </section>
+
+            {/* Actions */}
+            {changeable && (
+              <section style={card}>
+                <h2 style={sectionTitle}>Change this visit</h2>
+                <p
+                  style={{
+                    margin: "0 0 4px",
+                    color: "#6e7a70",
+                    fontSize: 14.5,
+                  }}
                 >
-                  {" "}
-                  · {Number(prv.rating_avg).toFixed(1)}★ ({prv.rating_count})
-                </span>
-              ) : null}
-            </p>
-            {prv.bio && (
-              <p
-                style={{ margin: "8px 0 0", color: "#6e7a70", fontSize: 14.5 }}
-              >
-                {prv.bio}
-              </p>
+                  Free to cancel — your card hasn&apos;t been charged.
+                </p>
+                <BookingTools id={row.id} postcode={row.address} />
+              </section>
             )}
-          </section>
-        )}
 
-        {row.provider_id && (
-          <div style={{ marginBottom: 20 }}>
-            <MessageThread
-              bookingId={row.id}
-              viewerRole="customer"
-              closed={
-                row.status === "cancelled" ||
-                new Date(row.scheduled_at).getTime() <
-                  Date.now() - 7 * 24 * 60 * 60 * 1000
-              }
-            />
+            {(canRate || canTip) && (
+              <section style={card}>
+                <h2 style={sectionTitle}>After your visit</h2>
+                {canRate && (
+                  <RateBooking id={row.id} existing={reviewRows ?? null} />
+                )}
+                {canTip && <TipBooking id={row.id} />}
+                <p style={{ margin: "14px 0 0" }}>
+                  <a
+                    href={`/book?service=${row.package_id ?? ""}&pc=${
+                      row.address ?? ""
+                    }`}
+                    style={{ color: "#2f4a3a", fontWeight: 600, fontSize: 14 }}
+                  >
+                    Book this again →
+                  </a>
+                </p>
+              </section>
+            )}
           </div>
-        )}
 
-        {/* Details */}
-        <section style={{ ...card, marginBottom: 20 }}>
-          <h2 style={sectionTitle}>Details</h2>
-          <dl style={grid}>
-            <Row label="Service" value={pkg?.name ?? "—"} />
-            <Row
-              label="Price"
-              value={pkg ? `£${Number(pkg.price).toFixed(2)}` : "—"}
-            />
-            <Row label="Postcode" value={row.address ?? "—"} />
-            <Row
-              label="Your notes"
-              value={row.household_notes || "None added"}
-            />
-            {ci?.arrived_at && (
-              <Row label="Arrived" value={time(ci.arrived_at)} />
-            )}
-            {ci?.left_at && <Row label="Finished" value={time(ci.left_at)} />}
-          </dl>
-        </section>
-
-        {/* Payment */}
-        <section style={{ ...card, marginBottom: 20 }}>
-          <h2 style={sectionTitle}>Payment</h2>
-          <dl style={grid}>
-            <Row
-              label="Total"
-              value={
-                jobPay ? `£${Number(jobPay.gross_amount).toFixed(2)}` : "—"
-              }
-            />
-            <Row label="Tip added" value={`£${tipTotal.toFixed(2)}`} />
-          </dl>
-        </section>
-
-        {/* Actions */}
-        {changeable && (
-          <section style={card}>
-            <h2 style={sectionTitle}>Change this visit</h2>
-            <p style={{ margin: "0 0 4px", color: "#6e7a70", fontSize: 14.5 }}>
-              Free to cancel — your card hasn&apos;t been charged.
-            </p>
-            <BookingTools id={row.id} postcode={row.address} />
-          </section>
-        )}
-
-        {(canRate || canTip) && (
-          <section style={card}>
-            <h2 style={sectionTitle}>After your visit</h2>
-            {canRate && (
-              <RateBooking id={row.id} existing={reviewRows ?? null} />
-            )}
-            {canTip && <TipBooking id={row.id} />}
-            <p style={{ margin: "14px 0 0" }}>
-              <a
-                href={`/book?service=${row.package_id ?? ""}&pc=${
-                  row.address ?? ""
-                }`}
-                style={{ color: "#2f4a3a", fontWeight: 600, fontSize: 14 }}
-              >
-                Book this again →
-              </a>
-            </p>
-          </section>
-        )}
+          {row.provider_id && (
+            <aside className="visit-chat">
+              <MessageThread
+                bookingId={row.id}
+                viewerRole="customer"
+                closed={
+                  row.status === "cancelled" ||
+                  new Date(row.scheduled_at).getTime() <
+                    Date.now() - 7 * 24 * 60 * 60 * 1000
+                }
+              />
+            </aside>
+          )}
+        </div>
       </div>
+
+      <style>{`
+        .visit-workspace {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(310px, 370px);
+          align-items: start;
+          gap: 24px;
+        }
+        .visit-details {
+          min-width: 0;
+        }
+        .visit-chat {
+          min-width: 0;
+          position: sticky;
+          top: 24px;
+        }
+        @media (max-width: 920px) {
+          .visit-workspace {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .visit-chat {
+            position: static;
+          }
+        }
+      `}</style>
     </main>
   );
 }

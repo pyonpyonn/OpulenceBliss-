@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../../ActiveJob";
 import MessageThread from "@/components/MessageThread";
+import CustomerSummaryCard from "@/components/CustomerSummaryCard";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
 export default async function JobPage({
@@ -26,7 +27,7 @@ export default async function JobPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, provider_id, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)"
+      "id, scheduled_at, status, address, household_notes, customer_id, customer_email, provider_id, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -50,6 +51,16 @@ export default async function JobPage({
     );
   }
 
+  const { data: customerRows } = await supabase.rpc(
+    "booking_customer_summary",
+    { p_booking_id: row.id },
+  );
+  const customer = one(customerRows as never) as {
+    full_name: string | null;
+    client_rating_avg: number | null;
+    client_rating_count: number | null;
+  } | null;
+
   const { data: pays } = await supabase
     .from("payments")
     .select("split_breakdown, status, kind")
@@ -60,8 +71,11 @@ export default async function JobPage({
     .filter((p) => p.kind === "tip")
     .reduce(
       (s, p) =>
-        s + Number((p.split_breakdown as { provider?: number } | null)?.provider ?? 0),
-      0
+        s +
+        Number(
+          (p.split_breakdown as { provider?: number } | null)?.provider ?? 0,
+        ),
+      0,
     );
 
   const pkg = one(row.packages as never);
@@ -85,7 +99,7 @@ export default async function JobPage({
       (pkg as { duration_minutes: number | null } | null)?.duration_minutes ??
       null,
     earns: Number(
-      (jobPay?.split_breakdown as { provider?: number } | null)?.provider ?? 0
+      (jobPay?.split_breakdown as { provider?: number } | null)?.provider ?? 0,
     ),
     arrivedAt: ci?.arrived_at ?? null,
     leftAt: ci?.left_at ?? null,
@@ -104,79 +118,125 @@ export default async function JobPage({
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 720, margin: "0 auto", paddingTop: 40 }}>
+      <div style={{ maxWidth: 1120, margin: "0 auto", paddingTop: 40 }}>
         <p style={{ margin: "0 0 20px" }}>
           <a href="/worker" style={{ color: "#FF5A36", fontSize: 14 }}>
             ← My jobs
           </a>
         </p>
 
-        <ActiveJob job={job} />
+        <div className="worker-job-workspace">
+          <div className="worker-job-details">
+            <ActiveJob job={job} />
 
-        {row.provider_id && (
-          <div style={{ marginTop: 22 }}>
-            <MessageThread
-              bookingId={job.id}
-              viewerRole="provider"
-              closed={
-                row.status === "cancelled" ||
-                new Date(row.scheduled_at).getTime() <
-                  Date.now() - 7 * 24 * 60 * 60 * 1000
-              }
-            />
+            <div style={{ marginTop: 22 }}>
+              <CustomerSummaryCard
+                name={customer?.full_name ?? null}
+                email={row.customer_email}
+                rating={
+                  customer?.client_rating_avg === null ||
+                  customer?.client_rating_avg === undefined
+                    ? null
+                    : Number(customer.client_rating_avg)
+                }
+                ratingCount={customer?.client_rating_count ?? 0}
+              />
+            </div>
+
+            {/* Audit trail */}
+            {(ci?.arrived_at || ci?.left_at) && (
+              <section style={{ ...card, marginTop: 22 }}>
+                <h2 style={sectionTitle}>Check-in record</h2>
+                <dl style={grid}>
+                  <Row label="Arrived" value={time(ci?.arrived_at ?? null)} />
+                  <Row label="Left" value={time(ci?.left_at ?? null)} />
+                  <Row
+                    label="Location check"
+                    value={
+                      ci?.geofence_pass === true
+                        ? "Confirmed at address"
+                        : ci?.geofence_pass === false
+                          ? "Flagged — away from address"
+                          : "Not verified"
+                    }
+                  />
+                  <Row
+                    label="Coordinates"
+                    value={
+                      ci?.gps_lat
+                        ? `${Number(ci.gps_lat).toFixed(4)}, ${Number(
+                            ci.gps_lng,
+                          ).toFixed(4)}`
+                        : "—"
+                    }
+                  />
+                </dl>
+              </section>
+            )}
+
+            {/* Money */}
+            <section style={{ ...card, marginTop: 22 }}>
+              <h2 style={sectionTitle}>Payment</h2>
+              <dl style={grid}>
+                <Row
+                  label="Your share"
+                  value={`£${job.earns?.toFixed(2) ?? "0.00"}`}
+                />
+                <Row label="Tips" value={`£${tips.toFixed(2)}`} />
+                <Row
+                  label="Status"
+                  value={
+                    jobPay?.status === "succeeded"
+                      ? "Paid to you"
+                      : jobPay?.status === "refunded"
+                        ? "Cancelled"
+                        : "Held until you check out"
+                  }
+                />
+              </dl>
+            </section>
           </div>
-        )}
 
-        {/* Audit trail */}
-        {(ci?.arrived_at || ci?.left_at) && (
-          <section style={{ ...card, marginTop: 22 }}>
-            <h2 style={sectionTitle}>Check-in record</h2>
-            <dl style={grid}>
-              <Row label="Arrived" value={time(ci?.arrived_at ?? null)} />
-              <Row label="Left" value={time(ci?.left_at ?? null)} />
-              <Row
-                label="Location check"
-                value={
-                  ci?.geofence_pass === true
-                    ? "Confirmed at address"
-                    : ci?.geofence_pass === false
-                    ? "Flagged — away from address"
-                    : "Not verified"
+          {row.provider_id && (
+            <aside className="worker-job-chat">
+              <MessageThread
+                bookingId={job.id}
+                viewerRole="provider"
+                closed={
+                  row.status === "cancelled" ||
+                  new Date(row.scheduled_at).getTime() <
+                    Date.now() - 7 * 24 * 60 * 60 * 1000
                 }
               />
-              <Row
-                label="Coordinates"
-                value={
-                  ci?.gps_lat
-                    ? `${Number(ci.gps_lat).toFixed(4)}, ${Number(
-                        ci.gps_lng
-                      ).toFixed(4)}`
-                    : "—"
-                }
-              />
-            </dl>
-          </section>
-        )}
-
-        {/* Money */}
-        <section style={{ ...card, marginTop: 22 }}>
-          <h2 style={sectionTitle}>Payment</h2>
-          <dl style={grid}>
-            <Row label="Your share" value={`£${job.earns?.toFixed(2) ?? "0.00"}`} />
-            <Row label="Tips" value={`£${tips.toFixed(2)}`} />
-            <Row
-              label="Status"
-              value={
-                jobPay?.status === "succeeded"
-                  ? "Paid to you"
-                  : jobPay?.status === "refunded"
-                  ? "Cancelled"
-                  : "Held until you check out"
-              }
-            />
-          </dl>
-        </section>
+            </aside>
+          )}
+        </div>
       </div>
+
+      <style>{`
+        .worker-job-workspace {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(310px, 370px);
+          align-items: start;
+          gap: 24px;
+        }
+        .worker-job-details {
+          min-width: 0;
+        }
+        .worker-job-chat {
+          min-width: 0;
+          position: sticky;
+          top: 24px;
+        }
+        @media (max-width: 920px) {
+          .worker-job-workspace {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .worker-job-chat {
+            position: static;
+          }
+        }
+      `}</style>
     </main>
   );
 }

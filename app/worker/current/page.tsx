@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../ActiveJob";
 import MessageThread from "@/components/MessageThread";
+import CustomerSummaryCard from "@/components/CustomerSummaryCard";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
 export default async function CurrentJobPage() {
@@ -32,13 +33,24 @@ export default async function CurrentJobPage() {
   const { data: rows } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, provider_payout, subscription_id, packages(name, duration_minutes, price), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)"
+      "id, scheduled_at, status, address, household_notes, customer_id, customer_email, provider_payout, subscription_id, packages(name, duration_minutes, price), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)",
     )
     .eq("status", "in_progress")
     .order("scheduled_at", { ascending: true })
     .limit(1);
 
   const row = (rows ?? [])[0] ?? null;
+
+  const { data: customerRows } = row
+    ? await supabase.rpc("booking_customer_summary", {
+        p_booking_id: row.id,
+      })
+    : { data: null };
+  const customer = one(customerRows as never) as {
+    full_name: string | null;
+    client_rating_avg: number | null;
+    client_rating_count: number | null;
+  } | null;
 
   const { data: pays } = row
     ? await supabase
@@ -83,12 +95,14 @@ export default async function CurrentJobPage() {
           (one(row.packages as never) as { name: string } | null)?.name ??
           "Service",
         durationMinutes:
-          (one(row.packages as never) as {
-            duration_minutes: number | null;
-          } | null)?.duration_minutes ?? null,
+          (
+            one(row.packages as never) as {
+              duration_minutes: number | null;
+            } | null
+          )?.duration_minutes ?? null,
         earns: Number(
           (jobPay?.split_breakdown as { provider?: number } | null)?.provider ??
-            0
+            0,
         ),
         arrivedAt:
           (one(row.check_ins as never) as { arrived_at: string | null } | null)
@@ -97,9 +111,11 @@ export default async function CurrentJobPage() {
           (one(row.check_ins as never) as { left_at: string | null } | null)
             ?.left_at ?? null,
         geofencePass:
-          (one(row.check_ins as never) as {
-            geofence_pass: boolean | null;
-          } | null)?.geofence_pass ?? null,
+          (
+            one(row.check_ins as never) as {
+              geofence_pass: boolean | null;
+            } | null
+          )?.geofence_pass ?? null,
       }
     : null;
 
@@ -109,7 +125,7 @@ export default async function CurrentJobPage() {
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 760 }}>
+      <div style={{ maxWidth: 1120 }}>
         <h1 style={h1}>Current job</h1>
         <p style={{ color: "#7A828C", margin: "0 0 24px", fontWeight: 600 }}>
           Everything you need while you&apos;re on site.
@@ -126,10 +142,24 @@ export default async function CurrentJobPage() {
           </div>
         ) : !job ? (
           <div style={empty}>
-            <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 900, color: "#16202A" }}>
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: 17,
+                fontWeight: 900,
+                color: "#16202A",
+              }}
+            >
               No job in progress
             </p>
-            <p style={{ margin: "0 0 18px", color: "#7A828C", fontSize: 14.5, fontWeight: 600 }}>
+            <p
+              style={{
+                margin: "0 0 18px",
+                color: "#7A828C",
+                fontSize: 14.5,
+                fontWeight: 600,
+              }}
+            >
               Check in from My jobs when you arrive at the customer&apos;s home,
               and the full job details will appear here.
             </p>
@@ -138,98 +168,136 @@ export default async function CurrentJobPage() {
             </a>
           </div>
         ) : (
-          <>
-            <ActiveJob job={job} />
+          <div className="current-job-workspace">
+            <div className="current-job-details">
+              <ActiveJob job={job} />
 
-            <div style={{ marginTop: 20 }}>
-              <MessageThread bookingId={job.id} viewerRole="provider" />
+              <div style={{ marginTop: 20 }}>
+                <CustomerSummaryCard
+                  name={customer?.full_name ?? null}
+                  email={row.customer_email}
+                  rating={
+                    customer?.client_rating_avg === null ||
+                    customer?.client_rating_avg === undefined
+                      ? null
+                      : Number(customer.client_rating_avg)
+                  }
+                  ratingCount={customer?.client_rating_count ?? 0}
+                />
+              </div>
+
+              {/* ---- check-in record ---- */}
+              <section style={{ ...card, marginTop: 20 }}>
+                <h2 style={sectionTitle}>Check-in record</h2>
+                <dl style={grid}>
+                  <Row label="Arrived" value={time(ci?.arrived_at ?? null)} />
+                  <Row label="Left" value={time(ci?.left_at ?? null)} />
+                  <Row
+                    label="Location check"
+                    value={
+                      ci?.geofence_pass === true
+                        ? "Confirmed at address"
+                        : ci?.geofence_pass === false
+                          ? "Flagged — away from address"
+                          : "Not verified"
+                    }
+                  />
+                  <Row
+                    label="Coordinates"
+                    value={
+                      ci?.gps_lat
+                        ? `${Number(ci.gps_lat).toFixed(4)}, ${Number(
+                            ci.gps_lng,
+                          ).toFixed(4)}`
+                        : "—"
+                    }
+                  />
+                </dl>
+              </section>
+
+              {/* ---- the client's notes in full ---- */}
+              {row.household_notes && (
+                <section style={{ ...card, marginTop: 20 }}>
+                  <h2 style={sectionTitle}>What the client asked for</h2>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      lineHeight: 1.6,
+                      color: "#3A424B",
+                    }}
+                  >
+                    {row.household_notes}
+                  </p>
+                </section>
+              )}
+
+              {/* ---- money ---- */}
+              <section style={{ ...card, marginTop: 20 }}>
+                <h2 style={sectionTitle}>Payment</h2>
+                <dl style={grid}>
+                  <Row
+                    label="You earn"
+                    value={`£${(job.earns ?? 0).toFixed(2)}`}
+                  />
+                  <Row label="Tips so far" value={`£${tipTotal.toFixed(2)}`} />
+                  <Row
+                    label="How you're paid"
+                    value={
+                      row.subscription_id
+                        ? "Transferred when you check out"
+                        : "Released when you check out"
+                    }
+                  />
+                  <Row
+                    label="Status"
+                    value={
+                      jobPay?.status === "succeeded"
+                        ? "Paid to you"
+                        : "Waiting on check-out"
+                    }
+                  />
+                </dl>
+              </section>
+              <p style={{ marginTop: 20 }}>
+                <a href="/worker" style={link}>
+                  ← All my jobs
+                </a>
+              </p>
             </div>
 
-            {/* ---- check-in record ---- */}
-            <section style={{ ...card, marginTop: 20 }}>
-              <h2 style={sectionTitle}>Check-in record</h2>
-              <dl style={grid}>
-                <Row label="Arrived" value={time(ci?.arrived_at ?? null)} />
-                <Row label="Left" value={time(ci?.left_at ?? null)} />
-                <Row
-                  label="Location check"
-                  value={
-                    ci?.geofence_pass === true
-                      ? "Confirmed at address"
-                      : ci?.geofence_pass === false
-                      ? "Flagged — away from address"
-                      : "Not verified"
-                  }
-                />
-                <Row
-                  label="Coordinates"
-                  value={
-                    ci?.gps_lat
-                      ? `${Number(ci.gps_lat).toFixed(4)}, ${Number(
-                          ci.gps_lng
-                        ).toFixed(4)}`
-                      : "—"
-                  }
-                />
-              </dl>
-            </section>
-
-            {/* ---- the client's notes in full ---- */}
-            {row.household_notes && (
-              <section style={{ ...card, marginTop: 20 }}>
-                <h2 style={sectionTitle}>What the client asked for</h2>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 15,
-                    fontWeight: 600,
-                    lineHeight: 1.6,
-                    color: "#3A424B",
-                  }}
-                >
-                  {row.household_notes}
-                </p>
-              </section>
-            )}
-
-            {/* ---- money ---- */}
-            <section style={{ ...card, marginTop: 20 }}>
-              <h2 style={sectionTitle}>Payment</h2>
-              <dl style={grid}>
-                <Row
-                  label="You earn"
-                  value={`£${(job.earns ?? 0).toFixed(2)}`}
-                />
-                <Row
-                  label="Tips so far"
-                  value={`£${tipTotal.toFixed(2)}`}
-                />
-                <Row
-                  label="How you're paid"
-                  value={
-                    row.subscription_id
-                      ? "Transferred when you check out"
-                      : "Released when you check out"
-                  }
-                />
-                <Row
-                  label="Status"
-                  value={
-                    jobPay?.status === "succeeded"
-                      ? "Paid to you"
-                      : "Waiting on check-out"
-                  }
-                />
-              </dl>
-            </section>
-            <p style={{ marginTop: 20 }}>
-              <a href="/worker" style={link}>
-                ← All my jobs
-              </a>
-            </p>
-          </>
+            <aside className="current-job-chat">
+              <MessageThread bookingId={job.id} viewerRole="provider" />
+            </aside>
+          </div>
         )}
       </div>
+
+      <style>{`
+        .current-job-workspace {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(310px, 370px);
+          align-items: start;
+          gap: 24px;
+        }
+        .current-job-details {
+          min-width: 0;
+        }
+        .current-job-chat {
+          min-width: 0;
+          position: sticky;
+          top: 24px;
+        }
+        @media (max-width: 920px) {
+          .current-job-workspace {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .current-job-chat {
+            position: static;
+          }
+        }
+      `}</style>
     </main>
   );
 }

@@ -236,7 +236,7 @@ const main: React.CSSProperties = {
   minWidth: 0,
   background: "transparent",
   padding: "26px 22px 96px",
-  maxWidth: 880,
+  maxWidth: 1240,
 };
 
 const gateWrap: React.CSSProperties = {

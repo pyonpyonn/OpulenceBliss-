@@ -15,7 +15,7 @@ function Gate({ emoji, title, body, href, cta, altHref, altText }: { emoji: stri
   return <main style={gateWrap}><div style={gateCard}><div style={{ fontSize: 38 }}>{emoji}</div><h1 style={gateTitle}>{title}</h1><p style={gateBody}>{body}</p><a href={href} style={btn}>{cta}</a>{altHref && <p style={{ marginTop: 16 }}><a href={altHref} style={quiet}>{altText}</a></p>}</div></main>;
 }
 const shell: React.CSSProperties = { display:"flex", alignItems:"stretch", minHeight:"100vh", background:"#F7F8F9", color:"#16202A", fontFamily:"'Nunito', system-ui, sans-serif" };
-const main: React.CSSProperties = { flex:1, minWidth:0, background:"transparent", padding:"26px 22px 96px", maxWidth:880 };
+const main: React.CSSProperties = { flex:1, minWidth:0, background:"transparent", padding:"26px 22px 96px", maxWidth:1240 };
 const gateWrap: React.CSSProperties = { minHeight:"80vh", background:"#F7F8F9", display:"grid", placeItems:"center", padding:24, fontFamily:"'Nunito', system-ui, sans-serif" };
 const gateCard: React.CSSProperties = { background:"#fff", border:"2px solid #EDEFF1", borderRadius:24, padding:"34px 30px", maxWidth:420, textAlign:"center" };
 const gateTitle: React.CSSProperties = { fontSize:25, fontWeight:900, letterSpacing:"-0.02em", margin:"10px 0 6px", color:"#16202A" };

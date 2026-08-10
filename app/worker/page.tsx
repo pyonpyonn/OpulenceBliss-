@@ -58,7 +58,10 @@ function clock(iso: string | null | undefined) {
   });
 }
 
-function elapsed(start: string | null | undefined, end: string | null | undefined) {
+function elapsed(
+  start: string | null | undefined,
+  end: string | null | undefined,
+) {
   if (!start || !end) return null;
   const minutes = Math.max(
     0,
@@ -319,6 +322,18 @@ export default async function WorkerPage() {
                       scheduledAt={r.scheduled_at}
                     />
                   )}
+                  <p style={{ margin: "14px 0 0" }}>
+                    <a
+                      href={`/worker/job/${r.id}`}
+                      style={{
+                        color: "#6D28D9",
+                        fontSize: 13.5,
+                        fontWeight: 800,
+                      }}
+                    >
+                      Open full job &amp; messages →
+                    </a>
+                  </p>
                 </article>
               );
             })}
@@ -406,7 +421,13 @@ export default async function WorkerPage() {
                   ]}
                 >
                   {r.household_notes && (
-                    <p style={{ color: "#4B5563", fontSize: 13.5, margin: "0 0 12px" }}>
+                    <p
+                      style={{
+                        color: "#4B5563",
+                        fontSize: 13.5,
+                        margin: "0 0 12px",
+                      }}
+                    >
                       <strong>Client notes:</strong> {r.household_notes}
                     </p>
                   )}
@@ -421,7 +442,11 @@ export default async function WorkerPage() {
                   <p style={{ margin: "12px 0 0" }}>
                     <a
                       href={`/worker/job/${r.id}`}
-                      style={{ color: "#6D28D9", fontSize: 13.5, fontWeight: 800 }}
+                      style={{
+                        color: "#6D28D9",
+                        fontSize: 13.5,
+                        fontWeight: 800,
+                      }}
                     >
                       Open full job details →
                     </a>
