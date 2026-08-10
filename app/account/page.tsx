@@ -7,6 +7,7 @@ import CurrentVisit, { type Visit } from "./CurrentVisit";
 import MembershipCard, { type Membership } from "./MembershipCard";
 import { BookingTools, RateBooking, TipBooking } from "./BookingTools";
 import VisitStatusPanel from "@/components/VisitStatusPanel";
+import VisitHistoryCard from "@/components/VisitHistoryCard";
 import { getVisitStatus } from "@/lib/visitStatus";
 
 type Row = {
@@ -16,16 +17,16 @@ type Row = {
   address: string | null;
   package_id: string | null;
   packages:
-    | { name: string; duration_minutes: number | null }
-    | { name: string; duration_minutes: number | null }[]
+    | { name: string; duration_minutes: number | null; price: number | null }
+    | { name: string; duration_minutes: number | null; price: number | null }[]
     | null;
   providers:
     | { display_name: string | null; rating_avg: number | null }
     | { display_name: string | null; rating_avg: number | null }[]
     | null;
   check_ins:
-    | { arrived_at: string | null }
-    | { arrived_at: string | null }[]
+    | { arrived_at: string | null; left_at: string | null }
+    | { arrived_at: string | null; left_at: string | null }[]
     | null;
 };
 
@@ -51,6 +52,25 @@ function when(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function clock(iso: string | null | undefined) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function elapsed(start: string | null | undefined, end: string | null | undefined) {
+  if (!start || !end) return null;
+  const minutes = Math.max(
+    0,
+    Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60_000),
+  );
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours ? `${hours}h ${rest}m` : `${rest}m`;
 }
 
 function firstName(name: string | null, email: string) {
@@ -82,7 +102,7 @@ export default async function AccountPage({
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes), providers(display_name, rating_avg), check_ins(arrived_at)"
+      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, rating_avg), check_ins(arrived_at, left_at)"
     )
     .order("scheduled_at", { ascending: false });
 
@@ -106,6 +126,19 @@ export default async function AccountPage({
       r.booking_id as string,
       { rating: r.rating as number, comment: r.comment as string | null },
     ])
+  );
+
+  const { data: paymentData } = await supabase
+    .from("payments")
+    .select("booking_id, gross_amount, status, kind")
+    .or("kind.is.null,kind.neq.tip");
+  const paymentMap = new Map(
+    (paymentData ?? [])
+      .filter((p) => p.booking_id)
+      .map((p) => [
+        p.booking_id as string,
+        { amount: Number(p.gross_amount ?? 0), status: p.status as string },
+      ]),
   );
 
   const active = rows.find((r) => r.status === "in_progress");
@@ -306,29 +339,63 @@ export default async function AccountPage({
             {history.map((b) => {
               const pkg = one(b.packages);
               const prv = one(b.providers);
+              const ci = one(b.check_ins);
               const st = LABEL[b.status] ?? LABEL.completed;
+              const review = reviews.get(b.id);
+              const payment = paymentMap.get(b.id);
+              const actualDuration = elapsed(ci?.arrived_at, ci?.left_at);
               return (
-                <article key={b.id} style={card}>
-                  <div style={rowHead}>
-                    <strong style={cardTitle}>{pkg?.name ?? "Service"}</strong>
-                    <span style={{ ...badge, background: st.bg, color: st.fg }}>
-                      {st.text}
-                    </span>
-                  </div>
-                  <p style={meta}>
-                    {when(b.scheduled_at)}
-                    {prv?.display_name ? ` · ${prv.display_name}` : ""}
-                  </p>
-
+                <VisitHistoryCard
+                  key={b.id}
+                  title={pkg?.name ?? "Service"}
+                  when={when(b.scheduled_at)}
+                  status={st.text}
+                  statusTone={b.status === "completed" ? "good" : "bad"}
+                  rating={
+                    b.status === "completed"
+                      ? {
+                          label: "Your rating for the provider",
+                          rating: review?.rating ?? null,
+                          comment: review?.comment ?? null,
+                          pending: "Your rating is still needed",
+                        }
+                      : null
+                  }
+                  facts={[
+                    { label: "Provider", value: prv?.display_name ?? "Not assigned" },
+                    { label: "Address", value: b.address ?? "—" },
+                    {
+                      label: "Duration",
+                      value:
+                        actualDuration ??
+                        (pkg?.duration_minutes
+                          ? `${pkg.duration_minutes} minutes planned`
+                          : "—"),
+                    },
+                    {
+                      label: "Arrival / finish",
+                      value: ci?.arrived_at
+                        ? `${clock(ci.arrived_at)} – ${clock(ci.left_at)}`
+                        : "No check-in recorded",
+                    },
+                    {
+                      label: "Amount",
+                      value: payment
+                        ? `£${payment.amount.toFixed(2)}`
+                        : pkg?.price
+                          ? `£${Number(pkg.price).toFixed(2)}`
+                          : "—",
+                    },
+                    { label: "Payment", value: payment?.status ?? "—" },
+                  ]}
+                >
                   {b.status === "completed" && (
                     <>
-                      <RateBooking id={b.id} existing={reviews.get(b.id)} />
+                      {!review && <RateBooking id={b.id} existing={null} />}
                       <TipBooking id={b.id} />
                       <p style={{ margin: "12px 0 0" }}>
                         <a
-                          href={`/book?service=${b.package_id ?? ""}&pc=${
-                            b.address ?? ""
-                          }`}
+                          href={`/book?service=${b.package_id ?? ""}&pc=${b.address ?? ""}`}
                           style={{
                             color: "#6D28D9",
                             fontWeight: 800,
@@ -341,7 +408,7 @@ export default async function AccountPage({
                       </p>
                     </>
                   )}
-                </article>
+                </VisitHistoryCard>
               );
             })}
           </div>

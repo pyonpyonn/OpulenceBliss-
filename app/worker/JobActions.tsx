@@ -45,10 +45,12 @@ export default function JobActions({
   id,
   status,
   scheduledAt,
+  existingRating,
 }: {
   id: string;
   status: string;
   scheduledAt: string;
+  existingRating?: { rating: number; comment: string | null } | null;
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
@@ -247,7 +249,7 @@ export default function JobActions({
         >
           ✓ Completed — payment taken and your share sent.
         </p>
-        <RateClientBox id={id} />
+        <RateClientBox id={id} existing={existingRating ?? null} />
       </div>
     );
   }
@@ -256,12 +258,34 @@ export default function JobActions({
 }
 
 // Provider rates the client.
-function RateClientBox({ id }: { id: string }) {
+function RateClientBox({
+  id,
+  existing,
+}: {
+  id: string;
+  existing: { rating: number; comment: string | null } | null;
+}) {
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
   const [done, setDone] = useState<string | null>(null);
+
+  if (existing) {
+    return (
+      <div style={{ marginTop: 8 }}>
+        <strong style={{ color: "#6D28D9", fontSize: 16 }}>
+          {"★".repeat(existing.rating)}
+          <span style={{ color: "#DDD6E8" }}>
+            {"★".repeat(5 - existing.rating)}
+          </span>
+        </strong>
+        <p style={{ margin: "3px 0 0", color: "#7A828C", fontSize: 13.5 }}>
+          {existing.comment ? `“${existing.comment}”` : "Your rating was submitted."}
+        </p>
+      </div>
+    );
+  }
 
   if (done) {
     return (

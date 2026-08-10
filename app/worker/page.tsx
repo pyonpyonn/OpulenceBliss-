@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
+import VisitHistoryCard from "@/components/VisitHistoryCard";
 import JobActions from "./JobActions";
 
 type Row = {
@@ -45,6 +46,25 @@ function when(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function clock(iso: string | null | undefined) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function elapsed(start: string | null | undefined, end: string | null | undefined) {
+  if (!start || !end) return null;
+  const minutes = Math.max(
+    0,
+    Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60_000),
+  );
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours ? `${hours}h ${rest}m` : `${rest}m`;
 }
 
 function timeLeft(iso: string | null | undefined) {
@@ -135,18 +155,23 @@ export default async function WorkerPage() {
 
   // What clients said about finished work
   const pastIds = rows.filter((r) => r.status === "completed").map((r) => r.id);
-  const reviewMap = new Map<
+  const clientReviewMap = new Map<
+    string,
+    { rating: number; comment: string | null }
+  >();
+  const providerReviewMap = new Map<
     string,
     { rating: number; comment: string | null }
   >();
   if (pastIds.length) {
     const { data: revs } = await supabase
       .from("reviews")
-      .select("booking_id, rating, comment")
-      .eq("reviewer", "client")
+      .select("booking_id, reviewer, rating, comment")
       .in("booking_id", pastIds);
     for (const r of revs ?? []) {
-      reviewMap.set(r.booking_id as string, {
+      const target =
+        r.reviewer === "provider" ? providerReviewMap : clientReviewMap;
+      target.set(r.booking_id as string, {
         rating: r.rating as number,
         comment: (r.comment as string | null) ?? null,
       });
@@ -299,41 +324,107 @@ export default async function WorkerPage() {
         )}
 
         {/* ---- 4. History ---- */}
-        <h2 style={sectionTitle}>Recent history</h2>
+        <h2 style={sectionTitle}>Past work</h2>
         {past.length === 0 ? (
           <p style={{ color: "#7A828C" }}>Nothing yet.</p>
         ) : (
-          <div style={{ ...card, padding: "6px 22px" }}>
+          <div style={{ display: "grid", gap: 12 }}>
             {past.slice(0, 12).map((r) => {
               const pkg = one(r.packages);
+              const ci = one(r.check_ins);
+              const clientReview = clientReviewMap.get(r.id);
+              const providerReview = providerReviewMap.get(r.id);
+              const actualDuration = elapsed(ci?.arrived_at, ci?.left_at);
+              const completed = r.status === "completed";
               return (
-                <div
+                <VisitHistoryCard
                   key={r.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "14px 0",
-                    borderBottom: "1px solid #F1F2F4",
-                    flexWrap: "wrap",
-                  }}
+                  title={pkg?.name ?? "Service"}
+                  when={when(r.scheduled_at)}
+                  status={
+                    completed
+                      ? "Completed"
+                      : r.status === "cancelled"
+                        ? "Cancelled"
+                        : "Declined"
+                  }
+                  statusTone={completed ? "good" : "neutral"}
+                  rating={
+                    completed
+                      ? {
+                          label: "Client's rating of your work",
+                          rating: clientReview?.rating ?? null,
+                          comment: clientReview?.comment ?? null,
+                          pending: "Waiting for the client’s rating",
+                        }
+                      : null
+                  }
+                  secondaryRating={
+                    completed
+                      ? {
+                          label: "Your rating of the client",
+                          rating: providerReview?.rating ?? null,
+                          comment: providerReview?.comment ?? null,
+                          pending: "You still need to rate this client",
+                        }
+                      : null
+                  }
+                  facts={[
+                    { label: "Client", value: r.customer_email ?? "—" },
+                    { label: "Address", value: r.address ?? "—" },
+                    {
+                      label: "Duration",
+                      value:
+                        actualDuration ??
+                        (pkg?.duration_minutes
+                          ? `${pkg.duration_minutes} minutes planned`
+                          : "—"),
+                    },
+                    {
+                      label: "Check-in / checkout",
+                      value: ci?.arrived_at
+                        ? `${clock(ci.arrived_at)} – ${clock(ci.left_at)}`
+                        : "No check-in recorded",
+                    },
+                    {
+                      label: "You earned",
+                      value: earnMap.has(r.id)
+                        ? `£${(earnMap.get(r.id) ?? 0).toFixed(2)}`
+                        : "—",
+                    },
+                    {
+                      label: "Location",
+                      value:
+                        ci?.geofence_pass === true
+                          ? "Verified at check-in"
+                          : ci?.geofence_pass === false
+                            ? "Check-in was flagged"
+                            : "Not recorded",
+                    },
+                  ]}
                 >
-                  <div>
-                    <strong style={{ fontSize: 14.5, color: "#16202A" }}>
-                      {pkg?.name ?? "Service"}
-                    </strong>
-                    <div style={{ color: "#7A828C", fontSize: 13 }}>
-                      {when(r.scheduled_at)} · {r.status}
-                    </div>
-                  </div>
-                  <a
-                    href={`/worker/job/${r.id}`}
-                    style={{ color: "#6D28D9", fontSize: 13.5 }}
-                  >
-                    Details
-                  </a>
-                </div>
+                  {r.household_notes && (
+                    <p style={{ color: "#4B5563", fontSize: 13.5, margin: "0 0 12px" }}>
+                      <strong>Client notes:</strong> {r.household_notes}
+                    </p>
+                  )}
+                  {completed && !providerReview && (
+                    <JobActions
+                      id={r.id}
+                      status={r.status}
+                      scheduledAt={r.scheduled_at}
+                      existingRating={null}
+                    />
+                  )}
+                  <p style={{ margin: "12px 0 0" }}>
+                    <a
+                      href={`/worker/job/${r.id}`}
+                      style={{ color: "#6D28D9", fontSize: 13.5, fontWeight: 800 }}
+                    >
+                      Open full job details →
+                    </a>
+                  </p>
+                </VisitHistoryCard>
               );
             })}
           </div>
