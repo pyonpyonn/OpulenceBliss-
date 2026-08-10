@@ -117,7 +117,11 @@ export default function JobActions({
       start(async () => {
         const r = await checkInJob(id, lat, lng, force);
         setNote(r?.reason ?? null);
-        setBlocked(r?.blocked ? { lat: lat ?? null, lng: lng ?? null } : null);
+        setBlocked(
+          r?.blocked && "canForce" in r && r.canForce
+            ? { lat: lat ?? null, lng: lng ?? null }
+            : null,
+        );
       });
 
     const locate = (force = false) => {

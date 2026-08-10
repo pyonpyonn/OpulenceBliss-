@@ -101,6 +101,7 @@ async function recalcRatings(s: Awaited<ReturnType<typeof requireAdmin>>) {
 
 export async function bringBookingToNow() {
   const s = await requireAdmin();
+  assertTestMode("Move next booking to now");
   const { data: next } = await s
     .from("bookings")
     .select("id, status, scheduled_at")

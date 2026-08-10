@@ -218,9 +218,14 @@ export async function checkInJob(
 
   // You can only check in on the day of the visit, from 30 minutes before.
   //
-  // TESTING: set ALLOW_EARLY_CHECKIN=true in .env.local to skip this while
-  // you're trying the flow out. Remove it before going live.
-  const allowEarly = process.env.ALLOW_EARLY_CHECKIN === "true";
+  // Development shortcuts require Stripe test mode. Skipping the time window
+  // additionally needs ALLOW_EARLY_CHECKIN=true; a failed geofence can be
+  // forced only while no real money is enabled.
+  const testPayments = (process.env.STRIPE_SECRET_KEY ?? "").startsWith(
+    "sk_test_",
+  );
+  const allowEarly =
+    process.env.ALLOW_EARLY_CHECKIN === "true" && testPayments;
 
   if (ctx.scheduledAt && !allowEarly) {
     const start = new Date(ctx.scheduledAt);
@@ -279,9 +284,22 @@ export async function checkInJob(
     }
   }
 
-  // Only check in if we could positively confirm the location.
-  if (pass !== true && !force) {
-    return { blocked: true, pass, distance, reason };
+  // Only check in if we could positively confirm the location. Development
+  // may force the path so checkout/payment can be exercised from a desk, but
+  // the server—not the button—decides whether that bypass exists.
+  if (pass !== true) {
+    if (!force) {
+      return { blocked: true, pass, distance, reason, canForce: testPayments };
+    }
+    if (!testPayments) {
+      return {
+        blocked: true,
+        pass,
+        distance,
+        reason: "Location could not be confirmed. Development bypass is disabled.",
+        canForce: false,
+      };
+    }
   }
 
   try {
@@ -321,7 +339,7 @@ export async function checkInJob(
 
   revalidatePath("/worker");
   revalidatePath("/account");
-  return { blocked: false, pass, distance, reason };
+  return { blocked: false, pass, distance, reason, canForce: false };
 }
 
 // Job finished — complete it AND settle the money.
