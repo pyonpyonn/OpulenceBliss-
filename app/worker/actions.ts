@@ -227,7 +227,7 @@ export async function checkInJob(
   const allowEarly =
     process.env.ALLOW_EARLY_CHECKIN === "true" && testPayments;
 
-  if (ctx.scheduledAt && !allowEarly) {
+  if (ctx.scheduledAt && !allowEarly && !(force && testPayments)) {
     const start = new Date(ctx.scheduledAt);
     const openFrom = new Date(start.getTime() - 30 * 60 * 1000);
     const endOfDay = new Date(start);
@@ -247,6 +247,7 @@ export async function checkInJob(
         pass: null,
         distance: null,
         reason: `Too early — this visit is ${when}. You can check in from 30 minutes before it starts.`,
+        canForce: testPayments,
       };
     }
     if (now > endOfDay) {
@@ -256,6 +257,7 @@ export async function checkInJob(
         distance: null,
         reason:
           "This visit's day has passed. Contact the team so we can sort it out.",
+        canForce: testPayments,
       };
     }
   }

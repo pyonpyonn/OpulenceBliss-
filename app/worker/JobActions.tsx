@@ -174,7 +174,7 @@ export default function JobActions({
               padding: "8px 16px",
             }}
           >
-            Check in anyway (will be flagged)
+            Continue anyway — development only
           </button>
         )}
         <JobExceptions
