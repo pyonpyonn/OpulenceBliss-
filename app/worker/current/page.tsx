@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../ActiveJob";
+import MessageThread from "@/components/MessageThread";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
@@ -139,6 +140,10 @@ export default async function CurrentJobPage() {
         ) : (
           <>
             <ActiveJob job={job} />
+
+            <div style={{ marginTop: 20 }}>
+              <MessageThread bookingId={job.id} viewerRole="provider" />
+            </div>
 
             {/* ---- check-in record ---- */}
             <section style={{ ...card, marginTop: 20 }}>

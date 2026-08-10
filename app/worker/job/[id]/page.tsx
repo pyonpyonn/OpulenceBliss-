@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../../ActiveJob";
+import MessageThread from "@/components/MessageThread";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
@@ -25,7 +26,7 @@ export default async function JobPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)"
+      "id, scheduled_at, status, address, household_notes, customer_email, provider_id, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -111,6 +112,20 @@ export default async function JobPage({
         </p>
 
         <ActiveJob job={job} />
+
+        {row.provider_id && (
+          <div style={{ marginTop: 22 }}>
+            <MessageThread
+              bookingId={job.id}
+              viewerRole="provider"
+              closed={
+                row.status === "cancelled" ||
+                new Date(row.scheduled_at).getTime() <
+                  Date.now() - 7 * 24 * 60 * 60 * 1000
+              }
+            />
+          </div>
+        )}
 
         {/* Audit trail */}
         {(ci?.arrived_at || ci?.left_at) && (

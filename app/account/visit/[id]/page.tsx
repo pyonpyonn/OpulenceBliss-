@@ -6,6 +6,7 @@ import { SignedOut } from "../../page";
 import CurrentVisit, { type Visit } from "../../CurrentVisit";
 import { BookingTools, RateBooking, TipBooking } from "../../BookingTools";
 import VisitStatusPanel from "@/components/VisitStatusPanel";
+import MessageThread from "@/components/MessageThread";
 import { getVisitStatus } from "@/lib/visitStatus";
 import ReportNoShow from "../../ReportNoShow";
 
@@ -29,7 +30,7 @@ export default async function VisitPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, package_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio), check_ins(arrived_at, left_at)",
+      "id, scheduled_at, status, address, household_notes, package_id, provider_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio), check_ins(arrived_at, left_at)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -164,6 +165,20 @@ export default async function VisitPage({
               </p>
             )}
           </section>
+        )}
+
+        {row.provider_id && (
+          <div style={{ marginBottom: 20 }}>
+            <MessageThread
+              bookingId={row.id}
+              viewerRole="customer"
+              closed={
+                row.status === "cancelled" ||
+                new Date(row.scheduled_at).getTime() <
+                  Date.now() - 7 * 24 * 60 * 60 * 1000
+              }
+            />
+          </div>
         )}
 
         {/* Details */}
