@@ -64,6 +64,7 @@ export async function reportProviderNoShow(
     const time = new Date(reportFrom).toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
     return {
       ok: false,

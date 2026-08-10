@@ -197,6 +197,7 @@ export async function rescheduleBooking(id: string, newSlot: string) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 
   await notifyProvider(

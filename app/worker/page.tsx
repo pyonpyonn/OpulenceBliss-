@@ -45,6 +45,7 @@ function when(iso: string) {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -53,6 +54,7 @@ function clock(iso: string | null | undefined) {
   return new Date(iso).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 }
 

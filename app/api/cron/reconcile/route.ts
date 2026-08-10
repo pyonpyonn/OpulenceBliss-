@@ -42,8 +42,10 @@ const MAX_STRIPE_TRANSFERS = 5000;
  * known test history without weakening reconciliation after the cutoff.
  */
 function reconciliationEpoch() {
-  const value = process.env.RECONCILE_SINCE?.trim();
-  if (!value) return null;
+  // This project's test-history boundary. Vercel may override it later, but
+  // reconciliation must never silently widen to old demo transfers merely
+  // because an environment variable was omitted.
+  const value = process.env.RECONCILE_SINCE?.trim() || "2026-08-05";
 
   const epoch = new Date(value);
   if (Number.isNaN(epoch.getTime())) {
@@ -801,17 +803,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    if (epoch) {
-      notes.push(
-        `Ignoring Stripe objects created before ${epoch.toISOString()} ` +
-          "(RECONCILE_SINCE).",
-      );
-    } else {
-      notes.push(
-        "RECONCILE_SINCE is not set — checking the entire requested Stripe " +
-          "window. Set it to your go-live date to exclude test-mode leftovers.",
-      );
-    }
+    notes.push(
+      `Ignoring Stripe objects created before ${epoch.toISOString()} ` +
+        "(RECONCILE_SINCE or project default).",
+    );
 
     /* ==================================================================
      * 6. Record. Never remediate.

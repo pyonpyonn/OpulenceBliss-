@@ -170,6 +170,7 @@ export async function acceptJob(id: string) {
             month: "long",
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true,
           })}`
         : ""
     }.</p><p>You'll only be charged once the visit is complete.</p>`,
@@ -241,6 +242,7 @@ export async function checkInJob(
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true,
       });
       return {
         blocked: true,

@@ -128,7 +128,11 @@ export async function bringBookingToNow() {
   revalidatePath("/account");
   return {
     moved: true,
-    message: `Moved a booking to ${when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} today.`,
+    message: `Moved a booking to ${when.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })} today.`,
   };
 }
 

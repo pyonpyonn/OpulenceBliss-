@@ -530,6 +530,7 @@ Today is ${now.toLocaleDateString("en-GB", {
   })}. The current time is ${now.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   })} UK time. Work out relative dates like "in 3 days" or "Friday" from this.
 
 You have tools for looking things up — use them rather than guessing. If someone asks about their own account, call the relevant tool instead of assuming.

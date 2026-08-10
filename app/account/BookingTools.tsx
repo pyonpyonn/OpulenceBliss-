@@ -29,6 +29,7 @@ function label(iso: string) {
   return `${day}, ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   })}`;
 }
 

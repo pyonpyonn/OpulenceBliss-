@@ -282,6 +282,7 @@ function friendlyTime(iso: string | null, now: string): string {
   const time = d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
   if (sameDay) return `today at ${time}`;
   return `${d.toLocaleDateString("en-GB", {

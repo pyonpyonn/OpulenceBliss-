@@ -18,7 +18,11 @@ const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
 function when(iso: string) {
   const d = new Date(iso);
   const today = new Date();
-  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
   if (d.toDateString() === today.toDateString()) return `today, ${time}`;
   return `${d.toLocaleDateString("en-GB", {
     weekday: "short",

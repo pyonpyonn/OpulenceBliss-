@@ -52,6 +52,7 @@ function whenLabel(iso: string) {
   return `${day} at ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   })}`;
 }
 

@@ -25,7 +25,9 @@ const admin = createClient(
 
 export async function GET(req: NextRequest) {
   const key = req.nextUrl.searchParams.get("key");
-  if (!process.env.CRON_SECRET || key !== process.env.CRON_SECRET) {
+  const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const secret = process.env.CRON_SECRET;
+  if (!secret || (key !== secret && bearer !== secret)) {
     return NextResponse.json({ error: "Not authorised" }, { status: 401 });
   }
 

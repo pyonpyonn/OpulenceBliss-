@@ -96,6 +96,7 @@ export default async function JobPage({
       ? new Date(iso).toLocaleTimeString("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
+          hour12: true,
         })
       : "—";
 

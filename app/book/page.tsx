@@ -46,7 +46,11 @@ function dayLabel(iso: string) {
   });
 }
 const timeLabel = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 const fullLabel = (iso: string) => `${dayLabel(iso)}, ${timeLabel(iso)}`;
 
 function duration(mins: number | null) {
