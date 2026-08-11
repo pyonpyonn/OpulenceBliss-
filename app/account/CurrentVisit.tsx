@@ -3,6 +3,8 @@
 // SETUP: code "app/account/CurrentVisit.tsx"
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import type { VisitStatus } from "@/lib/visitStatus";
 
 export type Visit = {
   id: string;
@@ -16,6 +18,10 @@ export type Visit = {
   providerRatingCount?: number | null;
   paymentLabel?: string | null;
   arrivedAt: string | null;
+  finishedAt?: string | null;
+  providerBio?: string | null;
+  householdNotes?: string | null;
+  tipTotal?: number;
 };
 
 const STAGES = ["Booked", "Confirmed", "Arrived", "Done"];
@@ -68,12 +74,27 @@ function countdown(iso: string) {
   return `in ${Math.round(hrs / 24)} day${Math.round(hrs / 24) === 1 ? "" : "s"}`;
 }
 
+function shortWhen(iso: string) {
+  return new Date(iso).toLocaleString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function CurrentVisit({
   visit,
   hideLink,
+  detailStatus,
+  children,
 }: {
   visit: Visit;
   hideLink?: boolean;
+  detailStatus?: VisitStatus | null;
+  children?: ReactNode;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const live = visit.status === "in_progress";
@@ -170,6 +191,91 @@ export default function CurrentVisit({
           </strong>
         </div>
       </div>
+
+      {detailStatus && (
+        <>
+          <div className="status-summary">
+            <strong>{detailStatus.headline}</strong>
+            <p>{detailStatus.detail}</p>
+          </div>
+          <div className="status-details">
+            <div className="status-box">
+              <span>Waiting on</span>
+              <strong>{detailStatus.nextActorLabel}</strong>
+              <p>{detailStatus.nextActorDetail}</p>
+            </div>
+            <div className="status-box">
+              <span>Your money</span>
+              <strong>{detailStatus.money.label}</strong>
+              <p>{detailStatus.money.explanation}</p>
+            </div>
+            {detailStatus.deadline && (
+              <div className="status-box status-wide">
+                <span>Next update</span>
+                <strong>{detailStatus.deadline.label}</strong>
+                <p>{shortWhen(detailStatus.deadline.at)}</p>
+              </div>
+            )}
+          </div>
+          {detailStatus.ifNobodyAccepts && (
+            <p className="status-notice">
+              <strong>If nobody accepts: </strong>
+              {detailStatus.ifNobodyAccepts}
+            </p>
+          )}
+          {detailStatus.reviewCase && (
+            <p className="status-notice">
+              <strong>
+                {detailStatus.reviewCase.category.replace(/_/g, " ")}:{" "}
+              </strong>
+              {detailStatus.reviewCase.summary}
+            </p>
+          )}
+        </>
+      )}
+
+      {detailStatus &&
+        (visit.providerBio ||
+          visit.householdNotes ||
+          visit.arrivedAt ||
+          visit.finishedAt ||
+          (visit.tipTotal ?? 0) > 0) && (
+          <div className="visit-notes">
+            {visit.providerBio && (
+              <div>
+                <span>About your professional</span>
+                <p>{visit.providerBio}</p>
+              </div>
+            )}
+            {visit.householdNotes && (
+              <div>
+                <span>Your instructions</span>
+                <p>{visit.householdNotes}</p>
+              </div>
+            )}
+            {(visit.arrivedAt || visit.finishedAt) && (
+              <div>
+                <span>Recorded visit</span>
+                <p>
+                  {visit.arrivedAt
+                    ? `Arrived ${shortWhen(visit.arrivedAt)}`
+                    : "Arrival not recorded"}
+                  {visit.finishedAt
+                    ? ` · Finished ${shortWhen(visit.finishedAt)}`
+                    : ""}
+                </p>
+              </div>
+            )}
+            {(visit.tipTotal ?? 0) > 0 && (
+              <div>
+                <span>Tip added</span>
+                <p>£{(visit.tipTotal ?? 0).toFixed(2)}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+      {children && <div className="inside-actions">{children}</div>}
 
       {!hideLink && (
         <a className="more" href={`/account/visit/${visit.id}`}>
@@ -324,6 +430,89 @@ export default function CurrentVisit({
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 8px;
         }
+        .status-details {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid #f1f1f2;
+        }
+        .status-summary {
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid #f1f1f2;
+        }
+        .status-summary strong {
+          display: block;
+          color: #16202a;
+          font-size: 17px;
+          font-weight: 900;
+        }
+        .status-summary p {
+          color: #58616c;
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 1.55;
+          margin: 4px 0 0;
+        }
+        .status-box {
+          background: #f7f8f9;
+          border-radius: 14px;
+          padding: 14px 15px;
+        }
+        .status-box.status-wide {
+          grid-column: 1 / -1;
+        }
+        .status-box span,
+        .visit-notes span {
+          display: block;
+          color: #a0a7b0;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+        .status-box strong {
+          display: block;
+          color: #16202a;
+          font-size: 16px;
+          font-weight: 900;
+        }
+        .status-box p,
+        .visit-notes p {
+          color: #707985;
+          font-size: 13.5px;
+          font-weight: 600;
+          line-height: 1.5;
+          margin: 4px 0 0;
+        }
+        .visit-notes {
+          display: grid;
+          gap: 12px;
+          margin-top: 12px;
+          padding: 14px 15px;
+          background: #fffaf0;
+          border: 1px solid #f1e5ca;
+          border-radius: 14px;
+        }
+        .status-notice {
+          background: #fffaf0;
+          border: 1px solid #f1e5ca;
+          border-radius: 12px;
+          color: #6f5a2a;
+          font-size: 13.5px;
+          font-weight: 600;
+          line-height: 1.5;
+          margin: 10px 0 0;
+          padding: 11px 13px;
+        }
+        .inside-actions {
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid #f1f1f2;
+        }
         .fact {
           border-radius: 13px;
           padding: 11px 12px;
@@ -385,6 +574,12 @@ export default function CurrentVisit({
           }
           .facts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .status-details {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .status-box.status-wide {
+            grid-column: auto;
           }
           .more {
             display: flex;

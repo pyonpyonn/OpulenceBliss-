@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "../../page";
 import CurrentVisit, { type Visit } from "../../CurrentVisit";
 import { BookingTools, RateBooking, TipBooking } from "../../BookingTools";
-import VisitStatusPanel from "@/components/VisitStatusPanel";
 import MessageThread from "@/components/MessageThread";
 import { getVisitStatus } from "@/lib/visitStatus";
 import ReportNoShow from "../../ReportNoShow";
@@ -89,6 +88,15 @@ export default async function VisitPage({
     left_at: string | null;
   } | null;
 
+  const paymentAmount = Number(jobPay?.gross_amount ?? pkg?.price ?? 0);
+  const paymentLabel = status?.money.label
+    ? `${status.money.label}${
+        paymentAmount > 0 ? ` · £${paymentAmount.toFixed(2)}` : ""
+      }`
+    : paymentAmount > 0
+      ? `£${paymentAmount.toFixed(2)}`
+      : "Included";
+
   const visit: Visit = {
     id: row.id,
     status: row.status,
@@ -99,7 +107,12 @@ export default async function VisitPage({
     providerName: prv?.display_name ?? null,
     providerRating: prv?.rating_avg ?? null,
     providerRatingCount: prv?.rating_count ?? 0,
+    providerBio: prv?.bio ?? null,
+    householdNotes: row.household_notes,
+    paymentLabel,
+    tipTotal,
     arrivedAt: ci?.arrived_at ?? null,
+    finishedAt: ci?.left_at ?? null,
   };
 
   const changeable =
@@ -110,15 +123,6 @@ export default async function VisitPage({
     status?.actions.some((action) => action.kind === "rate") ?? false;
   const canTip =
     status?.actions.some((action) => action.kind === "tip") ?? false;
-  const time = (iso: string | null) =>
-    iso
-      ? new Date(iso).toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
-      : "—";
-
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
@@ -131,127 +135,45 @@ export default async function VisitPage({
 
         <div className="visit-workspace">
           <div className="visit-details">
-            <CurrentVisit visit={visit} hideLink />
+            <CurrentVisit visit={visit} hideLink detailStatus={status}>
+              <ReportNoShow
+                bookingId={row.id}
+                scheduledAt={row.scheduled_at}
+                status={row.status}
+                hasArrived={!!ci?.arrived_at}
+              />
 
-            {status && (
-              <div style={{ marginBottom: 20 }}>
-                <VisitStatusPanel status={status} />
-                <ReportNoShow
-                  bookingId={row.id}
-                  scheduledAt={row.scheduled_at}
-                  status={row.status}
-                  hasArrived={!!ci?.arrived_at}
-                />
-              </div>
-            )}
+              {changeable && (
+                <div style={inlineSection}>
+                  <strong style={inlineTitle}>Manage this booking</strong>
+                  <BookingTools id={row.id} postcode={row.address} />
+                </div>
+              )}
 
-            {/* Your provider */}
-            {prv?.display_name && (
-              <section style={{ ...card, marginBottom: 20 }}>
-                <h2 style={sectionTitle}>Your provider</h2>
-                <p style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 600 }}>
-                  {prv.display_name}
-                  {prv.rating_avg ? (
-                    <span
+              {(canRate || canTip || reviewRows) && (
+                <div style={inlineSection}>
+                  <strong style={inlineTitle}>Your review</strong>
+                  {(canRate || reviewRows) && (
+                    <RateBooking id={row.id} existing={reviewRows ?? null} />
+                  )}
+                  {canTip && <TipBooking id={row.id} />}
+                  <p style={{ margin: "12px 0 0" }}>
+                    <a
+                      href={`/book?service=${row.package_id ?? ""}&pc=${
+                        row.address ?? ""
+                      }`}
                       style={{
-                        color: "#cf854f",
-                        fontWeight: 500,
-                        fontSize: 15,
+                        color: "#6D28D9",
+                        fontWeight: 800,
+                        fontSize: 13.5,
                       }}
                     >
-                      {" "}
-                      · {Number(prv.rating_avg).toFixed(1)}★ ({prv.rating_count}
-                      )
-                    </span>
-                  ) : null}
-                </p>
-                {prv.bio && (
-                  <p
-                    style={{
-                      margin: "8px 0 0",
-                      color: "#6e7a70",
-                      fontSize: 14.5,
-                    }}
-                  >
-                    {prv.bio}
+                      Book this again →
+                    </a>
                   </p>
-                )}
-              </section>
-            )}
-
-            {/* Details */}
-            <section style={{ ...card, marginBottom: 20 }}>
-              <h2 style={sectionTitle}>Details</h2>
-              <dl style={grid}>
-                <Row label="Service" value={pkg?.name ?? "—"} />
-                <Row
-                  label="Price"
-                  value={pkg ? `£${Number(pkg.price).toFixed(2)}` : "—"}
-                />
-                <Row label="Postcode" value={row.address ?? "—"} />
-                <Row
-                  label="Your notes"
-                  value={row.household_notes || "None added"}
-                />
-                {ci?.arrived_at && (
-                  <Row label="Arrived" value={time(ci.arrived_at)} />
-                )}
-                {ci?.left_at && (
-                  <Row label="Finished" value={time(ci.left_at)} />
-                )}
-              </dl>
-            </section>
-
-            {/* Payment */}
-            <section style={{ ...card, marginBottom: 20 }}>
-              <h2 style={sectionTitle}>Payment</h2>
-              <dl style={grid}>
-                <Row
-                  label="Total"
-                  value={
-                    jobPay ? `£${Number(jobPay.gross_amount).toFixed(2)}` : "—"
-                  }
-                />
-                <Row label="Tip added" value={`£${tipTotal.toFixed(2)}`} />
-              </dl>
-            </section>
-
-            {/* Actions */}
-            {changeable && (
-              <section style={card}>
-                <h2 style={sectionTitle}>Change this visit</h2>
-                <p
-                  style={{
-                    margin: "0 0 4px",
-                    color: "#6e7a70",
-                    fontSize: 14.5,
-                  }}
-                >
-                  Free to cancel — your card hasn&apos;t been charged.
-                </p>
-                <BookingTools id={row.id} postcode={row.address} />
-              </section>
-            )}
-
-            {(canRate || canTip) && (
-              <section style={card}>
-                <h2 style={sectionTitle}>After your visit</h2>
-                {canRate && (
-                  <RateBooking id={row.id} existing={reviewRows ?? null} />
-                )}
-                {canTip && <TipBooking id={row.id} />}
-                <p style={{ margin: "14px 0 0" }}>
-                  <a
-                    href={`/book?service=${row.package_id ?? ""}&pc=${
-                      row.address ?? ""
-                    }`}
-                    style={{ color: "#2f4a3a", fontWeight: 600, fontSize: 14 }}
-                  >
-                    Book this again →
-                  </a>
-                </p>
-              </section>
-            )}
+                </div>
+              )}
+            </CurrentVisit>
           </div>
 
           {row.provider_id && (
@@ -298,25 +220,6 @@ export default async function VisitPage({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt
-        style={{
-          color: "#a89f90",
-          fontSize: 11.5,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          marginBottom: 3,
-        }}
-      >
-        {label}
-      </dt>
-      <dd style={{ margin: 0, fontSize: 14.5, fontWeight: 500 }}>{value}</dd>
-    </div>
-  );
-}
-
 const FONTS =
   "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
 const wrap: React.CSSProperties = {
@@ -326,18 +229,6 @@ const wrap: React.CSSProperties = {
   fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
   padding: "0 20px 80px",
 };
-const card: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #ece5d8",
-  borderRadius: 16,
-  padding: "22px 24px",
-};
-const grid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-  gap: 16,
-  margin: 0,
-};
 const h1: React.CSSProperties = {
   fontFamily: "'Fraunces', serif",
   fontWeight: 500,
@@ -345,11 +236,16 @@ const h1: React.CSSProperties = {
   color: "#2f4a3a",
   margin: "0 0 8px",
 };
-const sectionTitle: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
-  fontSize: 20,
-  color: "#2f4a3a",
-  margin: "0 0 14px",
-};
 const link: React.CSSProperties = { color: "#5b7a65", fontSize: 14 };
+const inlineSection: React.CSSProperties = {
+  background: "#F7F8F9",
+  borderRadius: 14,
+  padding: "14px 15px",
+  marginTop: 10,
+};
+const inlineTitle: React.CSSProperties = {
+  display: "block",
+  color: "#16202A",
+  fontSize: 15,
+  fontWeight: 900,
+};
