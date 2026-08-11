@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../ActiveJob";
 import MessageThread from "@/components/MessageThread";
-import CustomerSummaryCard from "@/components/CustomerSummaryCard";
+import { providerPaymentLabel } from "@/lib/providerPaymentStatus";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
@@ -64,6 +64,14 @@ export default async function CurrentJobPage() {
     .filter((p) => p.kind === "tip")
     .reduce((t, p) => t + Number(p.gross_amount ?? 0), 0);
 
+  const { data: payout } = row
+    ? await supabase
+        .from("payouts")
+        .select("status")
+        .eq("booking_id", row.id)
+        .maybeSingle()
+    : { data: null };
+
   const ci = row
     ? (one(row.check_ins as never) as {
         arrived_at: string | null;
@@ -83,6 +91,14 @@ export default async function CurrentJobPage() {
         })
       : "—";
 
+  const providerEarns = row
+    ? Number(
+        row.provider_payout ??
+          (jobPay?.split_breakdown as { provider?: number } | null)?.provider ??
+          0,
+      )
+    : 0;
+
   const job: ActiveJobData | null = row
     ? {
         id: row.id,
@@ -91,6 +107,7 @@ export default async function CurrentJobPage() {
         address: row.address,
         notes: row.household_notes,
         client: customer?.full_name ?? row.customer_email,
+        clientEmail: row.customer_email,
         clientRating:
           customer?.client_rating_avg === null ||
           customer?.client_rating_avg === undefined
@@ -106,10 +123,13 @@ export default async function CurrentJobPage() {
               duration_minutes: number | null;
             } | null
           )?.duration_minutes ?? null,
-        earns: Number(
-          (jobPay?.split_breakdown as { provider?: number } | null)?.provider ??
-            0,
-        ),
+        earns: providerEarns,
+        paymentLabel: providerPaymentLabel({
+          bookingStatus: row.status,
+          paymentStatus: jobPay?.status,
+          payoutStatus: payout?.status,
+          amount: providerEarns,
+        }),
         arrivedAt:
           (one(row.check_ins as never) as { arrived_at: string | null } | null)
             ?.arrived_at ?? null,
@@ -177,20 +197,6 @@ export default async function CurrentJobPage() {
           <div className="current-job-workspace">
             <div className="current-job-details">
               <ActiveJob job={job} />
-
-              <div style={{ marginTop: 20 }}>
-                <CustomerSummaryCard
-                  name={customer?.full_name ?? null}
-                  email={row.customer_email}
-                  rating={
-                    customer?.client_rating_avg === null ||
-                    customer?.client_rating_avg === undefined
-                      ? null
-                      : Number(customer.client_rating_avg)
-                  }
-                  ratingCount={customer?.client_rating_count ?? 0}
-                />
-              </div>
 
               {/* ---- check-in record ---- */}
               <section style={{ ...card, marginTop: 20 }}>

@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import VisitHistoryCard from "@/components/VisitHistoryCard";
+import { providerPaymentLabel } from "@/lib/providerPaymentStatus";
 import ActiveJob, { type ActiveJobData } from "./ActiveJob";
 import JobActions from "./JobActions";
 
@@ -135,15 +136,26 @@ export default async function WorkerPage() {
   // Earnings per booking, so the card can show what each job pays
   const { data: paysData } = await supabase
     .from("payments")
-    .select("booking_id, split_breakdown, kind");
+    .select("booking_id, split_breakdown, kind, status");
   const earnMap = new Map<string, number>();
+  const paymentStatusMap = new Map<string, string>();
   for (const p of paysData ?? []) {
     if (p.kind === "tip" || !p.booking_id) continue;
     const share = Number(
       (p.split_breakdown as { provider?: number } | null)?.provider ?? 0,
     );
     earnMap.set(p.booking_id as string, share);
+    paymentStatusMap.set(p.booking_id as string, p.status as string);
   }
+
+  const { data: payoutData } = await supabase
+    .from("payouts")
+    .select("booking_id, status");
+  const payoutStatusMap = new Map(
+    (payoutData ?? [])
+      .filter((p) => p.booking_id)
+      .map((p) => [p.booking_id as string, p.status as string]),
+  );
   // Membership visits carry their payout on the booking itself.
   for (const r of [...rows, ...offers]) {
     const own = (r as unknown as { provider_payout?: number | null })
@@ -193,6 +205,7 @@ export default async function WorkerPage() {
       address: booking.address,
       notes: booking.household_notes,
       client: customer?.full_name ?? booking.customer_email ?? "Customer",
+      clientEmail: booking.customer_email,
       clientRating:
         customer?.client_rating_avg === null ||
         customer?.client_rating_avg === undefined
@@ -202,6 +215,12 @@ export default async function WorkerPage() {
       service: pkg?.name ?? "Service",
       durationMinutes: pkg?.duration_minutes ?? null,
       earns: earnMap.get(booking.id) ?? null,
+      paymentLabel: providerPaymentLabel({
+        bookingStatus: booking.status,
+        paymentStatus: paymentStatusMap.get(booking.id),
+        payoutStatus: payoutStatusMap.get(booking.id),
+        amount: earnMap.get(booking.id),
+      }),
       arrivedAt: checkIn?.arrived_at ?? null,
       leftAt: checkIn?.left_at ?? null,
       geofencePass: checkIn?.geofence_pass ?? null,

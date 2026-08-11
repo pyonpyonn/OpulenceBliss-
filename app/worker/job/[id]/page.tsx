@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import ActiveJob, { type ActiveJobData } from "../../ActiveJob";
 import MessageThread from "@/components/MessageThread";
-import CustomerSummaryCard from "@/components/CustomerSummaryCard";
+import { providerPaymentLabel } from "@/lib/providerPaymentStatus";
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
@@ -27,7 +27,7 @@ export default async function JobPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_id, customer_email, provider_id, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)",
+      "id, scheduled_at, status, address, household_notes, customer_id, customer_email, provider_id, provider_payout, subscription_id, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass, gps_lat, gps_lng)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -78,6 +78,12 @@ export default async function JobPage({
       0,
     );
 
+  const { data: payout } = await supabase
+    .from("payouts")
+    .select("status")
+    .eq("booking_id", id)
+    .maybeSingle();
+
   const pkg = one(row.packages as never);
   const ci = one(row.check_ins as never) as {
     arrived_at: string | null;
@@ -87,6 +93,12 @@ export default async function JobPage({
     gps_lng: number | null;
   } | null;
 
+  const providerEarns = Number(
+    row.provider_payout ??
+      (jobPay?.split_breakdown as { provider?: number } | null)?.provider ??
+      0,
+  );
+
   const job: ActiveJobData = {
     id: row.id,
     status: row.status,
@@ -94,6 +106,7 @@ export default async function JobPage({
     address: row.address,
     notes: row.household_notes,
     client: customer?.full_name ?? row.customer_email,
+    clientEmail: row.customer_email,
     clientRating:
       customer?.client_rating_avg === null ||
       customer?.client_rating_avg === undefined
@@ -104,9 +117,13 @@ export default async function JobPage({
     durationMinutes:
       (pkg as { duration_minutes: number | null } | null)?.duration_minutes ??
       null,
-    earns: Number(
-      (jobPay?.split_breakdown as { provider?: number } | null)?.provider ?? 0,
-    ),
+    earns: providerEarns,
+    paymentLabel: providerPaymentLabel({
+      bookingStatus: row.status,
+      paymentStatus: jobPay?.status,
+      payoutStatus: payout?.status,
+      amount: providerEarns,
+    }),
     arrivedAt: ci?.arrived_at ?? null,
     leftAt: ci?.left_at ?? null,
     geofencePass: ci?.geofence_pass ?? null,
@@ -134,20 +151,6 @@ export default async function JobPage({
         <div className="worker-job-workspace">
           <div className="worker-job-details">
             <ActiveJob job={job} />
-
-            <div style={{ marginTop: 22 }}>
-              <CustomerSummaryCard
-                name={customer?.full_name ?? null}
-                email={row.customer_email}
-                rating={
-                  customer?.client_rating_avg === null ||
-                  customer?.client_rating_avg === undefined
-                    ? null
-                    : Number(customer.client_rating_avg)
-                }
-                ratingCount={customer?.client_rating_count ?? 0}
-              />
-            </div>
 
             {/* Audit trail */}
             {(ci?.arrived_at || ci?.left_at) && (

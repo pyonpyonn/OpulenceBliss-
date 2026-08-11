@@ -3,6 +3,8 @@
 // The provider's live job. Save at: app/worker/ActiveJob.tsx
 
 import { useEffect, useState } from "react";
+import BookingProgress from "@/components/BookingProgress";
+import ParticipantSummary from "@/components/ParticipantSummary";
 import JobActions from "./JobActions";
 
 export type ActiveJobData = {
@@ -12,25 +14,17 @@ export type ActiveJobData = {
   address: string | null;
   notes: string | null;
   client: string | null;
+  clientEmail?: string | null;
   clientRating?: number | null;
   clientRatingCount?: number | null;
   service: string;
   durationMinutes: number | null;
   earns: number | null;
+  paymentLabel?: string | null;
   arrivedAt: string | null;
   leftAt: string | null;
   geofencePass: boolean | null;
 };
-
-const STAGES = ["Booked", "Confirmed", "Arrived", "Done"];
-
-function stageIndex(s: string) {
-  if (s === "offered") return 0;
-  if (s === "scheduled") return 1;
-  if (s === "in_progress") return 2;
-  if (s === "completed") return 3;
-  return 0;
-}
 
 function whenLabel(iso: string) {
   const d = new Date(iso);
@@ -47,7 +41,7 @@ function whenLabel(iso: string) {
             day: "numeric",
             month: "long",
           });
-  return `${day}, ${d.toLocaleTimeString("en-GB", {
+  return `${day} at ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -88,7 +82,6 @@ export default function ActiveJob({
     }
   }
 
-  const idx = stageIndex(job.status);
   const maps = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         job.address,
@@ -102,7 +95,11 @@ export default function ActiveJob({
       <div className="head">
         <div>
           <p className="eyebrow">
-            {live ? "In progress now" : idx === 3 ? "Finished" : "Next job"}
+            {live
+              ? "In progress now"
+              : job.status === "completed"
+                ? "Finished"
+                : "Next job"}
           </p>
           <h2>{job.service}</h2>
           <p className="when">{whenLabel(job.scheduled_at)}</p>
@@ -130,14 +127,7 @@ export default function ActiveJob({
         </div>
       )}
 
-      <ol className="track">
-        {STAGES.map((label, i) => (
-          <li key={label} className={i < idx ? "done" : i === idx ? "at" : ""}>
-            <span className="pip">{i < idx ? "✓" : i + 1}</span>
-            <span className="lbl">{label}</span>
-          </li>
-        ))}
-      </ol>
+      <BookingProgress status={job.status} />
 
       <dl className="facts">
         <div>
@@ -170,10 +160,25 @@ export default function ActiveJob({
           <dd>{job.durationMinutes ? `${job.durationMinutes} min` : "—"}</dd>
         </div>
         <div>
-          <dt>You earn</dt>
-          <dd>{job.earns !== null ? `£${job.earns.toFixed(2)}` : "—"}</dd>
+          <dt>Payment</dt>
+          <dd>
+            {job.paymentLabel ??
+              (job.earns !== null ? `£${job.earns.toFixed(2)} secured` : "—")}
+          </dd>
         </div>
       </dl>
+
+      {!compact && (
+        <ParticipantSummary
+          roleLabel="Your customer"
+          name={job.client}
+          email={job.clientEmail}
+          rating={job.clientRating ?? null}
+          ratingCount={job.clientRatingCount ?? 0}
+          ratingSource="provider"
+          description="This score comes from providers after completed visits. Use Messages for arrival details or anything you need before the job."
+        />
+      )}
 
       {job.notes && !compact && (
         <div className="notes">
@@ -244,9 +249,16 @@ export default function ActiveJob({
           margin: 0 0 4px;
         }
         .when {
-          color: #7a828c;
-          font-size: 14.5px;
-          margin: 0;
+          display: inline-flex;
+          color: #16202a;
+          background: #f7f8f9;
+          border: 1px solid #e6e8eb;
+          border-radius: 12px;
+          padding: 8px 11px;
+          font-size: 17px;
+          font-weight: 900;
+          line-height: 1.35;
+          margin: 5px 0 0;
         }
         .timer,
         .pay {
@@ -313,76 +325,31 @@ export default function ActiveJob({
           font-size: 12px;
           color: #7a828c;
         }
-        .track {
-          list-style: none;
-          display: flex;
-          gap: 6px;
-          padding: 0;
-          margin: 24px 0 22px;
-        }
-        .track li {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 7px;
-          position: relative;
-          color: #a9afb7;
-          font-size: 12.5px;
-        }
-        .track li::before {
-          content: "";
-          position: absolute;
-          top: 13px;
-          left: 0;
-          right: 50%;
-          height: 2px;
-          background: #f1f2f4;
-        }
-        .track li:first-child::before {
-          display: none;
-        }
-        .track li.done::before,
-        .track li.at::before {
-          background: #c86fc9;
-        }
-        .pip {
-          width: 27px;
-          height: 27px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          background: #f7f8f9;
-          border: 1.5px solid #e2dccf;
-          font-size: 12px;
-          font-weight: 600;
-          position: relative;
-          z-index: 1;
-        }
-        .track li.done .pip {
-          background: #f4ecfe;
-          border-color: #c86fc9;
-          color: #16202a;
-        }
-        .track li.at .pip {
-          background: #16202a;
-          border-color: #16202a;
-          color: #ffffff;
-        }
-        .track li.done,
-        .track li.at {
-          color: #16202a;
-        }
-        .track li.at {
-          font-weight: 600;
-        }
         .facts {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 16px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
           margin: 0;
-          padding-top: 20px;
-          border-top: 1px solid #f1f2f4;
+          padding: 0;
+          border: 0;
+        }
+        .facts > div {
+          min-width: 0;
+          padding: 11px 12px;
+          border-radius: 13px;
+          background: #f7f8f9;
+        }
+        .facts > div:nth-child(1) {
+          background: #e4f6ec;
+        }
+        .facts > div:nth-child(2) {
+          background: #e3f0fb;
+        }
+        .facts > div:nth-child(3) {
+          background: #fff3d6;
+        }
+        .facts > div:nth-child(4) {
+          background: #ffe6ea;
         }
         .facts dt {
           color: #a9afb7;
@@ -394,8 +361,9 @@ export default function ActiveJob({
         .facts dd {
           margin: 0;
           color: #16202a;
-          font-size: 14.5px;
+          font-size: 14px;
           font-weight: 900;
+          overflow-wrap: anywhere;
         }
         .facts a {
           color: #6d28d9;
@@ -446,38 +414,8 @@ export default function ActiveJob({
         .more a:hover {
           background: #6d28d9;
         }
-        .compact .track {
-          margin: 18px 0 16px;
-        }
-        .compact .facts {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
-          padding-top: 0;
-          border-top: 0;
-        }
-        .compact .facts > div {
-          min-width: 0;
-          padding: 11px 12px;
-          border-radius: 13px;
-          background: #f7f8f9;
-        }
-        .compact .facts > div:nth-child(1) {
-          background: #e4f6ec;
-        }
-        .compact .facts > div:nth-child(2) {
-          background: #e3f0fb;
-        }
-        .compact .facts > div:nth-child(3) {
-          background: #fff3d6;
-        }
-        .compact .facts > div:nth-child(4) {
-          background: #ffe6ea;
-        }
-        .compact .facts dd {
-          overflow-wrap: anywhere;
-        }
         @media (max-width: 620px) {
-          .compact .facts {
+          .facts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .more a {

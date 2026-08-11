@@ -204,7 +204,7 @@ export default async function AccountPage({
             ? "Payment issue"
             : payment?.status === "succeeded"
               ? `£${amount.toFixed(2)} paid`
-              : payment?.status === "authorized"
+              : payment?.status === "authorised"
                 ? `£${amount.toFixed(2)} held`
                 : amount > 0
                   ? `£${amount.toFixed(2)}`

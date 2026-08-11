@@ -1,58 +1,67 @@
-export default function CustomerSummaryCard({
+export default function ParticipantSummary({
+  roleLabel,
   name,
   email,
   rating,
   ratingCount,
+  ratingSource,
+  bio,
+  description,
 }: {
+  roleLabel: "Your professional" | "Your customer";
   name: string | null;
-  email: string | null;
+  email?: string | null;
   rating: number | null;
   ratingCount: number;
+  ratingSource: "customer" | "provider";
+  bio?: string | null;
+  description: string;
 }) {
   return (
-    <section style={card}>
-      <p style={eyebrow}>Your customer</p>
+    <div style={card}>
+      <p style={eyebrow}>{roleLabel}</p>
       <div style={head}>
         <div style={{ minWidth: 0 }}>
-          <h2 style={title}>{name?.trim() || "Customer"}</h2>
-          {email && <p style={emailStyle}>{email}</p>}
+          <strong style={nameStyle}>
+            {name?.trim() || "Not assigned yet"}
+          </strong>
+          {email && <span style={emailStyle}>{email}</span>}
         </div>
         <div style={ratingBox}>
           {rating !== null && ratingCount > 0 ? (
             <>
               <strong style={ratingValue}>{rating.toFixed(1)} ★</strong>
               <span style={ratingMeta}>
-                {ratingCount} provider{" "}
+                {ratingCount} {ratingSource}{" "}
                 {ratingCount === 1 ? "rating" : "ratings"}
               </span>
             </>
           ) : (
             <>
               <strong style={{ ...ratingValue, fontSize: 14 }}>
-                New customer
+                New profile
               </strong>
-              <span style={ratingMeta}>No provider ratings yet</span>
+              <span style={ratingMeta}>No ratings yet</span>
             </>
           )}
         </div>
       </div>
-      <p style={help}>
-        This score comes from providers after completed visits. Use Messages for
-        arrival details or anything you need before the job.
-      </p>
-    </section>
+      {bio && <p style={bioStyle}>{bio}</p>}
+      <p style={help}>{description}</p>
+    </div>
   );
 }
 
 const card: React.CSSProperties = {
   background: "#fff",
-  border: "2px solid #EDEFF1",
-  borderRadius: 20,
-  padding: "20px 22px",
+  border: "1.5px solid #E6E8EB",
+  borderRadius: 16,
+  padding: "16px 17px",
+  marginTop: 14,
 };
 const eyebrow: React.CSSProperties = {
   color: "#6D28D9",
-  fontSize: 11.5,
+  fontSize: 11,
   fontWeight: 900,
   letterSpacing: "0.1em",
   textTransform: "uppercase",
@@ -62,21 +71,22 @@ const head: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "flex-start",
-  gap: 16,
+  gap: 14,
   flexWrap: "wrap",
 };
-const title: React.CSSProperties = {
+const nameStyle: React.CSSProperties = {
+  display: "block",
   color: "#16202A",
-  fontSize: 20,
+  fontSize: 19,
   fontWeight: 900,
-  margin: 0,
 };
 const emailStyle: React.CSSProperties = {
+  display: "block",
   color: "#7A828C",
-  fontSize: 13.5,
+  fontSize: 13,
   fontWeight: 600,
   overflowWrap: "anywhere",
-  margin: "3px 0 0",
+  marginTop: 2,
 };
 const ratingBox: React.CSSProperties = {
   display: "grid",
@@ -84,7 +94,7 @@ const ratingBox: React.CSSProperties = {
   background: "#FFF8E8",
   border: "1px solid #F4E3B6",
   borderRadius: 12,
-  padding: "9px 12px",
+  padding: "8px 11px",
 };
 const ratingValue: React.CSSProperties = {
   color: "#8A5A00",
@@ -93,13 +103,20 @@ const ratingValue: React.CSSProperties = {
 };
 const ratingMeta: React.CSSProperties = {
   color: "#8A6B2B",
-  fontSize: 11.5,
+  fontSize: 11,
   fontWeight: 700,
 };
 const help: React.CSSProperties = {
   color: "#7A828C",
-  fontSize: 13.5,
+  fontSize: 13,
   fontWeight: 600,
   lineHeight: 1.5,
-  margin: "13px 0 0",
+  margin: "11px 0 0",
+};
+const bioStyle: React.CSSProperties = {
+  color: "#3E4752",
+  fontSize: 14,
+  fontWeight: 700,
+  lineHeight: 1.5,
+  margin: "12px 0 0",
 };

@@ -4,6 +4,8 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import BookingProgress from "@/components/BookingProgress";
+import ParticipantSummary from "@/components/ParticipantSummary";
 import type { VisitStatus } from "@/lib/visitStatus";
 
 export type Visit = {
@@ -23,8 +25,6 @@ export type Visit = {
   householdNotes?: string | null;
   tipTotal?: number;
 };
-
-const STAGES = ["Booked", "Confirmed", "Arrived", "Done"];
 
 function stageIndex(status: string) {
   switch (status) {
@@ -151,14 +151,7 @@ export default function CurrentVisit({
         </div>
       )}
 
-      <ol className="track">
-        {STAGES.map((s, i) => (
-          <li key={s} className={i < idx ? "done" : i === idx ? "at" : ""}>
-            <span className="pip">{i < idx ? "✓" : i + 1}</span>
-            <span className="lbl">{s}</span>
-          </li>
-        ))}
-      </ol>
+      <BookingProgress status={visit.status} />
 
       <div className="facts">
         <div className="fact mint">
@@ -191,6 +184,20 @@ export default function CurrentVisit({
           </strong>
         </div>
       </div>
+
+      {detailStatus && (
+        <ParticipantSummary
+          roleLabel="Your professional"
+          name={visit.providerName}
+          rating={
+            visit.providerRating === null ? null : Number(visit.providerRating)
+          }
+          ratingCount={visit.providerRatingCount ?? 0}
+          ratingSource="customer"
+          bio={visit.providerBio}
+          description="This score comes from customers after completed visits. Use Messages for arrival details or anything you need before the visit."
+        />
+      )}
 
       {detailStatus && (
         <>
@@ -235,18 +242,11 @@ export default function CurrentVisit({
       )}
 
       {detailStatus &&
-        (visit.providerBio ||
-          visit.householdNotes ||
+        (visit.householdNotes ||
           visit.arrivedAt ||
           visit.finishedAt ||
           (visit.tipTotal ?? 0) > 0) && (
           <div className="visit-notes">
-            {visit.providerBio && (
-              <div>
-                <span>About your professional</span>
-                <p>{visit.providerBio}</p>
-              </div>
-            )}
             {visit.householdNotes && (
               <div>
                 <span>Your instructions</span>
@@ -311,10 +311,16 @@ export default function CurrentVisit({
           margin: 0 0 4px;
         }
         .when {
-          color: #6b7280;
-          font-size: 15px;
-          font-weight: 600;
-          margin: 0;
+          display: inline-flex;
+          color: #16202a;
+          background: #f7f8f9;
+          border: 1px solid #e6e8eb;
+          border-radius: 12px;
+          padding: 8px 11px;
+          font-size: 17px;
+          font-weight: 900;
+          line-height: 1.35;
+          margin: 5px 0 0;
         }
         .timer {
           display: flex;
@@ -365,65 +371,6 @@ export default function CurrentVisit({
           background: linear-gradient(90deg, #f5c542, #c86fc9 55%, #7b2ff7);
           border-radius: 999px;
           transition: width 1s linear;
-        }
-        .track {
-          list-style: none;
-          display: flex;
-          gap: 4px;
-          padding: 0;
-          margin: 18px 0 16px;
-        }
-        .track li {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          position: relative;
-          color: #9ca3af;
-          font-size: 12.5px;
-          font-weight: 700;
-        }
-        .track li::before {
-          content: "";
-          position: absolute;
-          top: 13px;
-          left: 0;
-          right: 50%;
-          height: 4px;
-          background: #f1f1f2;
-        }
-        .track li:first-child::before {
-          display: none;
-        }
-        .track li.done::before,
-        .track li.at::before {
-          background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
-        }
-        .pip {
-          width: 27px;
-          height: 27px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
-          background: #f6f6f7;
-          font-size: 13px;
-          font-weight: 900;
-          position: relative;
-          z-index: 1;
-          color: #9ca3af;
-        }
-        .track li.done .pip {
-          background: #e9ddfd;
-          color: #6d28d9;
-        }
-        .track li.at .pip {
-          background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
-          color: #fff;
-        }
-        .track li.done,
-        .track li.at {
-          color: #1f2933;
         }
         .facts {
           display: grid;
@@ -568,9 +515,6 @@ export default function CurrentVisit({
         @media (max-width: 520px) {
           h2 {
             font-size: 23px;
-          }
-          .track .lbl {
-            font-size: 11px;
           }
           .facts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
