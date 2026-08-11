@@ -90,7 +90,13 @@ export default async function CurrentJobPage() {
         scheduled_at: row.scheduled_at,
         address: row.address,
         notes: row.household_notes,
-        client: row.customer_email,
+        client: customer?.full_name ?? row.customer_email,
+        clientRating:
+          customer?.client_rating_avg === null ||
+          customer?.client_rating_avg === undefined
+            ? null
+            : Number(customer.client_rating_avg),
+        clientRatingCount: customer?.client_rating_count ?? 0,
         service:
           (one(row.packages as never) as { name: string } | null)?.name ??
           "Service",
@@ -289,7 +295,7 @@ export default async function CurrentJobPage() {
           position: sticky;
           top: 24px;
         }
-        @media (max-width: 920px) {
+        @media (max-width: 1100px) {
           .current-job-workspace {
             grid-template-columns: minmax(0, 1fr);
           }

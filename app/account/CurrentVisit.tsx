@@ -13,6 +13,8 @@ export type Visit = {
   durationMinutes: number | null;
   providerName: string | null;
   providerRating: number | null;
+  providerRatingCount?: number | null;
+  paymentLabel?: string | null;
   arrivedAt: string | null;
 };
 
@@ -43,12 +45,12 @@ function whenLabel(iso: string) {
     d.toDateString() === today.toDateString()
       ? "Today"
       : d.toDateString() === tmr.toDateString()
-      ? "Tomorrow"
-      : d.toLocaleDateString("en-GB", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        });
+        ? "Tomorrow"
+        : d.toLocaleDateString("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
   return `${day} at ${d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -88,7 +90,7 @@ export default function CurrentVisit({
   if (live && visit.arrivedAt) {
     const secs = Math.max(
       0,
-      Math.floor((now - new Date(visit.arrivedAt).getTime()) / 1000)
+      Math.floor((now - new Date(visit.arrivedAt).getTime()) / 1000),
     );
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
@@ -102,22 +104,10 @@ export default function CurrentVisit({
 
   const soon = idx <= 1 ? countdown(visit.scheduled_at) : null;
 
-  const tag =
-    idx === 0
-      ? { text: "Finding your pro", bg: "#FFF1D6", fg: "#8A5A00" }
-      : idx === 1
-      ? { text: "Confirmed", bg: "#DFF5E8", fg: "#137B4E" }
-      : idx === 2
-      ? { text: "Happening now", bg: "#DDEDFB", fg: "#1B5E9E" }
-      : { text: "Completed", bg: "#EFEFF1", fg: "#4B5563" };
-
   return (
     <section className={live ? "visit live" : "visit"}>
       <div className="top">
         <div>
-          <span className="tag" style={{ background: tag.bg, color: tag.fg }}>
-            {tag.text}
-          </span>
           <h2>{visit.service}</h2>
           <p className="when">
             {whenLabel(visit.scheduled_at)}
@@ -155,7 +145,11 @@ export default function CurrentVisit({
           <strong>
             {visit.providerName ?? "Matching…"}
             {visit.providerRating
-              ? ` ${Number(visit.providerRating).toFixed(1)}★`
+              ? ` · ${Number(visit.providerRating).toFixed(1)}★${
+                  visit.providerRatingCount
+                    ? ` (${visit.providerRatingCount})`
+                    : ""
+                }`
               : ""}
           </strong>
         </div>
@@ -171,13 +165,15 @@ export default function CurrentVisit({
         </div>
         <div className="fact blush">
           <span>Payment</span>
-          <strong>{idx === 3 ? "Charged" : "Held"}</strong>
+          <strong>
+            {visit.paymentLabel ?? (idx === 3 ? "Charged" : "Held")}
+          </strong>
         </div>
       </div>
 
       {!hideLink && (
         <a className="more" href={`/account/visit/${visit.id}`}>
-          See full details →
+          See full details <span aria-hidden="true">→</span>
         </a>
       )}
 
@@ -186,8 +182,8 @@ export default function CurrentVisit({
           background: #fff;
           border: 2px solid #f1f1f2;
           border-radius: 24px;
-          padding: 26px 26px 22px;
-          margin-bottom: 22px;
+          padding: 20px;
+          margin-bottom: 16px;
           font-family: "Nunito", system-ui, sans-serif;
         }
         .visit.live {
@@ -201,16 +197,8 @@ export default function CurrentVisit({
           gap: 18px;
           flex-wrap: wrap;
         }
-        .tag {
-          display: inline-block;
-          font-size: 12px;
-          font-weight: 800;
-          padding: 5px 12px;
-          border-radius: 999px;
-          margin-bottom: 10px;
-        }
         h2 {
-          font-size: 27px;
+          font-size: 23px;
           font-weight: 900;
           letter-spacing: -0.02em;
           color: #1f2933;
@@ -268,7 +256,7 @@ export default function CurrentVisit({
         .bar span {
           display: block;
           height: 100%;
-          background: linear-gradient(90deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          background: linear-gradient(90deg, #f5c542, #c86fc9 55%, #7b2ff7);
           border-radius: 999px;
           transition: width 1s linear;
         }
@@ -277,7 +265,7 @@ export default function CurrentVisit({
           display: flex;
           gap: 4px;
           padding: 0;
-          margin: 24px 0 22px;
+          margin: 18px 0 16px;
         }
         .track li {
           flex: 1;
@@ -293,7 +281,7 @@ export default function CurrentVisit({
         .track li::before {
           content: "";
           position: absolute;
-          top: 15px;
+          top: 13px;
           left: 0;
           right: 50%;
           height: 4px;
@@ -304,11 +292,11 @@ export default function CurrentVisit({
         }
         .track li.done::before,
         .track li.at::before {
-          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
         }
         .pip {
-          width: 32px;
-          height: 32px;
+          width: 27px;
+          height: 27px;
           border-radius: 50%;
           display: grid;
           place-items: center;
@@ -320,11 +308,11 @@ export default function CurrentVisit({
           color: #9ca3af;
         }
         .track li.done .pip {
-          background: #E9DDFD;
-          color: #6D28D9;
+          background: #e9ddfd;
+          color: #6d28d9;
         }
         .track li.at .pip {
-          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
+          background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
           color: #fff;
         }
         .track li.done,
@@ -333,12 +321,12 @@ export default function CurrentVisit({
         }
         .facts {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 10px;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
         }
         .fact {
-          border-radius: 16px;
-          padding: 14px 16px;
+          border-radius: 13px;
+          padding: 11px 12px;
         }
         .fact span {
           display: block;
@@ -350,7 +338,7 @@ export default function CurrentVisit({
           margin-bottom: 3px;
         }
         .fact strong {
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 800;
           color: #1f2933;
           overflow-wrap: anywhere;
@@ -372,15 +360,21 @@ export default function CurrentVisit({
           color: #b0384f;
         }
         .more {
-          display: inline-block;
-          margin-top: 18px;
-          color: #6D28D9;
-          font-weight: 800;
-          font-size: 14.5px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 16px;
+          padding: 11px 18px;
+          border-radius: 999px;
+          background: #16202a;
+          color: #fff;
+          font-weight: 900;
+          font-size: 14px;
           text-decoration: none;
         }
         .more:hover {
-          text-decoration: underline;
+          background: #6d28d9;
         }
         @media (max-width: 520px) {
           h2 {
@@ -388,6 +382,14 @@ export default function CurrentVisit({
           }
           .track .lbl {
             font-size: 11px;
+          }
+          .facts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .more {
+            display: flex;
+            width: 100%;
+            box-sizing: border-box;
           }
         }
       `}</style>

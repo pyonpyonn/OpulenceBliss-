@@ -5,10 +5,8 @@
 import { createClient } from "@/lib/supabase/server";
 import CurrentVisit, { type Visit } from "./CurrentVisit";
 import MembershipCard, { type Membership } from "./MembershipCard";
-import { BookingTools, RateBooking, TipBooking } from "./BookingTools";
-import VisitStatusPanel from "@/components/VisitStatusPanel";
+import { RateBooking, TipBooking } from "./BookingTools";
 import VisitHistoryCard from "@/components/VisitHistoryCard";
-import { getVisitStatus } from "@/lib/visitStatus";
 
 type Row = {
   id: string;
@@ -21,8 +19,16 @@ type Row = {
     | { name: string; duration_minutes: number | null; price: number | null }[]
     | null;
   providers:
-    | { display_name: string | null; rating_avg: number | null }
-    | { display_name: string | null; rating_avg: number | null }[]
+    | {
+        display_name: string | null;
+        rating_avg: number | null;
+        rating_count: number | null;
+      }
+    | {
+        display_name: string | null;
+        rating_avg: number | null;
+        rating_count: number | null;
+      }[]
     | null;
   check_ins:
     | { arrived_at: string | null; left_at: string | null }
@@ -32,7 +38,7 @@ type Row = {
 
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
 const LABEL: Record<string, { text: string; bg: string; fg: string }> = {
@@ -64,7 +70,10 @@ function clock(iso: string | null | undefined) {
   });
 }
 
-function elapsed(start: string | null | undefined, end: string | null | undefined) {
+function elapsed(
+  start: string | null | undefined,
+  end: string | null | undefined,
+) {
   if (!start || !end) return null;
   const minutes = Math.max(
     0,
@@ -104,7 +113,7 @@ export default async function AccountPage({
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, rating_avg), check_ins(arrived_at, left_at)"
+      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count), check_ins(arrived_at, left_at)",
     )
     .order("scheduled_at", { ascending: false });
 
@@ -113,7 +122,7 @@ export default async function AccountPage({
   const { data: sub } = await supabase
     .from("subscriptions")
     .select(
-      "id, status, start_date, contract_length_months, cycles_billed, current_period_end, preferred_weekday, preferred_hour, postcode, paused_until, packages(name, price, visits_per_month)"
+      "id, status, start_date, contract_length_months, cycles_billed, current_period_end, preferred_weekday, preferred_hour, postcode, paused_until, packages(name, price, visits_per_month)",
     )
     .order("created_at", { ascending: false })
     .limit(1)
@@ -127,7 +136,7 @@ export default async function AccountPage({
     (reviewData ?? []).map((r) => [
       r.booking_id as string,
       { rating: r.rating as number, comment: r.comment as string | null },
-    ])
+    ]),
   );
 
   const { data: paymentData } = await supabase
@@ -148,17 +157,13 @@ export default async function AccountPage({
     .filter((r) => ["offered", "declined", "scheduled"].includes(r.status))
     .sort(
       (a, b) =>
-        new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+        new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
     );
   const history = rows.filter((r) =>
-    ["completed", "cancelled"].includes(r.status)
+    ["completed", "cancelled"].includes(r.status),
   );
   const featured = active ?? upcoming[0] ?? null;
   const rest = upcoming.filter((r) => r.id !== featured?.id);
-  const featuredStatus = featured
-    ? await getVisitStatus(supabase, featured.id)
-    : null;
-
   let membership: Membership | null = null;
   if (sub) {
     const mp = one(sub.packages as never) as {
@@ -188,6 +193,22 @@ export default async function AccountPage({
     const pkg = one(r.packages);
     const prv = one(r.providers);
     const ci = one(r.check_ins);
+    const payment = paymentMap.get(r.id);
+    const amount = payment?.amount ?? Number(pkg?.price ?? 0);
+    const paymentLabel =
+      payment?.status === "refunded"
+        ? `£${amount.toFixed(2)} refunded`
+        : payment?.status === "cancelled"
+          ? "Hold released"
+          : payment?.status === "capture_failed"
+            ? "Payment issue"
+            : payment?.status === "succeeded"
+              ? `£${amount.toFixed(2)} paid`
+              : payment?.status === "authorized"
+                ? `£${amount.toFixed(2)} held`
+                : amount > 0
+                  ? `£${amount.toFixed(2)}`
+                  : "Included";
     return {
       id: r.id,
       status: r.status,
@@ -197,12 +218,14 @@ export default async function AccountPage({
       durationMinutes: pkg?.duration_minutes ?? null,
       providerName: prv?.display_name ?? null,
       providerRating: prv?.rating_avg ?? null,
+      providerRatingCount: prv?.rating_count ?? 0,
+      paymentLabel,
       arrivedAt: ci?.arrived_at ?? null,
     };
   };
 
   const unrated = history.filter(
-    (b) => b.status === "completed" && !reviews.has(b.id)
+    (b) => b.status === "completed" && !reviews.has(b.id),
   );
 
   return (
@@ -266,12 +289,8 @@ export default async function AccountPage({
         {/* ---- current visit ---- */}
         {featured ? (
           <>
+            <h2 style={h2}>{active ? "Current booking" : "Next booking"}</h2>
             <CurrentVisit visit={toVisit(featured)} />
-            {featuredStatus && (
-              <div style={{ marginBottom: 20 }}>
-                <VisitStatusPanel status={featuredStatus} compact />
-              </div>
-            )}
           </>
         ) : (
           <div style={emptyBig}>
@@ -288,44 +307,14 @@ export default async function AccountPage({
           </div>
         )}
 
-        {/* ---- change featured ---- */}
-        {featured &&
-          ["offered", "declined", "scheduled"].includes(featured.status) && (
-            <div style={card}>
-              <strong style={cardTitle}>Need to change it?</strong>
-              <p style={{ ...meta, marginBottom: 0 }}>
-                Free to cancel — your card hasn&apos;t been charged.
-              </p>
-              <BookingTools id={featured.id} postcode={featured.address} />
-            </div>
-          )}
-
         {/* ---- also coming up ---- */}
         {rest.length > 0 && (
           <>
             <h2 style={h2}>Also coming up</h2>
             <div style={{ display: "grid", gap: 12, marginBottom: 30 }}>
-              {rest.map((b) => {
-                const pkg = one(b.packages);
-                const st = LABEL[b.status] ?? LABEL.scheduled;
-                return (
-                  <article key={b.id} style={card}>
-                    <div style={rowHead}>
-                      <strong style={cardTitle}>{pkg?.name ?? "Service"}</strong>
-                      <span
-                        style={{ ...badge, background: st.bg, color: st.fg }}
-                      >
-                        {st.text}
-                      </span>
-                    </div>
-                    <p style={meta}>
-                      {when(b.scheduled_at)}
-                      {b.address ? ` · ${b.address}` : ""}
-                    </p>
-                    <BookingTools id={b.id} postcode={b.address} />
-                  </article>
-                );
-              })}
+              {rest.map((booking) => (
+                <CurrentVisit key={booking.id} visit={toVisit(booking)} />
+              ))}
             </div>
           </>
         )}
@@ -364,7 +353,10 @@ export default async function AccountPage({
                       : null
                   }
                   facts={[
-                    { label: "Provider", value: prv?.display_name ?? "Not assigned" },
+                    {
+                      label: "Provider",
+                      value: prv?.display_name ?? "Not assigned",
+                    },
                     { label: "Address", value: b.address ?? "—" },
                     {
                       label: "Duration",
@@ -527,31 +519,6 @@ const card: React.CSSProperties = {
   border: "2px solid #F1F1F2",
   borderRadius: 20,
   padding: "20px 22px",
-};
-const rowHead: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 12,
-  marginBottom: 6,
-};
-const cardTitle: React.CSSProperties = {
-  fontSize: 18,
-  fontWeight: 900,
-  color: "#1F2933",
-};
-const meta: React.CSSProperties = {
-  margin: "0 0 4px",
-  color: "#6b7280",
-  fontSize: 14.5,
-  fontWeight: 600,
-};
-const badge: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 800,
-  padding: "5px 12px",
-  borderRadius: 999,
-  whiteSpace: "nowrap",
 };
 const btn: React.CSSProperties = {
   display: "inline-block",

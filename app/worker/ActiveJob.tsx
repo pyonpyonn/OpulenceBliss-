@@ -12,6 +12,8 @@ export type ActiveJobData = {
   address: string | null;
   notes: string | null;
   client: string | null;
+  clientRating?: number | null;
+  clientRatingCount?: number | null;
   service: string;
   durationMinutes: number | null;
   earns: number | null;
@@ -20,7 +22,7 @@ export type ActiveJobData = {
   geofencePass: boolean | null;
 };
 
-const STAGES = ["Offered", "Accepted", "On site", "Finished"];
+const STAGES = ["Booked", "Confirmed", "Arrived", "Done"];
 
 function stageIndex(s: string) {
   if (s === "offered") return 0;
@@ -94,7 +96,9 @@ export default function ActiveJob({
     : null;
 
   return (
-    <section className={live ? "job live" : "job"}>
+    <section
+      className={`job${live ? " live" : ""}${compact ? " compact" : ""}`}
+    >
       <div className="head">
         <div>
           <p className="eyebrow">
@@ -109,7 +113,7 @@ export default function ActiveJob({
             <strong>{elapsed}</strong>
             <small>on site</small>
           </div>
-        ) : job.earns !== null ? (
+        ) : job.earns !== null && !compact ? (
           <div className="pay">
             <strong>£{job.earns.toFixed(2)}</strong>
             <small>you earn</small>
@@ -137,8 +141,15 @@ export default function ActiveJob({
 
       <dl className="facts">
         <div>
-          <dt>Client</dt>
-          <dd>{job.client ?? "—"}</dd>
+          <dt>Customer</dt>
+          <dd>
+            {job.client ?? "—"}
+            {job.clientRating
+              ? ` · ${Number(job.clientRating).toFixed(1)}★${
+                  job.clientRatingCount ? ` (${job.clientRatingCount})` : ""
+                }`
+              : ""}
+          </dd>
         </div>
         <div>
           <dt>Address</dt>
@@ -164,28 +175,32 @@ export default function ActiveJob({
         </div>
       </dl>
 
-      {job.notes && (
+      {job.notes && !compact && (
         <div className="notes">
           <p className="notes-h">Client&apos;s notes</p>
           <p>{job.notes}</p>
         </div>
       )}
 
-      {job.geofencePass === false && (
+      {job.geofencePass === false && !compact && (
         <p className="flag">
           Location was flagged at check-in — you weren&apos;t near the address.
         </p>
       )}
 
-      <JobActions
-        id={job.id}
-        status={job.status}
-        scheduledAt={job.scheduled_at}
-      />
+      {!compact && (
+        <JobActions
+          id={job.id}
+          status={job.status}
+          scheduledAt={job.scheduled_at}
+        />
+      )}
 
       {compact && (
         <p className="more">
-          <a href={`/worker/job/${job.id}`}>Open full job page →</a>
+          <a href={live ? "/worker/current" : `/worker/job/${job.id}`}>
+            See full details <span aria-hidden="true">→</span>
+          </a>
         </p>
       )}
 
@@ -200,6 +215,11 @@ export default function ActiveJob({
         .job.live {
           border-color: #c86fc9;
           box-shadow: 0 14px 36px rgba(22, 32, 42, 0.12);
+        }
+        .job.compact {
+          border: 2px solid #f1f1f2;
+          border-radius: 24px;
+          padding: 20px;
         }
         .head {
           display: flex;
@@ -411,12 +431,60 @@ export default function ActiveJob({
           margin: 16px 0 0;
         }
         .more a {
-          color: #6d28d9;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: #16202a;
+          color: #fff;
+          border-radius: 999px;
+          padding: 11px 18px;
           font-size: 14px;
+          font-weight: 900;
           text-decoration: none;
         }
         .more a:hover {
-          color: #16202a;
+          background: #6d28d9;
+        }
+        .compact .track {
+          margin: 18px 0 16px;
+        }
+        .compact .facts {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
+          padding-top: 0;
+          border-top: 0;
+        }
+        .compact .facts > div {
+          min-width: 0;
+          padding: 11px 12px;
+          border-radius: 13px;
+          background: #f7f8f9;
+        }
+        .compact .facts > div:nth-child(1) {
+          background: #e4f6ec;
+        }
+        .compact .facts > div:nth-child(2) {
+          background: #e3f0fb;
+        }
+        .compact .facts > div:nth-child(3) {
+          background: #fff3d6;
+        }
+        .compact .facts > div:nth-child(4) {
+          background: #ffe6ea;
+        }
+        .compact .facts dd {
+          overflow-wrap: anywhere;
+        }
+        @media (max-width: 620px) {
+          .compact .facts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .more a {
+            display: flex;
+            width: 100%;
+            box-sizing: border-box;
+          }
         }
       `}</style>
     </section>

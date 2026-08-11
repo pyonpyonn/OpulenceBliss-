@@ -65,6 +65,7 @@ export default function MessageThread({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -90,13 +91,14 @@ export default function MessageThread({
 
     if (
       user &&
-      (data ?? []).some((message) =>
-        message.sender_id !== user.id && !message.read_at
+      !minimized &&
+      (data ?? []).some(
+        (message) => message.sender_id !== user.id && !message.read_at,
       )
     ) {
       await supabase.rpc("mark_messages_read", { p_booking_id: bookingId });
     }
-  }, [bookingId]);
+  }, [bookingId, minimized]);
 
   useEffect(() => {
     void load();
@@ -133,115 +135,141 @@ export default function MessageThread({
   }
 
   const other = viewerRole === "customer" ? "your provider" : "your customer";
+  const unread = messages.filter(
+    (message) => message.sender_id !== me && !message.read_at,
+  ).length;
 
   return (
     <section style={card}>
-      <div style={head}>
-        <strong style={title}>Messages</strong>
-        <span style={sub}>Stays on the platform — no phone numbers shared</span>
+      <div style={{ ...head, marginBottom: minimized ? 0 : 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <strong style={title}>Messages</strong>
+          <span style={sub}>
+            {minimized
+              ? `${messages.length} message${messages.length === 1 ? "" : "s"}`
+              : "Stays on the platform — no phone numbers shared"}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMinimized((value) => !value)}
+          aria-expanded={!minimized}
+          style={toggle}
+        >
+          {minimized
+            ? `Open chat${unread > 0 ? ` (${unread})` : ""}`
+            : "Minimise"}
+        </button>
       </div>
 
-      <div style={log} aria-live="polite">
-        {!loaded ? (
-          <p style={muted}>Loading…</p>
-        ) : messages.length === 0 ? (
-          <p style={muted}>
-            Nothing yet. Anything {other} should know before the visit?
-          </p>
-        ) : (
-          messages.map((message) => {
-            const mine = message.sender_id === me;
-            const fromAdmin = message.sender_role === "admin";
-            return (
-              <div
-                key={message.id}
-                style={{
-                  display: "flex",
-                  justifyContent: mine ? "flex-end" : "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    ...bubble,
-                    background: fromAdmin
-                      ? "#FFF3D6"
-                      : mine
-                        ? "#16202A"
-                        : "#F2F3F5",
-                    color: fromAdmin
-                      ? "#8A5A00"
-                      : mine
-                        ? "#fff"
-                        : "#16202A",
-                    borderBottomRightRadius: mine ? 5 : 16,
-                    borderBottomLeftRadius: mine ? 16 : 5,
-                  }}
-                >
-                  {fromAdmin && <span style={badge}>Opulence Bliss</span>}
-                  <span style={{ display: "block" }}>{message.body}</span>
-                  <span
+      {!minimized && (
+        <>
+          <div style={log} aria-live="polite">
+            {!loaded ? (
+              <p style={muted}>Loading…</p>
+            ) : messages.length === 0 ? (
+              <p style={muted}>
+                Nothing yet. Anything {other} should know before the visit?
+              </p>
+            ) : (
+              messages.map((message) => {
+                const mine = message.sender_id === me;
+                const fromAdmin = message.sender_role === "admin";
+                return (
+                  <div
+                    key={message.id}
                     style={{
-                      ...stamp,
-                      color: mine ? "rgba(255,255,255,0.6)" : "#A9AFB7",
+                      display: "flex",
+                      justifyContent: mine ? "flex-end" : "flex-start",
                     }}
                   >
-                    {when(message.created_at)}
-                    {mine && message.read_at ? " · read" : ""}
-                  </span>
-                </div>
+                    <div
+                      style={{
+                        ...bubble,
+                        background: fromAdmin
+                          ? "#FFF3D6"
+                          : mine
+                            ? "#16202A"
+                            : "#F2F3F5",
+                        color: fromAdmin
+                          ? "#8A5A00"
+                          : mine
+                            ? "#fff"
+                            : "#16202A",
+                        borderBottomRightRadius: mine ? 5 : 16,
+                        borderBottomLeftRadius: mine ? 16 : 5,
+                      }}
+                    >
+                      {fromAdmin && <span style={badge}>Opulence Bliss</span>}
+                      <span style={{ display: "block" }}>{message.body}</span>
+                      <span
+                        style={{
+                          ...stamp,
+                          color: mine ? "rgba(255,255,255,0.6)" : "#A9AFB7",
+                        }}
+                      >
+                        {when(message.created_at)}
+                        {mine && message.read_at ? " · read" : ""}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={endRef} />
+          </div>
+
+          {closed ? (
+            <p style={{ ...muted, marginTop: 12 }}>
+              This booking is closed. Contact support if you still need help.
+            </p>
+          ) : (
+            <>
+              <div style={chips}>
+                {QUICK[viewerRole].map((reply) => (
+                  <button
+                    key={reply}
+                    type="button"
+                    style={chip}
+                    disabled={busy}
+                    onClick={() => void send(reply)}
+                  >
+                    {reply}
+                  </button>
+                ))}
               </div>
-            );
-          })
-        )}
-        <div ref={endRef} />
-      </div>
 
-      {closed ? (
-        <p style={{ ...muted, marginTop: 12 }}>
-          This booking is closed. Contact support if you still need help.
-        </p>
-      ) : (
-        <>
-          <div style={chips}>
-            {QUICK[viewerRole].map((reply) => (
-              <button
-                key={reply}
-                type="button"
-                style={chip}
-                disabled={busy}
-                onClick={() => void send(reply)}
-              >
-                {reply}
-              </button>
-            ))}
-          </div>
+              <div style={composer}>
+                <input
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void send(body);
+                  }}
+                  placeholder={`Message ${other}…`}
+                  aria-label="Your message"
+                  disabled={busy}
+                  maxLength={2000}
+                  style={input}
+                />
+                <button
+                  type="button"
+                  onClick={() => void send(body)}
+                  disabled={busy || !body.trim()}
+                  style={{
+                    ...sendBtn,
+                    opacity: busy || !body.trim() ? 0.45 : 1,
+                  }}
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          )}
 
-          <div style={composer}>
-            <input
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") void send(body);
-              }}
-              placeholder={`Message ${other}…`}
-              aria-label="Your message"
-              disabled={busy}
-              maxLength={2000}
-              style={input}
-            />
-            <button
-              type="button"
-              onClick={() => void send(body)}
-              disabled={busy || !body.trim()}
-              style={{ ...sendBtn, opacity: busy || !body.trim() ? 0.45 : 1 }}
-            >
-              Send
-            </button>
-          </div>
+          {error && <p style={errStyle}>{error}</p>}
         </>
       )}
-
-      {error && <p style={errStyle}>{error}</p>}
     </section>
   );
 }
@@ -253,7 +281,12 @@ const card: React.CSSProperties = {
   padding: "18px 20px",
   fontFamily: "'Nunito', system-ui, sans-serif",
 };
-const head: React.CSSProperties = { marginBottom: 12 };
+const head: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 12,
+};
 const title: React.CSSProperties = {
   fontSize: 17,
   fontWeight: 900,
@@ -261,9 +294,22 @@ const title: React.CSSProperties = {
   display: "block",
 };
 const sub: React.CSSProperties = {
+  display: "block",
   fontSize: 12.5,
   fontWeight: 600,
   color: "#A9AFB7",
+};
+const toggle: React.CSSProperties = {
+  flexShrink: 0,
+  background: "#F4ECFE",
+  border: "1px solid #E2D2FA",
+  borderRadius: 999,
+  color: PURPLE,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  fontSize: 12,
+  fontWeight: 900,
+  padding: "7px 11px",
 };
 const log: React.CSSProperties = {
   display: "grid",

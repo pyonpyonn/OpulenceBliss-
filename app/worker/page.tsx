@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SignedOut } from "@/app/account/page";
 import VisitHistoryCard from "@/components/VisitHistoryCard";
+import ActiveJob, { type ActiveJobData } from "./ActiveJob";
 import JobActions from "./JobActions";
 
 type Row = {
@@ -158,6 +159,55 @@ export default async function WorkerPage() {
     .filter((r) => ["completed", "cancelled", "declined"].includes(r.status))
     .reverse();
 
+  const assigned = [...(running ? [running] : []), ...upcoming];
+  const customerSummaryMap = new Map<
+    string,
+    {
+      full_name: string | null;
+      client_rating_avg: number | null;
+      client_rating_count: number | null;
+    }
+  >();
+  await Promise.all(
+    assigned.map(async (booking) => {
+      const { data } = await supabase.rpc("booking_customer_summary", {
+        p_booking_id: booking.id,
+      });
+      const summary = one(data as never) as {
+        full_name: string | null;
+        client_rating_avg: number | null;
+        client_rating_count: number | null;
+      } | null;
+      if (summary) customerSummaryMap.set(booking.id, summary);
+    }),
+  );
+
+  const toActiveJob = (booking: Row): ActiveJobData => {
+    const pkg = one(booking.packages);
+    const checkIn = one(booking.check_ins);
+    const customer = customerSummaryMap.get(booking.id);
+    return {
+      id: booking.id,
+      status: booking.status,
+      scheduled_at: booking.scheduled_at,
+      address: booking.address,
+      notes: booking.household_notes,
+      client: customer?.full_name ?? booking.customer_email ?? "Customer",
+      clientRating:
+        customer?.client_rating_avg === null ||
+        customer?.client_rating_avg === undefined
+          ? null
+          : Number(customer.client_rating_avg),
+      clientRatingCount: customer?.client_rating_count ?? 0,
+      service: pkg?.name ?? "Service",
+      durationMinutes: pkg?.duration_minutes ?? null,
+      earns: earnMap.get(booking.id) ?? null,
+      arrivedAt: checkIn?.arrived_at ?? null,
+      leftAt: checkIn?.left_at ?? null,
+      geofencePass: checkIn?.geofence_pass ?? null,
+    };
+  };
+
   // What clients said about finished work
   const pastIds = rows.filter((r) => r.status === "completed").map((r) => r.id);
   const clientReviewMap = new Map<
@@ -207,19 +257,10 @@ export default async function WorkerPage() {
 
         {/* ---- In progress: short view only ---- */}
         {running && active && (
-          <a href={`/worker/current`} style={liveStrip}>
-            <span style={liveDot} />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <strong style={liveTitle}>
-                {one(running.packages)?.name ?? "Service"} — in progress
-              </strong>
-              <span style={liveMeta}>
-                {running.customer_email ?? "Client"}
-                {running.address ? ` · ${running.address}` : ""}
-              </span>
-            </span>
-            <span style={liveGo}>Open →</span>
-          </a>
+          <div style={{ marginBottom: 28 }}>
+            <h2 style={sectionTitle}>Current job</h2>
+            <ActiveJob job={toActiveJob(running)} compact />
+          </div>
         )}
 
         {/* ---- 2. New offers ---- */}
@@ -292,51 +333,9 @@ export default async function WorkerPage() {
           </p>
         ) : (
           <div style={{ display: "grid", gap: 14, marginBottom: 34 }}>
-            {upcoming.map((r) => {
-              const pkg = one(r.packages);
-              return (
-                <article key={r.id} style={card}>
-                  <div style={rowHead}>
-                    <h3 style={cardTitle}>{pkg?.name ?? "Service"}</h3>
-                    <span
-                      style={{
-                        ...badge,
-                        background: "#F4ECFE",
-                        color: "#16202A",
-                      }}
-                    >
-                      Confirmed
-                    </span>
-                  </div>
-                  <Facts
-                    client={r.customer_email}
-                    address={r.address}
-                    time={when(r.scheduled_at)}
-                    earns={earnMap.get(r.id)}
-                    notes={r.household_notes}
-                  />
-                  {active && (
-                    <JobActions
-                      id={r.id}
-                      status={r.status}
-                      scheduledAt={r.scheduled_at}
-                    />
-                  )}
-                  <p style={{ margin: "14px 0 0" }}>
-                    <a
-                      href={`/worker/job/${r.id}`}
-                      style={{
-                        color: "#6D28D9",
-                        fontSize: 13.5,
-                        fontWeight: 800,
-                      }}
-                    >
-                      Open full job &amp; messages →
-                    </a>
-                  </p>
-                </article>
-              );
-            })}
+            {upcoming.map((booking) => (
+              <ActiveJob key={booking.id} job={toActiveJob(booking)} compact />
+            ))}
           </div>
         )}
 
@@ -539,45 +538,6 @@ const card: React.CSSProperties = {
   border: "1px solid #EDEFF1",
   borderRadius: 16,
   padding: "22px 24px",
-};
-const liveStrip: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  background: "#F7F3FF",
-  border: "2px solid #E3D6FB",
-  borderRadius: 16,
-  padding: "14px 16px",
-  marginBottom: 30,
-  textDecoration: "none",
-  color: "#16202A",
-};
-const liveDot: React.CSSProperties = {
-  width: 10,
-  height: 10,
-  borderRadius: "50%",
-  background: "#6D28D9",
-  flexShrink: 0,
-};
-const liveTitle: React.CSSProperties = {
-  display: "block",
-  fontSize: 15.5,
-  fontWeight: 900,
-};
-const liveMeta: React.CSSProperties = {
-  display: "block",
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#7A828C",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-const liveGo: React.CSSProperties = {
-  fontSize: 13.5,
-  fontWeight: 900,
-  color: "#6D28D9",
-  whiteSpace: "nowrap",
 };
 const statGrid: React.CSSProperties = {
   display: "grid",

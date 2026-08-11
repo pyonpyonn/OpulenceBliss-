@@ -93,7 +93,13 @@ export default async function JobPage({
     scheduled_at: row.scheduled_at,
     address: row.address,
     notes: row.household_notes,
-    client: row.customer_email,
+    client: customer?.full_name ?? row.customer_email,
+    clientRating:
+      customer?.client_rating_avg === null ||
+      customer?.client_rating_avg === undefined
+        ? null
+        : Number(customer.client_rating_avg),
+    clientRatingCount: customer?.client_rating_count ?? 0,
     service: (pkg as { name: string } | null)?.name ?? "Service",
     durationMinutes:
       (pkg as { duration_minutes: number | null } | null)?.duration_minutes ??
@@ -228,7 +234,7 @@ export default async function JobPage({
           position: sticky;
           top: 24px;
         }
-        @media (max-width: 920px) {
+        @media (max-width: 1100px) {
           .worker-job-workspace {
             grid-template-columns: minmax(0, 1fr);
           }

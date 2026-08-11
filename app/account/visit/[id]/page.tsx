@@ -98,6 +98,7 @@ export default async function VisitPage({
     durationMinutes: pkg?.duration_minutes ?? null,
     providerName: prv?.display_name ?? null,
     providerRating: prv?.rating_avg ?? null,
+    providerRatingCount: prv?.rating_count ?? 0,
     arrivedAt: ci?.arrived_at ?? null,
   };
 
@@ -284,7 +285,7 @@ export default async function VisitPage({
           position: sticky;
           top: 24px;
         }
-        @media (max-width: 920px) {
+        @media (max-width: 1100px) {
           .visit-workspace {
             grid-template-columns: minmax(0, 1fr);
           }
