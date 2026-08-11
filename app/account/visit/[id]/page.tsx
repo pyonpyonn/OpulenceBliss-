@@ -1,17 +1,27 @@
-// One visit, in full — the client's live view.
-// Save at: app/account/visit/[id]/page.tsx
+// One visit, in full — the client booking workspace.
 
 import { createClient } from "@/lib/supabase/server";
-import { SignedOut } from "../../page";
-import CurrentVisit, { type Visit } from "../../CurrentVisit";
-import { BookingTools, RateBooking, TipBooking } from "../../BookingTools";
-import MessageThread from "@/components/MessageThread";
 import { getVisitStatus } from "@/lib/visitStatus";
+import BookingWorkspace, {
+  type ClientBookingWorkspaceData,
+} from "../../BookingWorkspace";
+import { BookingTools, RateBooking, TipBooking } from "../../BookingTools";
 import ReportNoShow from "../../ReportNoShow";
+import { SignedOut } from "../../page";
 
-function one<T>(v: T | T[] | null | undefined): T | null {
-  if (!v) return null;
-  return Array.isArray(v) ? (v[0] ?? null) : v;
+function one<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function professionFor(service: string, services: string[]) {
+  const value = `${service} ${services.join(" ")}`.toLowerCase();
+  if (value.includes("massage")) return "Professional therapist";
+  if (value.includes("clean")) return "Professional cleaner";
+  if (value.includes("beauty") || value.includes("facial")) {
+    return "Beauty professional";
+  }
+  return "Opulence Bliss professional";
 }
 
 export default async function VisitPage({
@@ -29,7 +39,7 @@ export default async function VisitPage({
   const { data: row } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, package_id, provider_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio), check_ins(arrived_at, left_at)",
+      "id, scheduled_at, status, address, household_notes, package_id, provider_id, offer_expires_at, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count, bio, photo_url, years_experience, services, vetting_status), check_ins(arrived_at, left_at)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -37,14 +47,13 @@ export default async function VisitPage({
   if (!row) {
     return (
       <main style={wrap}>
-        <link rel="stylesheet" href={FONTS} />
         <div style={{ maxWidth: 620, margin: "0 auto", paddingTop: 60 }}>
-          <h1 style={h1}>Visit not found</h1>
-          <p style={{ color: "#6e7a70" }}>
+          <h1 style={missingTitle}>Visit not found</h1>
+          <p style={{ color: "var(--ob-muted)" }}>
             This booking may have been cancelled.
           </p>
           <p style={{ marginTop: 20 }}>
-            <a href="/account" style={link}>
+            <a href="/account" style={backLink}>
               ← My bookings
             </a>
           </p>
@@ -53,199 +62,224 @@ export default async function VisitPage({
     );
   }
 
-  const status = await getVisitStatus(supabase, row.id);
+  const [status, reviewResult, paymentResult, eventResult] = await Promise.all([
+    getVisitStatus(supabase, row.id),
+    supabase
+      .from("reviews")
+      .select("rating, comment")
+      .eq("booking_id", id)
+      .eq("reviewer", "client")
+      .maybeSingle(),
+    supabase
+      .from("payments")
+      .select("gross_amount, status, kind, created_at")
+      .eq("booking_id", id),
+    supabase
+      .from("booking_events")
+      .select("to_status, created_at")
+      .eq("booking_id", id)
+      .order("created_at", { ascending: true }),
+  ]);
 
-  const { data: reviewRows } = await supabase
-    .from("reviews")
-    .select("rating, comment")
-    .eq("booking_id", id)
-    .eq("reviewer", "client")
-    .maybeSingle();
-
-  const { data: pays } = await supabase
-    .from("payments")
-    .select("gross_amount, status, kind")
-    .eq("booking_id", id);
-
-  const jobPay = (pays ?? []).find((p) => p.kind !== "tip");
-  const tipTotal = (pays ?? [])
-    .filter((p) => p.kind === "tip")
-    .reduce((s, p) => s + Number(p.gross_amount ?? 0), 0);
+  const pays = paymentResult.data ?? [];
+  const events = eventResult.data ?? [];
+  const review = reviewResult.data;
+  const jobPay = pays.find((payment) => payment.kind !== "tip");
 
   const pkg = one(row.packages as never) as {
     name: string;
     duration_minutes: number | null;
     price: number;
   } | null;
-  const prv = one(row.providers as never) as {
+  const provider = one(row.providers as never) as {
     display_name: string | null;
     rating_avg: number | null;
     rating_count: number | null;
     bio: string | null;
+    photo_url: string | null;
+    years_experience: number | null;
+    services: string[] | null;
+    vetting_status: string | null;
   } | null;
-  const ci = one(row.check_ins as never) as {
+  const checkIn = one(row.check_ins as never) as {
     arrived_at: string | null;
     left_at: string | null;
   } | null;
 
-  const paymentAmount = Number(jobPay?.gross_amount ?? pkg?.price ?? 0);
-  const paymentLabel = status?.money.label
-    ? `${status.money.label}${
-        paymentAmount > 0 ? ` · £${paymentAmount.toFixed(2)}` : ""
-      }`
-    : paymentAmount > 0
-      ? `£${paymentAmount.toFixed(2)}`
-      : "Included";
+  let latestProviderReview: ClientBookingWorkspaceData["latestReview"] = null;
+  if (row.provider_id) {
+    const { data } = await supabase
+      .from("reviews")
+      .select("rating, comment, bookings!inner(provider_id)")
+      .eq("reviewer", "client")
+      .eq("bookings.provider_id", row.provider_id)
+      .not("comment", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      latestProviderReview = {
+        rating: Number(data.rating),
+        comment: data.comment,
+      };
+    }
+  }
 
-  const visit: Visit = {
+  const service = pkg?.name ?? "Service";
+  const paymentAmount = Number(jobPay?.gross_amount ?? pkg?.price ?? 0);
+  const booking: ClientBookingWorkspaceData = {
     id: row.id,
     status: row.status,
-    scheduled_at: row.scheduled_at,
-    address: row.address,
-    service: pkg?.name ?? "Service",
+    service,
     durationMinutes: pkg?.duration_minutes ?? null,
-    providerName: prv?.display_name ?? null,
-    providerRating: prv?.rating_avg ?? null,
-    providerRatingCount: prv?.rating_count ?? 0,
-    providerBio: prv?.bio ?? null,
-    householdNotes: row.household_notes,
-    paymentLabel,
-    tipTotal,
-    arrivedAt: ci?.arrived_at ?? null,
-    finishedAt: ci?.left_at ?? null,
+    scheduledAt: row.scheduled_at,
+    address: row.address,
+    bookedAt: jobPay?.created_at ?? events[0]?.created_at ?? null,
+    confirmedAt:
+      events.find((event) => event.to_status === "scheduled")?.created_at ??
+      null,
+    arrivedAt: checkIn?.arrived_at ?? null,
+    finishedAt: checkIn?.left_at ?? null,
+    paymentAmount: paymentAmount > 0 ? paymentAmount : null,
+    paymentLabel:
+      status?.money.label ??
+      (paymentAmount > 0 ? "Payment recorded" : "Included"),
+    paymentExplanation:
+      status?.money.explanation ??
+      "Payment follows the booking status shown here.",
+    provider: {
+      assigned: Boolean(row.provider_id),
+      name: provider?.display_name ?? null,
+      photoUrl: provider?.photo_url ?? null,
+      rating:
+        provider?.rating_avg === null || provider?.rating_avg === undefined
+          ? null
+          : Number(provider.rating_avg),
+      ratingCount: provider?.rating_count ?? 0,
+      bio: provider?.bio ?? null,
+      yearsExperience: provider?.years_experience ?? null,
+      profession: professionFor(service, provider?.services ?? []),
+      backgroundChecked: provider?.vetting_status === "approved",
+    },
+    latestReview: latestProviderReview,
   };
 
-  const changeable =
-    status?.actions.some(
-      (action) => action.kind === "cancel" || action.kind === "reschedule",
-    ) ?? false;
+  const canCancel =
+    status?.actions.some((action) => action.kind === "cancel") ?? false;
+  const canReschedule =
+    status?.actions.some((action) => action.kind === "reschedule") ?? false;
   const canRate =
     status?.actions.some((action) => action.kind === "rate") ?? false;
   const canTip =
     status?.actions.some((action) => action.kind === "tip") ?? false;
+  const chatClosed =
+    row.status === "cancelled" ||
+    new Date(row.scheduled_at).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000;
+
   return (
     <main style={wrap}>
-      <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 1120, margin: "0 auto", paddingTop: 40 }}>
-        <p style={{ margin: "0 0 20px" }}>
-          <a href="/account" style={link}>
+      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+        <p style={{ margin: "0 0 16px" }}>
+          <a href="/account" style={backLink}>
             ← My bookings
           </a>
         </p>
 
-        <div className="visit-workspace">
-          <div className="visit-details">
-            <CurrentVisit visit={visit} hideLink detailStatus={status}>
-              <ReportNoShow
-                bookingId={row.id}
-                scheduledAt={row.scheduled_at}
-                status={row.status}
-                hasArrived={!!ci?.arrived_at}
+        <BookingWorkspace
+          booking={booking}
+          visitStatus={status}
+          canCancel={canCancel}
+          chatClosed={chatClosed}
+        >
+          <ReportNoShow
+            bookingId={row.id}
+            scheduledAt={row.scheduled_at}
+            status={row.status}
+            hasArrived={Boolean(checkIn?.arrived_at)}
+          />
+
+          {canReschedule && (
+            <div style={actionBlock}>
+              <strong style={actionTitle}>Need a different time?</strong>
+              <p style={actionCopy}>
+                Available appointments follow the same rescheduling policy shown
+                on your booking.
+              </p>
+              <BookingTools
+                id={row.id}
+                postcode={row.address}
+                showCancel={false}
               />
-
-              {changeable && (
-                <div style={inlineSection}>
-                  <strong style={inlineTitle}>Manage this booking</strong>
-                  <BookingTools id={row.id} postcode={row.address} />
-                </div>
-              )}
-
-              {(canRate || canTip || reviewRows) && (
-                <div style={inlineSection}>
-                  <strong style={inlineTitle}>Your review</strong>
-                  {(canRate || reviewRows) && (
-                    <RateBooking id={row.id} existing={reviewRows ?? null} />
-                  )}
-                  {canTip && <TipBooking id={row.id} />}
-                  <p style={{ margin: "12px 0 0" }}>
-                    <a
-                      href={`/book?service=${row.package_id ?? ""}&pc=${
-                        row.address ?? ""
-                      }`}
-                      style={{
-                        color: "#6D28D9",
-                        fontWeight: 800,
-                        fontSize: 13.5,
-                      }}
-                    >
-                      Book this again →
-                    </a>
-                  </p>
-                </div>
-              )}
-            </CurrentVisit>
-          </div>
-
-          {row.provider_id && (
-            <aside className="visit-chat">
-              <MessageThread
-                bookingId={row.id}
-                viewerRole="customer"
-                closed={
-                  row.status === "cancelled" ||
-                  new Date(row.scheduled_at).getTime() <
-                    Date.now() - 7 * 24 * 60 * 60 * 1000
-                }
-              />
-            </aside>
+            </div>
           )}
-        </div>
-      </div>
 
-      <style>{`
-        .visit-workspace {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(310px, 370px);
-          align-items: start;
-          gap: 24px;
-        }
-        .visit-details {
-          min-width: 0;
-        }
-        .visit-chat {
-          min-width: 0;
-          position: sticky;
-          top: 24px;
-        }
-        @media (max-width: 1100px) {
-          .visit-workspace {
-            grid-template-columns: minmax(0, 1fr);
-          }
-          .visit-chat {
-            position: static;
-          }
-        }
-      `}</style>
+          {(canRate || canTip || review) && (
+            <div style={actionBlock}>
+              <strong style={actionTitle}>Your review</strong>
+              {(canRate || review) && (
+                <RateBooking id={row.id} existing={review ?? null} />
+              )}
+              {canTip && <TipBooking id={row.id} />}
+              <p style={{ margin: "12px 0 0" }}>
+                <a
+                  href={`/book?service=${row.package_id ?? ""}&pc=${
+                    row.address ?? ""
+                  }`}
+                  style={bookAgainLink}
+                >
+                  Book this again →
+                </a>
+              </p>
+            </div>
+          )}
+        </BookingWorkspace>
+      </div>
     </main>
   );
 }
 
-const FONTS =
-  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap";
 const wrap: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#fbf7f0",
-  color: "#26302a",
-  fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
-  padding: "0 20px 80px",
+  color: "var(--ob-text)",
+  fontFamily: "'Nunito', system-ui, sans-serif",
+  padding: "4px 0 48px",
 };
-const h1: React.CSSProperties = {
-  fontFamily: "'Fraunces', serif",
-  fontWeight: 500,
-  fontSize: 34,
-  color: "#2f4a3a",
+
+const missingTitle: React.CSSProperties = {
   margin: "0 0 8px",
+  color: "var(--ob-text)",
+  fontSize: 32,
+  fontWeight: 900,
 };
-const link: React.CSSProperties = { color: "#5b7a65", fontSize: 14 };
-const inlineSection: React.CSSProperties = {
-  background: "#F7F8F9",
-  borderRadius: 14,
-  padding: "14px 15px",
-  marginTop: 10,
+
+const backLink: React.CSSProperties = {
+  color: "var(--ob-purple)",
+  fontSize: 14,
+  fontWeight: 800,
+  textDecoration: "none",
 };
-const inlineTitle: React.CSSProperties = {
+
+const actionBlock: React.CSSProperties = {
+  padding: "13px 0",
+  borderBottom: "1px solid var(--ob-border)",
+};
+
+const actionTitle: React.CSSProperties = {
   display: "block",
-  color: "#16202A",
+  color: "var(--ob-text)",
   fontSize: 15,
   fontWeight: 900,
+};
+
+const actionCopy: React.CSSProperties = {
+  margin: "4px 0 0",
+  color: "var(--ob-muted)",
+  fontSize: 13,
+  fontWeight: 650,
+};
+
+const bookAgainLink: React.CSSProperties = {
+  color: "var(--ob-purple)",
+  fontWeight: 800,
+  fontSize: 13.5,
 };

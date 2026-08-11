@@ -10,13 +10,23 @@ function stageIndex(status: string) {
   return 0;
 }
 
-export default function BookingProgress({ status }: { status: string }) {
-  const current = stageIndex(status);
+export default function BookingProgress({
+  status,
+  labels = STAGES,
+  details,
+  stage,
+}: {
+  status: string;
+  labels?: string[];
+  details?: Array<string | null>;
+  stage?: number;
+}) {
+  const current = stage ?? stageIndex(status);
 
   return (
     <div
-      className="booking-progress"
-      aria-label={`Booking progress: ${STAGES[current]}`}
+      className={`booking-progress${details ? " has-details" : ""}`}
+      aria-label={`Booking progress: ${labels[current] ?? STAGES[current]}`}
     >
       <span className="rail" aria-hidden="true" />
       <span
@@ -25,7 +35,7 @@ export default function BookingProgress({ status }: { status: string }) {
         style={{ width: `${current * 25}%` }}
       />
       <ol>
-        {STAGES.map((label, index) => {
+        {labels.map((label, index) => {
           const done = index < current;
           const active = index === current;
           return (
@@ -35,6 +45,7 @@ export default function BookingProgress({ status }: { status: string }) {
             >
               <span className="node">{done ? "✓" : index + 1}</span>
               <strong>{label}</strong>
+              {details?.[index] && <small>{details[index]}</small>}
             </li>
           );
         })}
@@ -113,6 +124,16 @@ export default function BookingProgress({ status }: { status: string }) {
           font-size: 12px;
           font-weight: 900;
           text-align: center;
+        }
+        small {
+          color: var(--ob-muted);
+          font-size: 10.5px;
+          font-weight: 700;
+          line-height: 1.25;
+          text-align: center;
+        }
+        .has-details {
+          margin: 28px 0 26px;
         }
         @media (max-width: 420px) {
           strong {

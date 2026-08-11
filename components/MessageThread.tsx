@@ -4,6 +4,7 @@
 // role-specific quick replies.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Send } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -34,6 +35,11 @@ const QUICK: Record<"customer" | "provider", string[]> = {
   ],
 };
 
+const DIALOG_QUICK: Record<"customer" | "provider", string[]> = {
+  customer: ["See you soon!", "Thanks!", "Sounds good!"],
+  provider: ["On my way", "I'm outside", "All finished — thank you"],
+};
+
 function when(iso: string) {
   const d = new Date(iso);
   const today = new Date().toDateString() === d.toDateString();
@@ -54,10 +60,12 @@ export default function MessageThread({
   bookingId,
   viewerRole,
   closed = false,
+  bare = false,
 }: {
   bookingId: string;
   viewerRole: "customer" | "provider";
   closed?: boolean;
+  bare?: boolean;
 }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [me, setMe] = useState<string | null>(null);
@@ -91,14 +99,14 @@ export default function MessageThread({
 
     if (
       user &&
-      !minimized &&
+      (bare || !minimized) &&
       (data ?? []).some(
         (message) => message.sender_id !== user.id && !message.read_at,
       )
     ) {
       await supabase.rpc("mark_messages_read", { p_booking_id: bookingId });
     }
-  }, [bookingId, minimized]);
+  }, [bare, bookingId, minimized]);
 
   useEffect(() => {
     void load();
@@ -140,31 +148,36 @@ export default function MessageThread({
   ).length;
 
   return (
-    <section style={card}>
-      <div style={{ ...head, marginBottom: minimized ? 0 : 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <strong style={title}>Messages</strong>
-          <span style={sub}>
+    <section style={bare ? bareCard : card}>
+      {!bare && (
+        <div style={{ ...head, marginBottom: minimized ? 0 : 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <strong style={title}>Messages</strong>
+            <span style={sub}>
+              {minimized
+                ? `${messages.length} message${messages.length === 1 ? "" : "s"}`
+                : "Stays on the platform — no phone numbers shared"}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMinimized((value) => !value)}
+            aria-expanded={!minimized}
+            style={toggle}
+          >
             {minimized
-              ? `${messages.length} message${messages.length === 1 ? "" : "s"}`
-              : "Stays on the platform — no phone numbers shared"}
-          </span>
+              ? `Open chat${unread > 0 ? ` (${unread})` : ""}`
+              : "Minimise"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setMinimized((value) => !value)}
-          aria-expanded={!minimized}
-          style={toggle}
-        >
-          {minimized
-            ? `Open chat${unread > 0 ? ` (${unread})` : ""}`
-            : "Minimise"}
-        </button>
-      </div>
+      )}
 
-      {!minimized && (
+      {(bare || !minimized) && (
         <>
-          <div style={log} aria-live="polite">
+          <div
+            style={bare ? { ...log, maxHeight: "min(52vh, 520px)" } : log}
+            aria-live="polite"
+          >
             {!loaded ? (
               <p style={muted}>Loading…</p>
             ) : messages.length === 0 ? (
@@ -188,14 +201,22 @@ export default function MessageThread({
                         ...bubble,
                         background: fromAdmin
                           ? "#FFF3D6"
-                          : mine
-                            ? "#16202A"
-                            : "#F2F3F5",
+                          : bare
+                            ? mine
+                              ? "var(--ob-purple-soft)"
+                              : "var(--ob-surface-soft)"
+                            : mine
+                              ? "#16202A"
+                              : "#F2F3F5",
                         color: fromAdmin
                           ? "#8A5A00"
-                          : mine
-                            ? "#fff"
-                            : "#16202A",
+                          : bare
+                            ? mine
+                              ? "var(--ob-purple)"
+                              : "var(--ob-text)"
+                            : mine
+                              ? "#fff"
+                              : "#16202A",
                         borderBottomRightRadius: mine ? 5 : 16,
                         borderBottomLeftRadius: mine ? 16 : 5,
                       }}
@@ -205,7 +226,13 @@ export default function MessageThread({
                       <span
                         style={{
                           ...stamp,
-                          color: mine ? "rgba(255,255,255,0.6)" : "#A9AFB7",
+                          color:
+                            bare && mine
+                              ? "var(--ob-purple)"
+                              : mine
+                                ? "rgba(255,255,255,0.6)"
+                                : "#A9AFB7",
+                          opacity: bare && mine ? 0.7 : 1,
                         }}
                       >
                         {when(message.created_at)}
@@ -226,7 +253,7 @@ export default function MessageThread({
           ) : (
             <>
               <div style={chips}>
-                {QUICK[viewerRole].map((reply) => (
+                {(bare ? DIALOG_QUICK : QUICK)[viewerRole].map((reply) => (
                   <button
                     key={reply}
                     type="button"
@@ -258,10 +285,14 @@ export default function MessageThread({
                   disabled={busy || !body.trim()}
                   style={{
                     ...sendBtn,
+                    ...(bare
+                      ? { width: 46, height: 46, padding: 0, borderRadius: 999 }
+                      : {}),
                     opacity: busy || !body.trim() ? 0.45 : 1,
                   }}
+                  aria-label="Send message"
                 >
-                  Send
+                  {bare ? <Send size={19} /> : "Send"}
                 </button>
               </div>
             </>
@@ -279,6 +310,12 @@ const card: React.CSSProperties = {
   border: "2px solid #EDEFF1",
   borderRadius: 20,
   padding: "18px 20px",
+  fontFamily: "'Nunito', system-ui, sans-serif",
+};
+const bareCard: React.CSSProperties = {
+  background: "transparent",
+  border: 0,
+  padding: 0,
   fontFamily: "'Nunito', system-ui, sans-serif",
 };
 const head: React.CSSProperties = {

@@ -46,9 +46,11 @@ const linkBtn: React.CSSProperties = {
 export function BookingTools({
   id,
   postcode,
+  showCancel = true,
 }: {
   id: string;
   postcode: string | null;
+  showCancel?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [slots, setSlots] = useState<string[] | null>(null);
@@ -94,21 +96,25 @@ export function BookingTools({
         >
           {open ? "Close" : "Reschedule"}
         </button>
-        <button
-          style={{ ...linkBtn, color: "#B0384F" }}
-          disabled={pending}
-          onClick={() => {
-            if (
-              !window.confirm(
-                "Cancel this booking? Your card won't be charged.",
+        {showCancel && (
+          <button
+            style={{ ...linkBtn, color: "#B0384F" }}
+            disabled={pending}
+            onClick={() => {
+              if (
+                !window.confirm(
+                  "Cancel this booking? Your card won't be charged.",
+                )
               )
-            )
-              return;
-            start(() => cancelBooking(id));
-          }}
-        >
-          {pending ? "Working…" : "Cancel booking"}
-        </button>
+                return;
+              start(async () => {
+                await cancelBooking(id);
+              });
+            }}
+          >
+            {pending ? "Working…" : "Cancel booking"}
+          </button>
+        )}
       </div>
 
       {message && (

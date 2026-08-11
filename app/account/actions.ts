@@ -58,9 +58,15 @@ async function notifyProvider(bookingId: string, title: string, body: string) {
 }
 
 // Cancel — releases the held payment (nothing was charged yet).
-export async function cancelBooking(id: string) {
+export async function cancelBooking(id: string, reason?: string) {
   const supabase = await createClient();
-  await transitionBooking(supabase, id, "cancelled");
+  const cleanReason = reason?.trim().slice(0, 240) || null;
+  await transitionBooking(supabase, id, "cancelled", {
+    reason: cleanReason
+      ? `Customer cancelled: ${cleanReason}`
+      : "Customer cancelled the booking",
+    meta: cleanReason ? { cancellation_reason: cleanReason } : {},
+  });
 
   // Release the authorisation hold so the customer's money is freed.
   const { data: pays } = await admin
@@ -150,7 +156,15 @@ export async function cancelBooking(id: string) {
   );
 
   revalidatePath("/account");
+  revalidatePath(`/account/visit/${id}`);
   revalidatePath("/worker");
+  return {
+    ok: true,
+    message:
+      pay?.status === "succeeded"
+        ? "Booking cancelled. Your refund has been started."
+        : "Booking cancelled. Your card hold is being released.",
+  };
 }
 
 export async function loadRescheduleWindow(id: string) {

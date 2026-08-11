@@ -42,9 +42,9 @@ const PATHS = [
 
 const LINK_RE = new RegExp(
   `\\[([^\\]]+)\\]\\(([^)]+)\\)|(https?://[^\\s)]+)|(/(?:${PATHS.join(
-    "|"
+    "|",
   )})(?:\\?[^\\s)]*)?)`,
-  "g"
+  "g",
 );
 
 function toPath(href: string) {
@@ -79,7 +79,7 @@ function Linkified({ text }: { text: string }) {
         <a key={m.index} href={href}>
           {label}
         </a>
-      )
+      ),
     );
     last = m.index + m[0].length;
   }
@@ -104,6 +104,12 @@ export default function SupportChat() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, open]);
+
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener("opulence:open-support", show);
+    return () => window.removeEventListener("opulence:open-support", show);
+  }, []);
 
   async function send(text: string) {
     const question = text.trim();
@@ -193,7 +199,9 @@ export default function SupportChat() {
             white-space: nowrap;
             opacity: 0;
             transform: translateX(8px);
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            transition:
+              opacity 0.2s ease,
+              transform 0.2s ease;
             pointer-events: none;
           }
           .fabWrap:hover .tip {

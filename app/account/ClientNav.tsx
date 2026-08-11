@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, LogOut, Plus, Store } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -14,11 +15,28 @@ const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
 const INK = "#16202A";
 const MUTED = "#7A828C";
 
-type Item = { href: string; label: string; short: string; icon: string; exact?: boolean };
+type Item = {
+  href: string;
+  label: string;
+  short: string;
+  icon: string;
+  exact?: boolean;
+};
 
 const ITEMS: Item[] = [
-  { href: "/account", label: "My bookings", short: "Visits", icon: "◫", exact: true },
-  { href: "/account/membership", label: "Membership", short: "Plan", icon: "★" },
+  {
+    href: "/account",
+    label: "My bookings",
+    short: "Visits",
+    icon: "◫",
+    exact: true,
+  },
+  {
+    href: "/account/membership",
+    label: "Membership",
+    short: "Plan",
+    icon: "★",
+  },
   { href: "/account/profile", label: "My details", short: "You", icon: "☺" },
   { href: "/account/updates", label: "Updates", short: "News", icon: "✦" },
 ];
@@ -33,6 +51,11 @@ export default function ClientNav({
   const path = usePathname() ?? "";
   const [hover, setHover] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const [collapsed, setCollapsed] = useState(true);
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("opulence-account-nav") !== "expanded");
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -61,23 +84,52 @@ export default function ClientNav({
 
   const first = (name || email || "Y").trim().charAt(0).toUpperCase();
 
+  function toggleSidebar() {
+    setCollapsed((value) => {
+      const next = !value;
+      localStorage.setItem(
+        "opulence-account-nav",
+        next ? "collapsed" : "expanded",
+      );
+      return next;
+    });
+  }
+
   return (
     <>
       {/* ---------------- desktop sidebar ---------------- */}
-      <aside className="side">
-        <Link href="/" style={brand}>
-          opulence<span style={{ color: PURPLE }}>bliss</span>
-        </Link>
+      <aside className={collapsed ? "side collapsed" : "side"}>
+        <div className="nav-head">
+          <Link href="/" style={brand} aria-label="Opulence Bliss home">
+            <span className="full-brand">
+              opulence<span style={{ color: PURPLE }}>bliss</span>
+            </span>
+            <span className="mini-brand">ob</span>
+          </Link>
+          <button
+            type="button"
+            className="collapse-toggle"
+            onClick={toggleSidebar}
+            aria-label={
+              collapsed ? "Expand account menu" : "Minimise account menu"
+            }
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
 
         <div style={profile}>
           <div style={avatar}>{first}</div>
-          <div style={{ minWidth: 0 }}>
+          <div className="nav-copy" style={{ minWidth: 0 }}>
             <div style={pName}>{name || "Your account"}</div>
             <div style={pMeta}>{email}</div>
           </div>
         </div>
 
-        <div style={sectionLabel}>My account</div>
+        <div className="nav-copy" style={sectionLabel}>
+          My account
+        </div>
 
         <nav style={{ display: "grid", gap: 4 }}>
           {ITEMS.map((i) => {
@@ -88,6 +140,7 @@ export default function ClientNav({
                 key={i.href}
                 href={i.href}
                 prefetch
+                title={collapsed ? i.label : undefined}
                 onMouseEnter={() => setHover(i.href)}
                 onMouseLeave={() => setHover(null)}
                 style={{
@@ -109,31 +162,50 @@ export default function ClientNav({
                 >
                   {i.icon}
                 </span>
-                <span style={{ flex: 1 }}>{i.label}</span>
+                <span className="nav-copy" style={{ flex: 1 }}>
+                  {i.label}
+                </span>
                 {i.href === "/account/updates" && unread > 0 && (
-                  <span style={pill}>{unread}</span>
+                  <span className="nav-count" style={pill}>
+                    {unread}
+                  </span>
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <Link href="/book" style={bookBtn}>
-          Book a service
+        <Link
+          href="/book"
+          style={bookBtn}
+          className="book-service"
+          aria-label="Book a service"
+          title={collapsed ? "Book a service" : undefined}
+        >
+          {collapsed ? <Plus size={19} /> : "Book a service"}
         </Link>
 
         <div style={foot}>
           <button
             style={footBtn}
+            className="foot-action"
+            title={collapsed ? "Sign out" : undefined}
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/";
             }}
           >
-            Sign out
+            <LogOut size={16} />
+            <span className="nav-copy">Sign out</span>
           </button>
-          <Link href="/" style={footBtn}>
-            Browse the site →
+          <Link
+            href="/"
+            style={footBtn}
+            className="foot-action"
+            title={collapsed ? "Browse the site" : undefined}
+          >
+            <Store size={16} />
+            <span className="nav-copy">Browse the site</span>
           </Link>
         </div>
       </aside>
@@ -173,6 +245,9 @@ export default function ClientNav({
 
       <style jsx>{`
         .side {
+          display: none;
+        }
+        .mini-brand {
           display: none;
         }
         .mtop {
@@ -215,6 +290,92 @@ export default function ClientNav({
             position: sticky;
             top: 0;
             align-self: flex-start;
+            transition:
+              width 0.22s ease,
+              flex-basis 0.22s ease,
+              padding 0.22s ease;
+          }
+          .side.collapsed {
+            width: 82px;
+            flex-basis: 82px;
+            padding-left: 12px;
+            padding-right: 12px;
+            align-items: center;
+          }
+          .nav-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            width: 100%;
+          }
+          .collapse-toggle {
+            display: grid;
+            place-items: center;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            border: 1px solid var(--ob-border);
+            border-radius: 10px;
+            background: var(--ob-surface-soft);
+            color: var(--ob-text);
+            cursor: pointer;
+          }
+          .collapse-toggle:hover {
+            border-color: ${PURPLE};
+            color: ${PURPLE};
+          }
+          .collapsed .full-brand,
+          .collapsed .nav-copy {
+            display: none;
+          }
+          .collapsed .mini-brand {
+            display: inline;
+            color: ${PURPLE};
+            font-size: 19px;
+            text-transform: lowercase;
+          }
+          .collapsed .nav-head {
+            display: grid;
+            justify-items: center;
+          }
+          .collapsed nav {
+            width: 100%;
+          }
+          .collapsed nav a {
+            justify-content: center;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-left-color: transparent !important;
+          }
+          .collapsed .nav-count {
+            position: absolute;
+            top: 3px;
+            right: 2px;
+            min-width: 17px !important;
+            height: 17px !important;
+            padding: 0 4px !important;
+            font-size: 9px !important;
+          }
+          .collapsed .book-service {
+            width: 44px;
+            height: 44px;
+            box-sizing: border-box;
+            display: grid;
+            place-items: center;
+            padding: 0 !important;
+          }
+          .foot-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .collapsed .foot-action {
+            width: 42px;
+            height: 38px;
+            box-sizing: border-box;
+            justify-content: center;
+            padding: 0 !important;
           }
           .mtop,
           .tabs {
@@ -290,6 +451,7 @@ const sectionLabel: React.CSSProperties = {
 };
 
 const row: React.CSSProperties = {
+  position: "relative",
   display: "flex",
   alignItems: "center",
   gap: 11,
