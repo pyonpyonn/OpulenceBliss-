@@ -250,9 +250,9 @@ export default function ActiveJob({
         }
         .when {
           display: inline-flex;
-          color: #16202a;
-          background: #f7f8f9;
-          border: 1px solid #e6e8eb;
+          color: var(--ob-text);
+          background: var(--ob-surface-soft);
+          border: 1px solid var(--ob-border);
           border-radius: 12px;
           padding: 8px 11px;
           font-size: 17px;
@@ -269,21 +269,21 @@ export default function ActiveJob({
           padding: 10px 16px;
         }
         .timer {
-          background: #f4ecfe;
+          background: var(--ob-purple-soft);
         }
         .pay {
-          background: #f7f8f9;
+          background: var(--ob-surface-soft);
         }
         .timer strong,
         .pay strong {
           font-family: "Nunito", system-ui, sans-serif;
           font-size: 23px;
-          color: #16202a;
+          color: var(--ob-text);
           font-variant-numeric: tabular-nums;
         }
         .timer small,
         .pay small {
-          color: #7a828c;
+          color: var(--ob-muted);
           font-size: 12px;
         }
         .dot {
@@ -306,7 +306,7 @@ export default function ActiveJob({
         .bar {
           position: relative;
           height: 8px;
-          background: #f1f2f4;
+          background: var(--ob-border);
           border-radius: 999px;
           margin: 20px 0 26px;
         }
@@ -323,7 +323,7 @@ export default function ActiveJob({
           top: 12px;
           font-style: normal;
           font-size: 12px;
-          color: #7a828c;
+          color: var(--ob-muted);
         }
         .facts {
           display: grid;
@@ -337,19 +337,19 @@ export default function ActiveJob({
           min-width: 0;
           padding: 11px 12px;
           border-radius: 13px;
-          background: #f7f8f9;
+          background: var(--ob-surface-soft);
         }
         .facts > div:nth-child(1) {
-          background: #e4f6ec;
+          background: var(--ob-mint);
         }
         .facts > div:nth-child(2) {
-          background: #e3f0fb;
+          background: var(--ob-sky);
         }
         .facts > div:nth-child(3) {
-          background: #fff3d6;
+          background: var(--ob-butter);
         }
         .facts > div:nth-child(4) {
-          background: #ffe6ea;
+          background: var(--ob-blush);
         }
         .facts dt {
           color: #a9afb7;
@@ -370,7 +370,7 @@ export default function ActiveJob({
           font-weight: 900;
         }
         .notes {
-          background: #ffffff;
+          background: var(--ob-surface-soft);
           border-radius: 12px;
           padding: 14px 16px;
           margin-top: 20px;
@@ -388,8 +388,8 @@ export default function ActiveJob({
           color: #16202a;
         }
         .flag {
-          background: #ffe6ea;
-          color: #b0384f;
+          background: var(--ob-blush);
+          color: var(--ob-danger-text);
           padding: 10px 12px;
           border-radius: 10px;
           font-size: 13.5px;

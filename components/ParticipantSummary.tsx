@@ -53,14 +53,14 @@ export default function ParticipantSummary({
 }
 
 const card: React.CSSProperties = {
-  background: "#fff",
-  border: "1.5px solid #E6E8EB",
+  background: "var(--ob-surface)",
+  border: "1.5px solid var(--ob-border)",
   borderRadius: 16,
   padding: "16px 17px",
   marginTop: 14,
 };
 const eyebrow: React.CSSProperties = {
-  color: "#6D28D9",
+  color: "var(--ob-purple)",
   fontSize: 11,
   fontWeight: 900,
   letterSpacing: "0.1em",
@@ -76,13 +76,13 @@ const head: React.CSSProperties = {
 };
 const nameStyle: React.CSSProperties = {
   display: "block",
-  color: "#16202A",
+  color: "var(--ob-text)",
   fontSize: 19,
   fontWeight: 900,
 };
 const emailStyle: React.CSSProperties = {
   display: "block",
-  color: "#7A828C",
+  color: "var(--ob-muted)",
   fontSize: 13,
   fontWeight: 600,
   overflowWrap: "anywhere",
@@ -91,30 +91,30 @@ const emailStyle: React.CSSProperties = {
 const ratingBox: React.CSSProperties = {
   display: "grid",
   justifyItems: "end",
-  background: "#FFF8E8",
+  background: "var(--ob-butter)",
   border: "1px solid #F4E3B6",
   borderRadius: 12,
   padding: "8px 11px",
 };
 const ratingValue: React.CSSProperties = {
-  color: "#8A5A00",
+  color: "var(--ob-rating-text)",
   fontSize: 18,
   fontWeight: 900,
 };
 const ratingMeta: React.CSSProperties = {
-  color: "#8A6B2B",
+  color: "var(--ob-rating-text)",
   fontSize: 11,
   fontWeight: 700,
 };
 const help: React.CSSProperties = {
-  color: "#7A828C",
+  color: "var(--ob-muted)",
   fontSize: 13,
   fontWeight: 600,
   lineHeight: 1.5,
   margin: "11px 0 0",
 };
 const bioStyle: React.CSSProperties = {
-  color: "#3E4752",
+  color: "var(--ob-text)",
   fontSize: 14,
   fontWeight: 700,
   lineHeight: 1.5,

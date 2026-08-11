@@ -312,9 +312,9 @@ export default function CurrentVisit({
         }
         .when {
           display: inline-flex;
-          color: #16202a;
-          background: #f7f8f9;
-          border: 1px solid #e6e8eb;
+          color: var(--ob-text);
+          background: var(--ob-surface-soft);
+          border: 1px solid var(--ob-border);
           border-radius: 12px;
           padding: 8px 11px;
           font-size: 17px;
@@ -326,18 +326,18 @@ export default function CurrentVisit({
           display: flex;
           align-items: baseline;
           gap: 8px;
-          background: #ddedfb;
+          background: var(--ob-sky);
           border-radius: 16px;
           padding: 11px 16px;
         }
         .timer strong {
           font-size: 24px;
           font-weight: 900;
-          color: #1b5e9e;
+          color: var(--ob-info-text);
           font-variant-numeric: tabular-nums;
         }
         .timer small {
-          color: #4b7fae;
+          color: var(--ob-info-text);
           font-size: 12px;
           font-weight: 700;
         }
@@ -360,7 +360,7 @@ export default function CurrentVisit({
         }
         .bar {
           height: 10px;
-          background: #f1f1f2;
+          background: var(--ob-border);
           border-radius: 999px;
           margin: 20px 0 4px;
           overflow: hidden;
@@ -392,19 +392,19 @@ export default function CurrentVisit({
         }
         .status-summary strong {
           display: block;
-          color: #16202a;
+          color: var(--ob-text);
           font-size: 17px;
           font-weight: 900;
         }
         .status-summary p {
-          color: #58616c;
+          color: var(--ob-muted);
           font-size: 14px;
           font-weight: 600;
           line-height: 1.55;
           margin: 4px 0 0;
         }
         .status-box {
-          background: #f7f8f9;
+          background: var(--ob-surface-soft);
           border-radius: 14px;
           padding: 14px 15px;
         }
@@ -414,7 +414,7 @@ export default function CurrentVisit({
         .status-box span,
         .visit-notes span {
           display: block;
-          color: #a0a7b0;
+          color: var(--ob-muted);
           font-size: 11px;
           font-weight: 900;
           letter-spacing: 0.07em;
@@ -423,13 +423,13 @@ export default function CurrentVisit({
         }
         .status-box strong {
           display: block;
-          color: #16202a;
+          color: var(--ob-text);
           font-size: 16px;
           font-weight: 900;
         }
         .status-box p,
         .visit-notes p {
-          color: #707985;
+          color: var(--ob-muted);
           font-size: 13.5px;
           font-weight: 600;
           line-height: 1.5;
@@ -440,13 +440,13 @@ export default function CurrentVisit({
           gap: 12px;
           margin-top: 12px;
           padding: 14px 15px;
-          background: #fffaf0;
-          border: 1px solid #f1e5ca;
+          background: var(--ob-butter);
+          border: 1px solid var(--ob-border);
           border-radius: 14px;
         }
         .status-notice {
-          background: #fffaf0;
-          border: 1px solid #f1e5ca;
+          background: var(--ob-butter);
+          border: 1px solid var(--ob-border);
           border-radius: 12px;
           color: #6f5a2a;
           font-size: 13.5px;
@@ -480,20 +480,20 @@ export default function CurrentVisit({
           overflow-wrap: anywhere;
         }
         .mint {
-          background: #e4f6ec;
-          color: #137b4e;
+          background: var(--ob-mint);
+          color: var(--ob-success-text);
         }
         .sky {
-          background: #e3f0fb;
-          color: #1b5e9e;
+          background: var(--ob-sky);
+          color: var(--ob-info-text);
         }
         .butter {
-          background: #fff3d6;
-          color: #8a5a00;
+          background: var(--ob-butter);
+          color: var(--ob-warning-text);
         }
         .blush {
-          background: #ffe6ea;
-          color: #b0384f;
+          background: var(--ob-blush);
+          color: var(--ob-danger-text);
         }
         .more {
           display: inline-flex;

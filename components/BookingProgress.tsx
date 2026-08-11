@@ -56,7 +56,7 @@ export default function BookingProgress({ status }: { status: string }) {
         }
         .rail {
           right: 12.5%;
-          background: #eceef1;
+          background: var(--ob-border);
         }
         .fill {
           max-width: 75%;
@@ -85,18 +85,18 @@ export default function BookingProgress({ status }: { status: string }) {
           display: grid;
           place-items: center;
           box-sizing: border-box;
-          border: 3px solid #fff;
+          border: 3px solid var(--ob-surface);
           border-radius: 50%;
-          background: #eceef1;
-          color: #89919b;
+          background: var(--ob-surface-soft);
+          color: var(--ob-muted);
           font-size: 12px;
           font-weight: 900;
-          box-shadow: 0 0 0 1px #e2e5e9;
+          box-shadow: 0 0 0 1px var(--ob-border);
         }
         li.done .node {
-          background: #e9ddfd;
-          color: #6d28d9;
-          box-shadow: 0 0 0 1px #d8c2f7;
+          background: var(--ob-purple-soft);
+          color: var(--ob-purple);
+          box-shadow: 0 0 0 1px var(--ob-purple);
         }
         li.active .node {
           background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
@@ -107,7 +107,7 @@ export default function BookingProgress({ status }: { status: string }) {
         }
         li.done,
         li.active {
-          color: #16202a;
+          color: var(--ob-text);
         }
         strong {
           font-size: 12px;

@@ -11,6 +11,8 @@ import SiteHeader from "@/components/SiteHeader";
 import Toaster from "@/components/Toaster";
 import RatingGate from "@/components/RatingGate";
 import SupportChat from "@/components/SupportChat";
+import ThemeProvider from "@/components/ThemeProvider";
+import AppearanceControl from "@/components/AppearanceControl";
 
 // Self-hosted by Next, so no extra request to Google and no flash of
 // unstyled text. Components ask for "Nunito" by name and get this.
@@ -23,7 +25,7 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   ),
   title: "Opulence Bliss — home cleaning & massage in London",
   description:
@@ -47,12 +49,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <TopBar />
-        <SiteHeader />
-        {children}
-        <Toaster />
-        <RatingGate />
-        <SupportChat />
+        <ThemeProvider>
+          <TopBar />
+          <SiteHeader />
+          {children}
+          <Toaster />
+          <RatingGate />
+          <SupportChat />
+          <AppearanceControl />
+        </ThemeProvider>
       </body>
     </html>
   );
