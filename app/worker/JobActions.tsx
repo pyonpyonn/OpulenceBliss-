@@ -46,11 +46,15 @@ export default function JobActions({
   status,
   scheduledAt,
   existingRating,
+  showExceptions = true,
+  compact = false,
 }: {
   id: string;
   status: string;
   scheduledAt: string;
   existingRating?: { rating: number; comment: string | null } | null;
+  showExceptions?: boolean;
+  compact?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
@@ -66,7 +70,7 @@ export default function JobActions({
 
   if (status === "offered") {
     return (
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: compact ? 0 : 16 }}>
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={() =>
@@ -142,13 +146,15 @@ export default function JobActions({
     const good = note?.startsWith("Location confirmed");
 
     return (
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: compact ? 0 : 16 }}>
         <button onClick={() => locate()} disabled={pending} style={dim(green)}>
           {pending ? "Checking location…" : "I've arrived — check in"}
         </button>
-        <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
-          You need to be at the customer&apos;s address to check in.
-        </p>
+        {!compact && (
+          <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
+            You need to be at the customer&apos;s address to check in.
+          </p>
+        )}
 
         {note && (
           <p
@@ -179,18 +185,20 @@ export default function JobActions({
             Continue anyway — development only
           </button>
         )}
-        <JobExceptions
-          bookingId={id}
-          status={status}
-          scheduledAt={scheduledAt}
-        />
+        {showExceptions && (
+          <JobExceptions
+            bookingId={id}
+            status={status}
+            scheduledAt={scheduledAt}
+          />
+        )}
       </div>
     );
   }
 
   if (status === "in_progress") {
     return (
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: compact ? 0 : 16 }}>
         <button
           onClick={() =>
             start(async () => {
@@ -209,10 +217,12 @@ export default function JobActions({
         >
           {pending ? "Finishing…" : "Finish & check out"}
         </button>
-        <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
-          Checking out completes the job and charges the customer — your share
-          is released automatically.
-        </p>
+        {!compact && (
+          <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
+            Checking out completes the job and charges the customer — your share
+            is released automatically.
+          </p>
+        )}
         {note && (
           <p
             style={{
@@ -227,18 +237,20 @@ export default function JobActions({
             {note}
           </p>
         )}
-        <JobExceptions
-          bookingId={id}
-          status={status}
-          scheduledAt={scheduledAt}
-        />
+        {showExceptions && (
+          <JobExceptions
+            bookingId={id}
+            status={status}
+            scheduledAt={scheduledAt}
+          />
+        )}
       </div>
     );
   }
 
   if (status === "completed") {
     return (
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: compact ? 0 : 14 }}>
         <p
           style={{
             margin: "0 0 10px",
@@ -281,7 +293,9 @@ function RateClientBox({
           </span>
         </strong>
         <p style={{ margin: "3px 0 0", color: "#7A828C", fontSize: 13.5 }}>
-          {existing.comment ? `“${existing.comment}”` : "Your rating was submitted."}
+          {existing.comment
+            ? `“${existing.comment}”`
+            : "Your rating was submitted."}
         </p>
       </div>
     );

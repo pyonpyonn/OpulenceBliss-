@@ -22,19 +22,31 @@ export default function BookingProgress({
   stage?: number;
 }) {
   const current = stage ?? stageIndex(status);
+  const count = Math.max(labels.length, 1);
+  const side = 50 / count;
+  const progressWidth = Math.min(current, count - 1) * (100 / count);
+  const maximumWidth = ((count - 1) / count) * 100;
 
   return (
     <div
       className={`booking-progress${details ? " has-details" : ""}`}
       aria-label={`Booking progress: ${labels[current] ?? STAGES[current]}`}
     >
-      <span className="rail" aria-hidden="true" />
+      <span
+        className="rail"
+        aria-hidden="true"
+        style={{ left: `${side}%`, right: `${side}%` }}
+      />
       <span
         className="fill"
         aria-hidden="true"
-        style={{ width: `${current * 25}%` }}
+        style={{
+          left: `${side}%`,
+          width: `${progressWidth}%`,
+          maxWidth: `${maximumWidth}%`,
+        }}
       />
-      <ol>
+      <ol style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
         {labels.map((label, index) => {
           const done = index < current;
           const active = index === current;
@@ -61,16 +73,13 @@ export default function BookingProgress({
         .fill {
           position: absolute;
           top: 15px;
-          left: 12.5%;
           height: 5px;
           border-radius: 999px;
         }
         .rail {
-          right: 12.5%;
           background: var(--ob-border);
         }
         .fill {
-          max-width: 75%;
           background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
           transition: width 0.35s ease;
         }
@@ -78,7 +87,6 @@ export default function BookingProgress({
           position: relative;
           z-index: 1;
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
           list-style: none;
           padding: 0;
           margin: 0;

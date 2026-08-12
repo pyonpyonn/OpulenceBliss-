@@ -17,12 +17,16 @@ export default function JobExceptions({
   bookingId,
   status,
   scheduledAt,
+  defaultOpen = null,
+  showLauncher = true,
 }: {
   bookingId: string;
   status: string;
   scheduledAt: string;
+  defaultOpen?: null | "cant" | "noaccess";
+  showLauncher?: boolean;
 }) {
-  const [open, setOpen] = useState<null | "cant" | "noaccess">(null);
+  const [open, setOpen] = useState<null | "cant" | "noaccess">(defaultOpen);
   const [reason, setReason] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -79,7 +83,7 @@ export default function JobExceptions({
 
   return (
     <div className="wrap">
-      {!open && (
+      {!open && showLauncher && (
         <button
           className="quiet"
           onClick={() => setOpen(canWithdraw ? "cant" : "noaccess")}
@@ -107,15 +111,17 @@ export default function JobExceptions({
                 Nobody&apos;s home
               </button>
             )}
-            <button
-              className="tab close"
-              onClick={() => {
-                setOpen(null);
-                setResult(null);
-              }}
-            >
-              ×
-            </button>
+            {showLauncher && (
+              <button
+                className="tab close"
+                onClick={() => {
+                  setOpen(null);
+                  setResult(null);
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
 
           {open === "cant" && (
