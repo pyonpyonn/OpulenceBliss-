@@ -199,7 +199,7 @@ export default async function VisitPage({
           />
 
           {canReschedule && (
-            <div style={actionBlock}>
+            <div id="reschedule" style={actionBlock}>
               <strong style={actionTitle}>Need a different time?</strong>
               <p style={actionCopy}>
                 Available appointments follow the same rescheduling policy shown

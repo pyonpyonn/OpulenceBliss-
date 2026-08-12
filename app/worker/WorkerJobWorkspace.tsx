@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
 import MessageThread from "@/components/MessageThread";
-import JobActions from "./JobActions";
+import JobActions, { CheckInControl } from "./JobActions";
 import JobExceptions from "./JobExceptions";
 import type { WorkerJobWorkspaceData } from "./jobData";
 
@@ -232,6 +232,9 @@ export default function WorkerJobWorkspace({
             <p>Booking ID: {bookingRef}</p>
           </div>
           <div className="head-actions">
+            {job.status === "scheduled" && (
+              <CheckInControl id={job.id} compact animated label="Check in" />
+            )}
             <button className="message" onClick={() => setChatOpen(true)}>
               <MessageSquare size={18} /> Message {clientFirstName}
             </button>
@@ -372,16 +375,18 @@ export default function WorkerJobWorkspace({
             <strong>{status.title}</strong>
             <p>{status.detail}</p>
           </div>
-          <div className="job-action">
-            <JobActions
-              id={job.id}
-              status={job.status}
-              scheduledAt={job.scheduledAt}
-              existingRating={job.existingClientRating}
-              showExceptions={false}
-              compact
-            />
-          </div>
+          {job.status !== "scheduled" && (
+            <div className="job-action">
+              <JobActions
+                id={job.id}
+                status={job.status}
+                scheduledAt={job.scheduledAt}
+                existingRating={job.existingClientRating}
+                showExceptions={false}
+                compact
+              />
+            </div>
+          )}
         </section>
 
         <div className="detail-grid">

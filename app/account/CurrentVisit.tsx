@@ -295,11 +295,36 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
         <div className="state-actions">
           {state.tone === "booked" ? (
             <>
+              <a
+                className="secondary-action"
+                href={`${detailHref}?reschedule=1#reschedule`}
+              >
+                Reschedule
+              </a>
               <a className="danger-action" href={`${detailHref}?cancel=1`}>
                 Cancel booking
               </a>
               <a className="primary-action" href={detailHref}>
                 Manage booking
+              </a>
+            </>
+          ) : state.tone === "confirmed" ? (
+            <>
+              <a
+                className="secondary-action"
+                href={`${detailHref}?reschedule=1#reschedule`}
+              >
+                Reschedule
+              </a>
+              <a className="danger-action" href={`${detailHref}?cancel=1`}>
+                Cancel booking
+              </a>
+              <a className="secondary-action" href={detailHref}>
+                <Eye size={16} /> See full details
+              </a>
+              <a className="primary-action" href={`${detailHref}?chat=1`}>
+                <MessageSquare size={16} /> Message{" "}
+                {visit.providerName?.split(" ")[0] ?? "pro"}
               </a>
             </>
           ) : state.tone === "done" ? (

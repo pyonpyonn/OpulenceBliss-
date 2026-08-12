@@ -16,7 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
-import JobActions from "./JobActions";
+import JobActions, { CheckInControl } from "./JobActions";
 
 export type ActiveJobData = {
   id: string;
@@ -300,6 +300,9 @@ export default function ActiveJob({
               <a className="secondary-action" href={detailHref}>
                 <Eye size={16} /> See full details
               </a>
+              {job.status === "scheduled" && (
+                <CheckInControl id={job.id} compact animated label="Check in" />
+              )}
               <a className="primary-action" href={`${detailHref}?chat=1`}>
                 <MessageSquare size={16} /> Message client
               </a>

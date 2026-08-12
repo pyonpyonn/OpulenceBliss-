@@ -58,10 +58,6 @@ export default function JobActions({
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
-  const [blocked, setBlocked] = useState<{
-    lat: number | null;
-    lng: number | null;
-  } | null>(null);
   const dim = (s: React.CSSProperties) => ({
     ...s,
     opacity: pending ? 0.6 : 1,
@@ -126,72 +122,9 @@ export default function JobActions({
   }
 
   if (status === "scheduled") {
-    const run = (lat?: number | null, lng?: number | null, force = false) =>
-      start(async () => {
-        const r = await checkInJob(id, lat, lng, force);
-        setNote(r?.reason ?? null);
-        setBlocked(
-          r?.blocked && "canForce" in r && r.canForce
-            ? { lat: lat ?? null, lng: lng ?? null }
-            : null,
-        );
-      });
-
-    const locate = (force = false) => {
-      setNote(null);
-      if (!navigator.geolocation) {
-        run(null, null, force);
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => run(pos.coords.latitude, pos.coords.longitude, force),
-        () => run(null, null, force),
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
-    };
-
-    const good = note?.startsWith("Location confirmed");
-
     return (
       <div style={{ marginTop: compact ? 0 : 16 }}>
-        <button onClick={() => locate()} disabled={pending} style={dim(green)}>
-          {pending ? "Checking location…" : "I've arrived — check in"}
-        </button>
-        {!compact && (
-          <p style={{ color: "#7A828C", fontSize: 13, margin: "10px 0 0" }}>
-            You need to be at the customer&apos;s address to check in.
-          </p>
-        )}
-
-        {note && (
-          <p
-            style={{
-              margin: "10px 0 0",
-              padding: "10px 12px",
-              borderRadius: 10,
-              fontSize: 13.5,
-              background: good ? "#F4ECFE" : "#FFE6EA",
-              color: good ? "#16202A" : "#B0384F",
-            }}
-          >
-            {note}
-          </p>
-        )}
-
-        {blocked && (
-          <button
-            onClick={() => run(blocked.lat, blocked.lng, true)}
-            disabled={pending}
-            style={{
-              ...dim(ghost),
-              marginTop: 10,
-              fontSize: 13,
-              padding: "8px 16px",
-            }}
-          >
-            Continue anyway — development only
-          </button>
-        )}
+        <CheckInControl id={id} compact={compact} />
         {showExceptions && (
           <JobExceptions
             bookingId={id}
@@ -274,6 +207,103 @@ export default function JobActions({
   }
 
   return null;
+}
+
+export function CheckInControl({
+  id,
+  compact = false,
+  animated = false,
+  label = "I've arrived — check in",
+}: {
+  id: string;
+  compact?: boolean;
+  animated?: boolean;
+  label?: string;
+}) {
+  const [pending, start] = useTransition();
+  const [note, setNote] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<{
+    lat: number | null;
+    lng: number | null;
+  } | null>(null);
+
+  const run = (lat?: number | null, lng?: number | null, force = false) =>
+    start(async () => {
+      const result = await checkInJob(id, lat, lng, force);
+      setNote(result?.reason ?? null);
+      setBlocked(
+        result?.blocked && "canForce" in result && result.canForce
+          ? { lat: lat ?? null, lng: lng ?? null }
+          : null,
+      );
+    });
+
+  const locate = (force = false) => {
+    setNote(null);
+    if (!navigator.geolocation) {
+      run(null, null, force);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        run(position.coords.latitude, position.coords.longitude, force),
+      () => run(null, null, force),
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  };
+
+  const good = note?.startsWith("Location confirmed");
+
+  return (
+    <div className="worker-checkin-control">
+      <button
+        type="button"
+        className={
+          animated ? "worker-checkin-button animated" : "worker-checkin-button"
+        }
+        onClick={() => locate()}
+        disabled={pending}
+      >
+        {pending ? "Checking location…" : label}
+      </button>
+      {!compact && (
+        <p
+          style={{ color: "var(--ob-muted)", fontSize: 13, margin: "10px 0 0" }}
+        >
+          You need to be at the customer&apos;s address to check in.
+        </p>
+      )}
+      {note && (
+        <p
+          style={{
+            margin: "8px 0 0",
+            padding: "9px 11px",
+            borderRadius: 9,
+            fontSize: 12.5,
+            background: good ? "var(--ob-purple-soft)" : "var(--ob-blush)",
+            color: good ? "var(--ob-text)" : "var(--ob-danger-text)",
+          }}
+        >
+          {note}
+        </p>
+      )}
+      {blocked && (
+        <button
+          type="button"
+          onClick={() => run(blocked.lat, blocked.lng, true)}
+          disabled={pending}
+          style={{
+            ...ghost,
+            marginTop: 8,
+            fontSize: 12,
+            padding: "7px 13px",
+          }}
+        >
+          Continue anyway — development only
+        </button>
+      )}
+    </div>
+  );
 }
 
 // Provider rates the client.

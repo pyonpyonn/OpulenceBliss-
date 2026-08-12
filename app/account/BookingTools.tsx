@@ -3,7 +3,7 @@
 // Cancel / reschedule / rate — the client's controls on each booking.
 // Save at: app/account/BookingTools.tsx
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   cancelBooking,
   loadRescheduleWindow,
@@ -57,6 +57,7 @@ export function BookingTools({
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [cutoff, setCutoff] = useState<string | null>(null);
+  const openedFromLink = useRef(false);
 
   async function loadSlots() {
     setMessage(null);
@@ -85,6 +86,16 @@ export function BookingTools({
       setSlots([]);
     }
   }
+
+  useEffect(() => {
+    if (openedFromLink.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reschedule") !== "1") return;
+    openedFromLink.current = true;
+    void loadSlots();
+    // loadSlots is intentionally run once for the explicit dashboard link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{ marginTop: 12 }}>
