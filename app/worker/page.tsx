@@ -91,7 +91,6 @@ export default async function WorkerPage() {
     .maybeSingle();
 
   const active = prov?.joining_fee_paid === true;
-  const approved = prov?.vetting_status === "approved";
 
   const { data: rowsData } = await supabase
     .from("bookings")
@@ -260,27 +259,11 @@ export default async function WorkerPage() {
     }
   }
 
-  const todayCount = upcoming.filter(
-    (r) =>
-      new Date(r.scheduled_at).toDateString() === new Date().toDateString(),
-  ).length;
-  const dueTotal = upcoming.reduce((s, r) => s + (earnMap.get(r.id) ?? 0), 0);
-
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         <h1 style={h1}>Jobs</h1>
-
-        {/* ---- Summary, straight at the top ---- */}
-        {active && approved && (
-          <div style={statGrid}>
-            <Stat label="Jobs today" value={String(todayCount)} />
-            <Stat label="New offers" value={String(offers.length)} />
-            <Stat label="Coming up" value={String(upcoming.length)} />
-            <Stat label="Due to you" value={`£${dueTotal.toFixed(2)}`} />
-          </div>
-        )}
 
         {/* ---- In progress: short view only ---- */}
         {running && active && (
@@ -467,24 +450,6 @@ function EmptyNextJob() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ ...card, padding: "18px 20px" }}>
-      <p
-        style={{
-          fontFamily: "'Nunito', system-ui, sans-serif",
-          fontSize: 25,
-          color: "#16202A",
-          margin: "0 0 2px",
-        }}
-      >
-        {value}
-      </p>
-      <span style={{ color: "#7A828C", fontSize: 13 }}>{label}</span>
-    </div>
-  );
-}
-
 /* ---------- styles ---------- */
 
 const FONTS =
@@ -494,18 +459,6 @@ const wrap: React.CSSProperties = {
   color: "#16202A",
   fontFamily: "'Nunito', system-ui, sans-serif",
   padding: 0,
-};
-const card: React.CSSProperties = {
-  background: "var(--ob-surface)",
-  border: "1px solid var(--ob-border)",
-  borderRadius: 16,
-  padding: "22px 24px",
-};
-const statGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-  gap: 12,
-  marginBottom: 34,
 };
 const h1: React.CSSProperties = {
   fontFamily: "'Nunito', system-ui, sans-serif",
