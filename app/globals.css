@@ -245,41 +245,8 @@ body {
 
 @media (min-width: 900px) {
   .portal-main {
-    width: calc(100% - 92px) !important;
+    width: 0 !important;
     max-width: none !important;
-  }
-
-  .appearance-control.portal {
-    left: 25px;
-    bottom: 18px;
-  }
-
-  .appearance-control.portal .appearance-trigger {
-    width: 44px;
-    height: 44px;
-    justify-content: center;
-    padding: 0;
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
-    font-size: 20px;
-  }
-
-  .appearance-control.portal .appearance-trigger-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .appearance-control.portal .appearance-menu {
-    left: 54px;
-    bottom: 0;
   }
 }
 
