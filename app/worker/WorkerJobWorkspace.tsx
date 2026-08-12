@@ -167,6 +167,11 @@ export default function WorkerJobWorkspace({
   const modalOpen = chatOpen || issueOpen;
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("chat") === "1") setChatOpen(true);
+  }, []);
+
+  useEffect(() => {
     if (!modalOpen) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";

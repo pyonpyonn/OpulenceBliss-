@@ -74,17 +74,6 @@ function elapsed(
   return hours ? `${hours}h ${rest}m` : `${rest}m`;
 }
 
-function timeLeft(iso: string | null | undefined) {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return "Expiring";
-  const mins = Math.floor(ms / 60000);
-  if (mins < 60) return `${mins}m left`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h left`;
-  return `${Math.floor(hrs / 24)}d left`;
-}
-
 export default async function WorkerPage() {
   const supabase = await createClient();
   const {
@@ -224,6 +213,7 @@ export default async function WorkerPage() {
       arrivedAt: checkIn?.arrived_at ?? null,
       leftAt: checkIn?.left_at ?? null,
       geofencePass: checkIn?.geofence_pass ?? null,
+      offerExpiresAt: booking.offer_expires_at ?? null,
     };
   };
 
@@ -261,7 +251,7 @@ export default async function WorkerPage() {
   return (
     <main style={wrap}>
       <link rel="stylesheet" href={FONTS} />
-      <div style={{ maxWidth: 780 }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         <h1 style={h1}>Jobs</h1>
 
         {/* ---- Summary, straight at the top ---- */}
@@ -287,69 +277,26 @@ export default async function WorkerPage() {
           New offers{offers.length > 0 ? ` (${offers.length})` : ""}
         </h2>
         {offers.length === 0 ? (
-          <p style={{ color: "#7A828C", margin: "0 0 34px" }}>
+          <p style={{ color: "var(--ob-muted)", margin: "0 0 34px" }}>
             Nothing waiting right now.
           </p>
         ) : (
           <div style={{ display: "grid", gap: 16, marginBottom: 34 }}>
-            {offers.map((r) => {
-              const pkg = one(r.packages);
-              const earns = earnMap.get(r.id);
-              return (
-                <article key={r.id} style={{ ...card, borderColor: "#F3CBD4" }}>
-                  <div style={rowHead}>
-                    <h3 style={cardTitle}>{pkg?.name ?? "Service"}</h3>
-                    <span
-                      style={{
-                        ...badge,
-                        background: "#FFE6EA",
-                        color: "#B0384F",
-                      }}
-                    >
-                      {timeLeft(r.offer_expires_at) ?? "New offer"}
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      margin: "-6px 0 14px",
-                      fontSize: 13,
-                      color: "#7A828C",
-                    }}
-                  >
-                    Offered to several providers — first to accept gets it.
-                  </p>
-                  <Facts
-                    client={r.customer_email}
-                    address={r.address}
-                    time={when(r.scheduled_at)}
-                    earns={earns}
-                    notes={r.household_notes}
-                  />
-                  {active ? (
-                    <JobActions
-                      id={r.id}
-                      status={r.status}
-                      scheduledAt={r.scheduled_at}
-                    />
-                  ) : (
-                    <p
-                      style={{ marginTop: 14, color: "#B0384F", fontSize: 14 }}
-                    >
-                      Pay the joining fee above to accept this job.
-                    </p>
-                  )}
-                </article>
-              );
-            })}
+            {offers.map((booking) => (
+              <ActiveJob
+                key={booking.id}
+                job={toActiveJob(booking)}
+                canAct={active}
+                compact
+              />
+            ))}
           </div>
         )}
 
         {/* ---- 3. Coming up ---- */}
         <h2 style={sectionTitle}>Coming up</h2>
         {upcoming.length === 0 ? (
-          <p style={{ color: "#7A828C", margin: "0 0 34px" }}>
-            Nothing scheduled. Check your availability is up to date.
-          </p>
+          <EmptyNextJob />
         ) : (
           <div style={{ display: "grid", gap: 14, marginBottom: 34 }}>
             {upcoming.map((booking) => (
@@ -359,7 +306,9 @@ export default async function WorkerPage() {
         )}
 
         {/* ---- 4. History ---- */}
-        <h2 style={sectionTitle}>Past work</h2>
+        <h2 id="past-work" style={sectionTitle}>
+          Past work
+        </h2>
         {past.length === 0 ? (
           <p style={{ color: "#7A828C" }}>Nothing yet.</p>
         ) : (
@@ -481,46 +430,22 @@ export default async function WorkerPage() {
 
 /* ---------- small pieces ---------- */
 
-function Facts({
-  client,
-  address,
-  time,
-  earns,
-  notes,
-}: {
-  client: string | null;
-  address: string | null;
-  time: string;
-  earns?: number;
-  notes: string | null;
-}) {
+function EmptyNextJob() {
   return (
-    <>
-      <dl style={factGrid}>
-        <Fact label="Client" value={client ?? "—"} />
-        <Fact label="Address" value={address ?? "—"} />
-        <Fact label="When" value={time} />
-        <Fact
-          label="You earn"
-          value={earns !== undefined ? `£${earns.toFixed(2)}` : "—"}
-        />
-      </dl>
-      {notes && (
-        <div style={notesBox}>
-          <p style={notesH}>Client&apos;s notes</p>
-          <p style={{ margin: 0, fontSize: 14 }}>{notes}</p>
-        </div>
-      )}
-    </>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt style={dt}>{label}</dt>
-      <dd style={dd}>{value}</dd>
-    </div>
+    <section style={emptyJob}>
+      <div style={emptyIcon} aria-hidden="true">
+        ◫
+      </div>
+      <div>
+        <h3 style={emptyTitle}>You don&apos;t have any upcoming jobs yet</h3>
+        <p style={emptyCopy}>
+          New bookings will appear here once clients request your services.
+        </p>
+        <a href="/worker/availability" style={emptyAction}>
+          View schedule
+        </a>
+      </div>
+    </section>
   );
 }
 
@@ -553,8 +478,8 @@ const wrap: React.CSSProperties = {
   padding: 0,
 };
 const card: React.CSSProperties = {
-  background: "#fff",
-  border: "1px solid #EDEFF1",
+  background: "var(--ob-surface)",
+  border: "1px solid var(--ob-border)",
   borderRadius: 16,
   padding: "22px 24px",
 };
@@ -563,45 +488,6 @@ const statGrid: React.CSSProperties = {
   gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
   gap: 12,
   marginBottom: 34,
-};
-const rowHead: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 12,
-  marginBottom: 14,
-};
-const factGrid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-  gap: 14,
-  margin: 0,
-};
-const dt: React.CSSProperties = {
-  color: "#A9AFB7",
-  fontSize: 11.5,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  marginBottom: 3,
-};
-const dd: React.CSSProperties = {
-  margin: 0,
-  color: "#16202A",
-  fontSize: 14.5,
-  fontWeight: 900,
-};
-const notesBox: React.CSSProperties = {
-  background: "transparent",
-  borderRadius: 12,
-  padding: "12px 14px",
-  marginTop: 16,
-};
-const notesH: React.CSSProperties = {
-  margin: "0 0 4px",
-  fontSize: 11.5,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#A9AFB7",
 };
 const h1: React.CSSProperties = {
   fontFamily: "'Nunito', system-ui, sans-serif",
@@ -614,20 +500,54 @@ const sectionTitle: React.CSSProperties = {
   fontFamily: "'Nunito', system-ui, sans-serif",
   fontWeight: 900,
   fontSize: 22,
-  color: "#16202A",
+  color: "var(--ob-text)",
   margin: "0 0 14px",
 };
-const cardTitle: React.CSSProperties = {
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  fontWeight: 900,
-  fontSize: 21,
-  color: "#16202A",
-  margin: 0,
+const emptyJob: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 28,
+  minHeight: 150,
+  boxSizing: "border-box",
+  marginBottom: 34,
+  padding: "24px",
+  border: "1px solid var(--ob-border)",
+  borderRadius: 18,
+  background: "var(--ob-surface)",
 };
-const badge: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  padding: "5px 12px",
-  borderRadius: 999,
-  whiteSpace: "nowrap",
+const emptyIcon: React.CSSProperties = {
+  display: "grid",
+  placeItems: "center",
+  width: 86,
+  height: 86,
+  flex: "0 0 86px",
+  borderRadius: "50%",
+  background: "var(--ob-purple-soft)",
+  color: "var(--ob-purple)",
+  fontSize: 44,
+  fontWeight: 900,
+};
+const emptyTitle: React.CSSProperties = {
+  margin: "0 0 4px",
+  color: "var(--ob-text)",
+  fontSize: 18,
+  fontWeight: 900,
+};
+const emptyCopy: React.CSSProperties = {
+  maxWidth: 430,
+  margin: "0 0 13px",
+  color: "var(--ob-muted)",
+  fontSize: 13.5,
+  fontWeight: 650,
+};
+const emptyAction: React.CSSProperties = {
+  display: "inline-block",
+  border: "1px solid var(--ob-purple)",
+  borderRadius: 9,
+  padding: "8px 15px",
+  color: "var(--ob-purple)",
+  fontSize: 12.5,
+  fontWeight: 900,
+  textDecoration: "none",
 };

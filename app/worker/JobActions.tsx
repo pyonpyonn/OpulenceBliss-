@@ -71,7 +71,25 @@ export default function JobActions({
   if (status === "offered") {
     return (
       <div style={{ marginTop: compact ? 0 : 16 }}>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: compact ? "flex-end" : undefined,
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            onClick={() =>
+              start(async () => {
+                await declineJob(id);
+              })
+            }
+            disabled={pending}
+            style={dim(ghost)}
+          >
+            Decline
+          </button>
           <button
             onClick={() =>
               start(async () => {
@@ -84,20 +102,9 @@ export default function JobActions({
               })
             }
             disabled={pending}
-            style={dim(green)}
+            style={dim(compact ? apricot : green)}
           >
-            {pending ? "…" : "Accept"}
-          </button>
-          <button
-            onClick={() =>
-              start(async () => {
-                await declineJob(id);
-              })
-            }
-            disabled={pending}
-            style={dim(ghost)}
-          >
-            Decline
+            {pending ? "…" : compact ? "Accept booking" : "Accept"}
           </button>
         </div>
         {note && (

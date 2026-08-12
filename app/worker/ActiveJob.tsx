@@ -1,10 +1,21 @@
 "use client";
 
-// The provider's live job. Save at: app/worker/ActiveJob.tsx
+// Compact job-state card used only on the provider Jobs dashboard.
 
 import { useEffect, useState } from "react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  Eye,
+  Info,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  UserRound,
+} from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
-import ParticipantSummary from "@/components/ParticipantSummary";
 import JobActions from "./JobActions";
 
 export type ActiveJobData = {
@@ -24,407 +35,580 @@ export type ActiveJobData = {
   arrivedAt: string | null;
   leftAt: string | null;
   geofencePass: boolean | null;
+  offerExpiresAt?: string | null;
 };
 
-function whenLabel(iso: string) {
-  const d = new Date(iso);
+const STAGES = ["Booked", "Confirmed", "On the way", "In progress", "Done"];
+
+function stageIndex(status: string) {
+  if (status === "completed") return 4;
+  if (status === "in_progress") return 3;
+  if (status === "scheduled") return 1;
+  return 0;
+}
+
+function relativeDate(iso: string) {
+  const date = new Date(iso);
   const today = new Date();
-  const tmr = new Date();
-  tmr.setDate(today.getDate() + 1);
-  const day =
-    d.toDateString() === today.toDateString()
-      ? "Today"
-      : d.toDateString() === tmr.toDateString()
-        ? "Tomorrow"
-        : d.toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          });
-  return `${day} at ${d.toLocaleTimeString("en-GB", {
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+  return date.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function fullDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function clock(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-  })}`;
+  });
+}
+
+function durationLabel(minutes: number | null) {
+  if (!minutes) return "Flexible time";
+  if (minutes >= 120 && minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
+  return `${minutes} min`;
+}
+
+function finishTime(start: string, duration: number | null) {
+  if (!duration) return null;
+  return new Date(new Date(start).getTime() + duration * 60_000).toISOString();
+}
+
+function offerTimeLeft(iso: string | null | undefined) {
+  if (!iso) return "Respond while the offer is open.";
+  const minutes = Math.floor((new Date(iso).getTime() - Date.now()) / 60_000);
+  if (minutes <= 0) return "This offer is expiring now.";
+  if (minutes < 60) return `${minutes} minutes left to respond.`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours} ${hours === 1 ? "hour" : "hours"} left to respond.`;
+}
+
+function statusCopy(job: ActiveJobData, elapsed: string) {
+  if (job.status === "offered") {
+    return {
+      tone: "offer",
+      title: "New booking request",
+      detail: offerTimeLeft(job.offerExpiresAt),
+    };
+  }
+  if (job.status === "scheduled") {
+    return {
+      tone: "confirmed",
+      title: "You have confirmed this job",
+      detail:
+        "Open the full details before you travel so you know what to expect.",
+    };
+  }
+  if (job.status === "in_progress") {
+    return {
+      tone: "live",
+      title: "This visit is in progress",
+      detail: elapsed
+        ? `${elapsed} on site`
+        : "You are checked in with the client.",
+    };
+  }
+  if (job.status === "completed") {
+    return {
+      tone: "done",
+      title: "Job completed successfully",
+      detail: "Your completed visit and payout status are saved.",
+    };
+  }
+  return {
+    tone: "neutral",
+    title: "Job update",
+    detail: "Open the full details for the latest information.",
+  };
 }
 
 export default function ActiveJob({
   job,
-  compact,
+  canAct = true,
 }: {
   job: ActiveJobData;
   compact?: boolean;
+  canAct?: boolean;
 }) {
   const live = job.status === "in_progress";
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!live) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
   }, [live]);
 
   let elapsed = "";
-  let progress = 0;
   if (live && job.arrivedAt) {
-    const secs = Math.max(
+    const seconds = Math.max(
       0,
       Math.floor((now - new Date(job.arrivedAt).getTime()) / 1000),
     );
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    elapsed =
-      (h > 0 ? `${h}:` : "") +
-      `${String(m).padStart(h > 0 ? 2 : 1, "0")}:${String(s).padStart(2, "0")}`;
-    if (job.durationMinutes) {
-      progress = Math.min(100, (secs / (job.durationMinutes * 60)) * 100);
-    }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const rest = seconds % 60;
+    elapsed = `${hours ? `${hours}:` : ""}${String(minutes).padStart(
+      hours ? 2 : 1,
+      "0",
+    )}:${String(rest).padStart(2, "0")}`;
   }
 
+  const finish = finishTime(job.scheduled_at, job.durationMinutes);
   const maps = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         job.address,
       )}`
     : null;
+  const status = statusCopy(job, elapsed);
+  const detailHref = live ? "/worker/current" : `/worker/job/${job.id}`;
+  const customerInitial = (job.client ?? "C").trim().charAt(0).toUpperCase();
 
   return (
-    <section
-      className={`job${live ? " live" : ""}${compact ? " compact" : ""}`}
-    >
-      <div className="head">
-        <div>
-          <p className="eyebrow">
-            {live
-              ? "In progress now"
-              : job.status === "completed"
-                ? "Finished"
-                : "Next job"}
-          </p>
-          <h2>{job.service}</h2>
-          <p className="when">{whenLabel(job.scheduled_at)}</p>
+    <section className={`dashboard-job ${status.tone}`}>
+      <header className="job-head">
+        <div className="job-title">
+          <h3>
+            {job.service} · {durationLabel(job.durationMinutes)}
+          </h3>
+          <div className="date-row">
+            <span>
+              <CalendarDays size={16} /> {relativeDate(job.scheduled_at)},{" "}
+              {fullDate(job.scheduled_at)}
+            </span>
+            <span>
+              <Clock3 size={16} /> {clock(job.scheduled_at)}
+              {finish ? ` – ${clock(finish)}` : ""}
+            </span>
+          </div>
         </div>
-        {live ? (
-          <div className="timer">
-            <span className="dot" />
-            <strong>{elapsed}</strong>
-            <small>on site</small>
+
+        <div className="progress-wrap">
+          <BookingProgress
+            status={job.status}
+            stage={stageIndex(job.status)}
+            labels={STAGES}
+          />
+        </div>
+      </header>
+
+      <div className="summary-grid">
+        <Summary tone="mint" icon={<UserRound size={19} />} label="Client">
+          <div className="client-row">
+            <span className="avatar">{customerInitial}</span>
+            <div>
+              <strong>{job.client ?? "Customer"}</strong>
+              <small className="rating">
+                {job.clientRating !== null && job.clientRating !== undefined
+                  ? `${Number(job.clientRating).toFixed(1)} ★ (${job.clientRatingCount ?? 0})`
+                  : "Not yet rated"}
+              </small>
+            </div>
           </div>
-        ) : job.earns !== null && !compact ? (
-          <div className="pay">
-            <strong>£{job.earns.toFixed(2)}</strong>
-            <small>you earn</small>
-          </div>
-        ) : null}
+        </Summary>
+
+        <Summary tone="sky" icon={<MapPin size={19} />} label="Location">
+          <strong>{job.address ?? "Address unavailable"}</strong>
+          {maps && (
+            <a href={maps} target="_blank" rel="noreferrer">
+              <Navigation size={13} /> Open map
+            </a>
+          )}
+        </Summary>
+
+        <Summary tone="butter" icon={<Clock3 size={19} />} label="Duration">
+          <strong>{durationLabel(job.durationMinutes)}</strong>
+          <small>
+            {clock(job.scheduled_at)}
+            {finish ? ` – ${clock(finish)}` : ""}
+          </small>
+        </Summary>
+
+        <Summary tone="blush" icon={<CreditCard size={19} />} label="Payout">
+          <strong>
+            {job.earns !== null ? `£${job.earns.toFixed(2)}` : "—"}
+          </strong>
+          <small>{job.paymentLabel ?? "Payout updates after completion"}</small>
+        </Summary>
       </div>
 
-      {live && job.durationMinutes && (
-        <div className="bar">
-          <span style={{ width: `${progress}%` }} />
-          <em>
-            {Math.round(progress)}% of {job.durationMinutes} min
-          </em>
+      <footer className="state-bar">
+        {status.tone === "offer" ? (
+          <Info size={22} />
+        ) : (
+          <CheckCircle2 size={24} />
+        )}
+        <div className="state-copy">
+          <strong>{status.title}</strong>
+          <span>{status.detail}</span>
         </div>
-      )}
 
-      <BookingProgress status={job.status} />
-
-      <dl className="facts">
-        <div>
-          <dt>Customer</dt>
-          <dd>
-            {job.client ?? "—"}
-            {job.clientRating
-              ? ` · ${Number(job.clientRating).toFixed(1)}★${
-                  job.clientRatingCount ? ` (${job.clientRatingCount})` : ""
-                }`
-              : ""}
-          </dd>
+        <div className="state-actions">
+          {job.status === "offered" ? (
+            canAct ? (
+              <JobActions
+                id={job.id}
+                status={job.status}
+                scheduledAt={job.scheduled_at}
+                showExceptions={false}
+                compact
+              />
+            ) : (
+              <span className="locked-copy">Finish setup to respond</span>
+            )
+          ) : job.status === "completed" ? (
+            <>
+              <a className="secondary-action" href="/worker/earnings">
+                View payout
+              </a>
+              <a className="primary-action" href="/worker#past-work">
+                View completed jobs
+              </a>
+            </>
+          ) : (
+            <>
+              <a className="secondary-action" href={detailHref}>
+                <Eye size={16} /> See full details
+              </a>
+              <a className="primary-action" href={`${detailHref}?chat=1`}>
+                <MessageSquare size={16} /> Message client
+              </a>
+            </>
+          )}
         </div>
-        <div>
-          <dt>Address</dt>
-          <dd>
-            {job.address ?? "—"}
-            {maps && (
-              <>
-                {" · "}
-                <a href={maps} target="_blank" rel="noreferrer">
-                  map
-                </a>
-              </>
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>Duration</dt>
-          <dd>{job.durationMinutes ? `${job.durationMinutes} min` : "—"}</dd>
-        </div>
-        <div>
-          <dt>Payment</dt>
-          <dd>
-            {job.paymentLabel ??
-              (job.earns !== null ? `£${job.earns.toFixed(2)} secured` : "—")}
-          </dd>
-        </div>
-      </dl>
-
-      {!compact && (
-        <ParticipantSummary
-          roleLabel="Your customer"
-          name={job.client}
-          email={job.clientEmail}
-          rating={job.clientRating ?? null}
-          ratingCount={job.clientRatingCount ?? 0}
-          ratingSource="provider"
-          description="This score comes from providers after completed visits. Use Messages for arrival details or anything you need before the job."
-        />
-      )}
-
-      {job.notes && !compact && (
-        <div className="notes">
-          <p className="notes-h">Client&apos;s notes</p>
-          <p>{job.notes}</p>
-        </div>
-      )}
-
-      {job.geofencePass === false && !compact && (
-        <p className="flag">
-          Location was flagged at check-in — you weren&apos;t near the address.
-        </p>
-      )}
-
-      {!compact && (
-        <JobActions
-          id={job.id}
-          status={job.status}
-          scheduledAt={job.scheduled_at}
-        />
-      )}
-
-      {compact && (
-        <p className="more">
-          <a href={live ? "/worker/current" : `/worker/job/${job.id}`}>
-            See full details <span aria-hidden="true">→</span>
-          </a>
-        </p>
-      )}
+      </footer>
 
       <style jsx>{`
-        .job {
-          background: #fff;
-          border: 1px solid #edeff1;
-          border-radius: 20px;
-          padding: 28px 28px 24px;
-          font-family: "Nunito", system-ui, sans-serif;
-        }
-        .job.live {
-          border-color: #c86fc9;
-          box-shadow: 0 14px 36px rgba(22, 32, 42, 0.12);
-        }
-        .job.compact {
-          border: 2px solid #f1f1f2;
-          border-radius: 24px;
-          padding: 20px;
-        }
-        .head {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 20px;
-          flex-wrap: wrap;
-        }
-        .eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          font-size: 11.5px;
-          font-weight: 600;
-          color: #6d28d9;
-          margin: 0 0 6px;
-        }
-        h2 {
-          font-family: "Nunito", system-ui, sans-serif;
-          font-weight: 900;
-          font-size: 27px;
-          color: #16202a;
-          margin: 0 0 4px;
-        }
-        .when {
-          display: inline-flex;
-          color: var(--ob-text);
-          background: var(--ob-surface-soft);
+        .dashboard-job {
+          box-sizing: border-box;
+          width: 100%;
+          overflow: hidden;
           border: 1px solid var(--ob-border);
-          border-radius: 12px;
-          padding: 8px 11px;
-          font-size: 17px;
-          font-weight: 900;
-          line-height: 1.35;
-          margin: 5px 0 0;
-        }
-        .timer,
-        .pay {
-          display: flex;
-          align-items: baseline;
-          gap: 7px;
-          border-radius: 12px;
-          padding: 10px 16px;
-        }
-        .timer {
-          background: var(--ob-purple-soft);
-        }
-        .pay {
-          background: var(--ob-surface-soft);
-        }
-        .timer strong,
-        .pay strong {
-          font-family: "Nunito", system-ui, sans-serif;
-          font-size: 23px;
+          border-radius: 18px;
+          background: var(--ob-surface);
           color: var(--ob-text);
-          font-variant-numeric: tabular-nums;
+          box-shadow: 0 8px 24px rgba(22, 32, 42, 0.06);
+          font-family: "Nunito", system-ui, sans-serif;
         }
-        .timer small,
-        .pay small {
-          color: var(--ob-muted);
-          font-size: 12px;
+        .dashboard-job.live {
+          border-color: color-mix(
+            in srgb,
+            var(--ob-purple) 55%,
+            var(--ob-border)
+          );
+          box-shadow: 0 12px 30px var(--ob-shadow);
         }
-        .dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #4b8c68;
-          align-self: center;
-          animation: pulse 1.6s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%,
-          100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.3;
-          }
-        }
-        .bar {
-          position: relative;
-          height: 8px;
-          background: var(--ob-border);
-          border-radius: 999px;
-          margin: 20px 0 26px;
-        }
-        .bar span {
-          display: block;
-          height: 100%;
-          background: #c86fc9;
-          border-radius: 999px;
-          transition: width 1s linear;
-        }
-        .bar em {
-          position: absolute;
-          right: 0;
-          top: 12px;
-          font-style: normal;
-          font-size: 12px;
-          color: var(--ob-muted);
-        }
-        .facts {
+        .job-head {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
-          margin: 0;
-          padding: 0;
-          border: 0;
+          grid-template-columns: minmax(260px, 0.9fr) minmax(430px, 1.2fr);
+          align-items: start;
+          gap: 26px;
+          padding: 17px 20px 8px;
         }
-        .facts > div {
+        .job-title,
+        .progress-wrap {
           min-width: 0;
-          padding: 11px 12px;
-          border-radius: 13px;
-          background: var(--ob-surface-soft);
         }
-        .facts > div:nth-child(1) {
+        h3 {
+          margin: 0;
+          color: var(--ob-text);
+          font-size: 20px;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+        }
+        .date-row {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
+          margin-top: 7px;
+        }
+        .date-row span {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border-radius: 8px;
+          background: var(--ob-purple-soft);
+          color: var(--ob-text);
+          padding: 5px 9px;
+          font-size: 12.5px;
+          font-weight: 800;
+        }
+        .date-row span:first-child {
           background: var(--ob-mint);
         }
-        .facts > div:nth-child(2) {
-          background: var(--ob-sky);
-        }
-        .facts > div:nth-child(3) {
-          background: var(--ob-butter);
-        }
-        .facts > div:nth-child(4) {
-          background: var(--ob-blush);
-        }
-        .facts dt {
-          color: #a9afb7;
-          font-size: 11.5px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          margin-bottom: 4px;
-        }
-        .facts dd {
+        .progress-wrap :global(.booking-progress) {
           margin: 0;
-          color: #16202a;
+        }
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          padding: 6px 20px 10px;
+        }
+        .client-row {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          min-width: 0;
+        }
+        .client-row > div {
+          min-width: 0;
+        }
+        .avatar {
+          display: grid;
+          place-items: center;
+          width: 36px;
+          height: 36px;
+          flex: 0 0 36px;
+          border-radius: 50%;
+          background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
+          color: #fff;
+          font-size: 15px;
+          font-weight: 900;
+        }
+        .rating {
+          color: var(--ob-success-text) !important;
+          font-weight: 900 !important;
+        }
+        .state-bar {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 10px;
+          min-height: 54px;
+          padding: 9px 14px;
+          border-top: 1px solid var(--ob-border);
+          background: var(--ob-purple-soft);
+          color: var(--ob-purple);
+        }
+        .confirmed .state-bar,
+        .done .state-bar {
+          background: var(--ob-mint);
+          color: var(--ob-success-text);
+        }
+        .live .state-bar {
+          background: var(--ob-sky);
+          color: var(--ob-info-text);
+        }
+        .state-copy {
+          display: grid;
+          min-width: 0;
+        }
+        .state-copy strong {
+          color: inherit;
           font-size: 14px;
           font-weight: 900;
-          overflow-wrap: anywhere;
         }
-        .facts a {
-          color: #6d28d9;
-          font-weight: 900;
+        .state-copy span,
+        .locked-copy {
+          color: var(--ob-muted);
+          font-size: 12px;
+          font-weight: 700;
         }
-        .notes {
-          background: var(--ob-surface-soft);
-          border-radius: 12px;
-          padding: 14px 16px;
-          margin-top: 20px;
+        .state-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 9px;
+          flex-wrap: wrap;
         }
-        .notes-h {
-          margin: 0 0 4px;
-          font-size: 11.5px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: #a9afb7;
+        .state-actions :global(button),
+        .secondary-action,
+        .primary-action {
+          min-height: 38px;
+          box-sizing: border-box;
+          white-space: nowrap;
         }
-        .notes p:last-child {
-          margin: 0;
-          font-size: 14.5px;
-          color: #16202a;
-        }
-        .flag {
-          background: var(--ob-blush);
-          color: var(--ob-danger-text);
-          padding: 10px 12px;
-          border-radius: 10px;
-          font-size: 13.5px;
-          margin: 16px 0 0;
-        }
-        .more {
-          margin: 16px 0 0;
-        }
-        .more a {
+        .secondary-action,
+        .primary-action {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          background: #16202a;
-          color: #fff;
-          border-radius: 999px;
-          padding: 11px 18px;
-          font-size: 14px;
+          gap: 7px;
+          border-radius: 9px;
+          padding: 8px 15px;
+          font-size: 12.5px;
           font-weight: 900;
           text-decoration: none;
         }
-        .more a:hover {
-          background: #6d28d9;
+        .secondary-action {
+          border: 1px solid var(--ob-purple);
+          background: var(--ob-surface);
+          color: var(--ob-purple);
         }
-        @media (max-width: 620px) {
-          .facts {
+        .primary-action {
+          border: 1px solid var(--ob-purple);
+          background: var(--ob-purple);
+          color: #fff;
+        }
+        @media (max-width: 1080px) {
+          .job-head {
+            grid-template-columns: 1fr;
+            gap: 6px;
+          }
+          .progress-wrap {
+            margin-top: 4px;
+          }
+          .summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
-          .more a {
-            display: flex;
+        }
+        @media (max-width: 680px) {
+          .job-head {
+            padding: 16px 16px 7px;
+          }
+          h3 {
+            font-size: 18px;
+          }
+          .date-row {
+            align-items: stretch;
+          }
+          .date-row span {
+            flex: 1 1 190px;
+          }
+          .summary-grid {
+            grid-template-columns: 1fr;
+            padding: 5px 16px 10px;
+          }
+          .state-bar {
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            padding: 12px 14px;
+          }
+          .state-actions {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             width: 100%;
-            box-sizing: border-box;
+          }
+          .state-actions :global(> div),
+          .state-actions :global(> div > div) {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+          }
+          .state-actions :global(button),
+          .secondary-action,
+          .primary-action {
+            width: 100%;
+          }
+        }
+        @media (max-width: 430px) {
+          .state-actions,
+          .state-actions :global(> div),
+          .state-actions :global(> div > div) {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
     </section>
+  );
+}
+
+function Summary({
+  tone,
+  icon,
+  label,
+  children,
+}: {
+  tone: "mint" | "sky" | "butter" | "blush";
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`summary ${tone}`}>
+      <div className="summary-label">
+        {icon} {label}
+      </div>
+      <div className="summary-body">{children}</div>
+
+      <style jsx>{`
+        .summary {
+          min-width: 0;
+          min-height: 88px;
+          box-sizing: border-box;
+          border: 1px solid
+            color-mix(in srgb, var(--ob-border) 75%, transparent);
+          border-radius: 13px;
+          padding: 10px 12px;
+        }
+        .mint {
+          background: var(--ob-mint);
+          color: var(--ob-success-text);
+        }
+        .sky {
+          background: var(--ob-sky);
+          color: var(--ob-info-text);
+        }
+        .butter {
+          background: var(--ob-butter);
+          color: var(--ob-warning-text);
+        }
+        .blush {
+          background: var(--ob-blush);
+          color: var(--ob-danger-text);
+        }
+        .summary-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 7px;
+          font-size: 10.5px;
+          font-weight: 900;
+          letter-spacing: 0.055em;
+          text-transform: uppercase;
+        }
+        .summary-body {
+          display: grid;
+          gap: 3px;
+          min-width: 0;
+          color: var(--ob-text);
+        }
+        .summary-body :global(strong) {
+          overflow: hidden;
+          color: var(--ob-text);
+          font-size: 13.5px;
+          font-weight: 900;
+          line-height: 1.25;
+          text-overflow: ellipsis;
+        }
+        .summary-body :global(small) {
+          color: var(--ob-muted);
+          font-size: 11.5px;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+        .summary-body :global(a) {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          width: fit-content;
+          color: var(--ob-purple);
+          font-size: 11.5px;
+          font-weight: 900;
+          text-decoration: none;
+        }
+      `}</style>
+    </div>
   );
 }
