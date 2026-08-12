@@ -214,7 +214,7 @@ export default async function VisitPage({
           )}
 
           {(canRate || canTip || review) && (
-            <div style={actionBlock}>
+            <div id="review" style={actionBlock}>
               <strong style={actionTitle}>Your review</strong>
               {(canRate || review) && (
                 <RateBooking id={row.id} existing={review ?? null} />

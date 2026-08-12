@@ -21,11 +21,13 @@ type Row = {
   providers:
     | {
         display_name: string | null;
+        photo_url: string | null;
         rating_avg: number | null;
         rating_count: number | null;
       }
     | {
         display_name: string | null;
+        photo_url: string | null;
         rating_avg: number | null;
         rating_count: number | null;
       }[]
@@ -113,7 +115,7 @@ export default async function AccountPage({
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, rating_avg, rating_count), check_ins(arrived_at, left_at)",
+      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, photo_url, rating_avg, rating_count), check_ins(arrived_at, left_at)",
     )
     .order("scheduled_at", { ascending: false });
 
@@ -217,10 +219,14 @@ export default async function AccountPage({
       service: pkg?.name ?? "Service",
       durationMinutes: pkg?.duration_minutes ?? null,
       providerName: prv?.display_name ?? null,
+      providerPhoto: prv?.photo_url ?? null,
       providerRating: prv?.rating_avg ?? null,
       providerRatingCount: prv?.rating_count ?? 0,
+      paymentAmount: amount > 0 ? amount : null,
+      paymentStatus: payment?.status ?? null,
       paymentLabel,
       arrivedAt: ci?.arrived_at ?? null,
+      finishedAt: ci?.left_at ?? null,
     };
   };
 
@@ -232,7 +238,7 @@ export default async function AccountPage({
     <main style={wrap}>
       <link rel="stylesheet" href={FONT} />
 
-      <div style={{ maxWidth: 780 }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         {/* ---- welcome ---- */}
         <h1 style={h1}>
           Hey {firstName(me?.full_name ?? null, user.email ?? "there")} 👋
@@ -293,18 +299,7 @@ export default async function AccountPage({
             <CurrentVisit visit={toVisit(featured)} />
           </>
         ) : (
-          <div style={emptyBig}>
-            <span style={{ fontSize: 40 }}>🧼</span>
-            <strong style={{ fontSize: 20, fontWeight: 900, marginTop: 8 }}>
-              No visits booked
-            </strong>
-            <p style={{ color: "#6b7280", margin: "6px 0 18px", fontSize: 15 }}>
-              Pay per visit — no membership, no lock-in.
-            </p>
-            <a href="/book" style={btn}>
-              Book a service
-            </a>
-          </div>
+          <EmptyNextBooking />
         )}
 
         {/* ---- also coming up ---- */}
@@ -409,6 +404,28 @@ export default async function AccountPage({
         )}
       </div>
     </main>
+  );
+}
+
+function EmptyNextBooking() {
+  return (
+    <section className="account-empty-booking" style={emptyBig}>
+      <div style={emptyIcon} aria-hidden="true">
+        ◫
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <strong style={emptyTitle}>
+          You don&apos;t have any upcoming bookings yet
+        </strong>
+        <p style={emptyCopy}>
+          Treat yourself to a little self-care. Book a service in just a few
+          taps.
+        </p>
+      </div>
+      <a href="/book" style={emptyButton}>
+        Book a service
+      </a>
+    </section>
   );
 }
 
@@ -574,12 +591,53 @@ const upsell: React.CSSProperties = {
   flexWrap: "wrap",
 };
 const emptyBig: React.CSSProperties = {
-  background: "#fff",
-  border: "2px dashed #E5E5E7",
-  borderRadius: 24,
-  padding: "40px 26px",
-  textAlign: "center",
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: 28,
+  minHeight: 150,
+  boxSizing: "border-box",
+  marginBottom: 22,
+  padding: "24px 34px",
+  border: "1px solid var(--ob-border)",
+  borderRadius: 18,
+  background: "var(--ob-surface)",
+};
+const emptyIcon: React.CSSProperties = {
   display: "grid",
   placeItems: "center",
-  marginBottom: 22,
+  width: 86,
+  height: 86,
+  borderRadius: "50%",
+  background: "var(--ob-purple-soft)",
+  color: "var(--ob-purple)",
+  fontSize: 44,
+  fontWeight: 900,
+};
+const emptyTitle: React.CSSProperties = {
+  display: "block",
+  maxWidth: 320,
+  color: "var(--ob-text)",
+  fontSize: 18,
+  fontWeight: 900,
+};
+const emptyCopy: React.CSSProperties = {
+  maxWidth: 430,
+  margin: "5px 0 0",
+  color: "var(--ob-muted)",
+  fontSize: 13.5,
+  fontWeight: 650,
+};
+const emptyButton: React.CSSProperties = {
+  display: "inline-block",
+  minWidth: 190,
+  boxSizing: "border-box",
+  borderRadius: 10,
+  background: "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)",
+  color: "#fff",
+  padding: "13px 24px",
+  textAlign: "center",
+  fontSize: 14,
+  fontWeight: 900,
+  textDecoration: "none",
 };

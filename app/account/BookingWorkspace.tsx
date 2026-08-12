@@ -195,6 +195,12 @@ export default function BookingWorkspace({
 
   const modalOpen = chatOpen || cancelOpen;
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("chat") === "1") setChatOpen(true);
+    if (params.get("cancel") === "1" && canCancel) setCancelOpen(true);
+  }, [canCancel]);
+
+  useEffect(() => {
     if (!modalOpen) return;
     const before = document.body.style.overflow;
     document.body.style.overflow = "hidden";

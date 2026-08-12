@@ -241,6 +241,15 @@ body {
   .appearance-control.portal {
     bottom: 82px;
   }
+
+  .account-empty-booking {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  .account-empty-booking > a {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
 
 @media (min-width: 900px) {
@@ -258,6 +267,17 @@ body {
 }
 
 @media (max-width: 420px) {
+  .account-empty-booking {
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+    padding: 24px 18px !important;
+    text-align: center;
+  }
+
+  .account-empty-booking > a {
+    grid-column: auto;
+  }
+
   .appearance-trigger-label {
     position: absolute;
     width: 1px;
