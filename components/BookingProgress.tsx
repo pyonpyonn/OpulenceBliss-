@@ -156,6 +156,15 @@ export default function BookingProgress({
             top: 13.5px;
           }
         }
+        @media (max-width: 640px) {
+          .has-details small {
+            display: none;
+          }
+          .has-details {
+            margin-top: 24px;
+            margin-bottom: 20px;
+          }
+        }
         @media (prefers-reduced-motion: reduce) {
           .fill {
             transition: none;

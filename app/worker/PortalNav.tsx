@@ -1,31 +1,66 @@
 "use client";
 
-// SETUP: mkdir -p "app/worker" && code "app/worker/PortalNav.tsx"
-//
-// Inline styles on purpose. Media queries only for showing/hiding.
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  CalendarClock,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  CircleUserRound,
+  LogOut,
+  WalletCards,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
-const PURPLE = "#6D28D9";
-const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
-const INK = "#16202A";
-const MUTED = "#7A828C";
+type Item = {
+  href: string;
+  label: string;
+  short: string;
+  icon: LucideIcon;
+};
 
-type Item = { href: string; label: string; short: string; icon: string };
-
-const ITEMS: Item[] = [
-  { href: "/worker/current", label: "Current job", short: "Now", icon: "▶" },
-  { href: "/worker", label: "Jobs", short: "Jobs", icon: "≡" },
-  { href: "/worker/earnings", label: "My status", short: "Status", icon: "£" },
-  { href: "/worker/availability", label: "Availability", short: "Hours", icon: "◷" },
-  { href: "/worker/profile", label: "My profile", short: "You", icon: "☺" },
-  { href: "/worker/updates", label: "Updates", short: "News", icon: "✦" },
+const BASE_ITEMS: Item[] = [
+  { href: "/worker", label: "Jobs", short: "Jobs", icon: CalendarDays },
+  {
+    href: "/worker/earnings",
+    label: "My status",
+    short: "Status",
+    icon: WalletCards,
+  },
+  {
+    href: "/worker/profile",
+    label: "My profile",
+    short: "You",
+    icon: CircleUserRound,
+  },
+  {
+    href: "/worker/updates",
+    label: "Updates",
+    short: "News",
+    icon: Bell,
+  },
 ];
+
+const CURRENT_ITEM: Item = {
+  href: "/worker/current",
+  label: "Current job",
+  short: "Now",
+  icon: Activity,
+};
+
+const AVAILABILITY_ITEM: Item = {
+  href: "/worker/availability",
+  label: "Availability",
+  short: "Hours",
+  icon: CalendarClock,
+};
 
 export default function PortalNav({
   name,
@@ -34,7 +69,7 @@ export default function PortalNav({
   registered,
   paid,
   approved,
-  hasJobToday,
+  hasCurrentJob,
 }: {
   name: string;
   rating: number | null;
@@ -42,11 +77,17 @@ export default function PortalNav({
   registered: boolean;
   paid: boolean;
   approved: boolean;
-  hasJobToday: boolean;
+  hasCurrentJob: boolean;
 }) {
   const path = usePathname() ?? "";
-  const [hover, setHover] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const [collapsed, setCollapsed] = useState(true);
+  const locked = !registered || !paid;
+  const items = hasCurrentJob ? [CURRENT_ITEM, ...BASE_ITEMS] : BASE_ITEMS;
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem("opulence-worker-nav") !== "expanded");
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -55,182 +96,233 @@ export default function PortalNav({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user || !alive) return;
-      const { count: n } = await supabase
+      const { count: total } = await supabase
         .from("notifications")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("read", false);
-      if (alive) setUnread(n ?? 0);
+      if (alive) setUnread(total ?? 0);
     }
-    count();
-    const t = setInterval(count, 30000);
+    void count();
+    const timer = window.setInterval(count, 30_000);
     return () => {
       alive = false;
-      clearInterval(t);
+      window.clearInterval(timer);
     };
   }, []);
 
-  const locked = !registered || !paid;
-
-  // "Current job" is only meaningful on the day of a visit.
-  const items = hasJobToday
-    ? ITEMS
-    : ITEMS.filter((i) => i.href !== "/worker/current");
-
   const status = !registered
-    ? { text: "Not registered", bg: "#FFE6EA", fg: "#B0384F" }
+    ? {
+        text: "Not registered",
+        bg: "var(--ob-blush)",
+        fg: "var(--ob-danger-text)",
+      }
     : !paid
-    ? { text: "Fee unpaid", bg: "#FFF3D6", fg: "#8A5A00" }
-    : !approved
-    ? { text: "Awaiting approval", bg: "#FFF3D6", fg: "#8A5A00" }
-    : { text: "Active", bg: "#DFF5E8", fg: "#137B4E" };
-
-  const isOn = (href: string) =>
-    href === "/worker" ? path === "/worker" : path.startsWith(href);
+      ? {
+          text: "Fee unpaid",
+          bg: "var(--ob-butter)",
+          fg: "var(--ob-warning-text)",
+        }
+      : !approved
+        ? {
+            text: "Awaiting approval",
+            bg: "var(--ob-butter)",
+            fg: "var(--ob-warning-text)",
+          }
+        : {
+            text: "Active",
+            bg: "var(--ob-mint)",
+            fg: "var(--ob-success-text)",
+          };
 
   const first = (name || "P").trim().charAt(0).toUpperCase();
+  const isOn = (href: string) => {
+    if (href === "/worker") {
+      return path === "/worker" || path.startsWith("/worker/job/");
+    }
+    return path.startsWith(href);
+  };
+
+  function toggleSidebar() {
+    setCollapsed((value) => {
+      const next = !value;
+      localStorage.setItem(
+        "opulence-worker-nav",
+        next ? "collapsed" : "expanded",
+      );
+      return next;
+    });
+  }
 
   return (
     <>
-      {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="side">
-        <Link href="/worker" style={brand}>
-          opulence<span style={{ color: PURPLE }}>pro</span>
-        </Link>
+      <aside className={collapsed ? "side collapsed" : "side"}>
+        <div className="nav-head">
+          <Link
+            href="/worker"
+            className="brand"
+            aria-label="Opulence provider portal"
+          >
+            <span className="full-brand">
+              opulence<b>pro</b>
+            </span>
+            <span className="mini-brand">
+              O<b>B</b>
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="collapse-toggle"
+            onClick={toggleSidebar}
+            aria-label={
+              collapsed ? "Expand provider menu" : "Minimise provider menu"
+            }
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <ChevronRight size={19} /> : <ChevronLeft size={19} />}
+          </button>
+        </div>
 
-        <div style={profile}>
-          <div style={avatar}>{first}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={pName}>{name || "Provider"}</div>
-            <div style={pMeta}>
-              {rating
-                ? `${Number(rating).toFixed(1)} ★  ·  ${ratingCount} review${
-                    ratingCount === 1 ? "" : "s"
-                  }`
+        <div className="profile" title={collapsed ? name : undefined}>
+          <div className="avatar">
+            {first}
+            <span className="status-dot" style={{ background: status.fg }} />
+          </div>
+          <div className="nav-copy identity">
+            <strong>{name || "Provider"}</strong>
+            <span>
+              {rating !== null
+                ? `${rating.toFixed(1)} ★ · ${ratingCount} review${ratingCount === 1 ? "" : "s"}`
                 : "No reviews yet"}
-            </div>
+            </span>
           </div>
         </div>
 
-        <span style={{ ...chip, background: status.bg, color: status.fg }}>
+        <span
+          className="nav-copy status-chip"
+          style={{ background: status.bg, color: status.fg }}
+        >
           {status.text}
         </span>
 
-        <div style={sectionLabel}>Portal</div>
+        <nav className="nav-list" aria-label="Provider portal">
+          {items.map((item) => {
+            const active = isOn(item.href);
+            const itemLocked = locked && item.href !== "/worker";
+            const Icon = item.icon;
 
-        <nav style={{ display: "grid", gap: 4 }}>
-          {items.map((i) => {
-            const on = isOn(i.href);
-            const lock = locked && i.href !== "/worker";
-            const hot = hover === i.href;
-
-            if (lock) {
-              return (
-                <div
-                  key={i.href}
-                  style={{ ...row, color: "#B9BEC5", cursor: "not-allowed" }}
-                  title="Pay the £150 joining fee to unlock"
-                >
-                  <span style={{ ...badge, background: "#F3F4F6", color: "#B9BEC5" }}>
-                    {i.icon}
-                  </span>
-                  <span style={{ flex: 1 }}>{i.label}</span>
-                  <span style={{ fontSize: 12 }}>🔒</span>
-                </div>
-              );
-            }
-
-            return (
-              <Link
-                key={i.href}
-                href={i.href}
-                prefetch
-                onMouseEnter={() => setHover(i.href)}
-                onMouseLeave={() => setHover(null)}
-                style={{
-                  ...row,
-                  background: on ? "#F7F3FF" : hot ? "#F8F9FA" : "transparent",
-                  color: on ? PURPLE : INK,
-                  borderLeft: on
-                    ? `3px solid ${PURPLE}`
-                    : "3px solid transparent",
-                  paddingLeft: 10,
-                }}
+            return itemLocked ? (
+              <div
+                key={item.href}
+                className="nav-item locked"
+                title="Pay the joining fee to unlock"
+                aria-disabled="true"
               >
-                <span
-                  style={{
-                    ...badge,
-                    background: on ? "#EDE4FD" : "#F3F4F6",
-                    color: on ? PURPLE : MUTED,
-                  }}
-                >
-                  {i.icon}
+                <span className="nav-icon">
+                  <Icon size={23} strokeWidth={2.15} />
                 </span>
-                <span style={{ flex: 1 }}>{i.label}</span>
-                {i.href === "/worker/updates" && unread > 0 && (
-                  <span style={pill}>{unread}</span>
+                <span className="nav-copy">{item.label}</span>
+              </div>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch
+                className={active ? "nav-item active" : "nav-item"}
+                title={collapsed ? item.label : undefined}
+              >
+                <span className="nav-icon">
+                  <Icon size={23} strokeWidth={2.15} />
+                </span>
+                <span className="nav-copy">{item.label}</span>
+                {item.href === "/worker/updates" && unread > 0 && (
+                  <span className="nav-count">
+                    {unread > 99 ? "99+" : unread}
+                  </span>
                 )}
               </Link>
             );
           })}
         </nav>
 
-        {!registered && (
-          <Link href="/provider/join" style={joinBtn}>
-            Register as a provider
+        <div className="rail-separator" />
+
+        {locked ? (
+          <div
+            className="availability locked"
+            title="Finish provider setup to unlock"
+          >
+            <CalendarClock size={23} />
+            <span className="nav-copy">Availability</span>
+          </div>
+        ) : (
+          <Link
+            href={AVAILABILITY_ITEM.href}
+            className={
+              isOn(AVAILABILITY_ITEM.href)
+                ? "availability active"
+                : "availability"
+            }
+            title={collapsed ? AVAILABILITY_ITEM.label : undefined}
+          >
+            <CalendarClock size={23} />
+            <span className="nav-copy">Availability</span>
           </Link>
         )}
 
-        <div style={foot}>
+        <div className="rail-separator lower" />
+
+        <div className="foot">
           <button
-            style={footBtn}
+            className="foot-action"
+            title={collapsed ? "Sign out" : undefined}
             onClick={async () => {
               await supabase.auth.signOut();
               window.location.href = "/";
             }}
           >
-            Sign out
+            <LogOut size={22} />
+            <span className="nav-copy">Sign out</span>
           </button>
-          <Link href="/" style={footBtn}>
-            Customer site →
-          </Link>
         </div>
       </aside>
 
-      {/* ================= MOBILE TOP ================= */}
       <div className="mtop">
-        <Link href="/worker" style={{ ...brand, fontSize: 20 }}>
-          opulence<span style={{ color: PURPLE }}>pro</span>
+        <Link href="/worker" className="mobile-brand">
+          opulence<b>pro</b>
         </Link>
-        <span style={{ ...chip, background: status.bg, color: status.fg }}>
+        <span
+          className="mobile-status"
+          style={{ background: status.bg, color: status.fg }}
+        >
           {status.text}
         </span>
       </div>
 
-      {/* ================= MOBILE TABS ================= */}
-      <nav className="tabs">
-        {items.map((i) => {
-          const on = isOn(i.href);
-          const lock = locked && i.href !== "/worker";
-          return lock ? (
-            <div key={i.href} style={{ ...tab, color: "#C6CBD1" }}>
-              <span style={tabIcon}>🔒</span>
-              {i.short}
+      <nav className="tabs" aria-label="Provider mobile navigation">
+        {[...items, AVAILABILITY_ITEM].map((item) => {
+          const active = isOn(item.href);
+          const itemLocked = locked && item.href !== "/worker";
+          const Icon = item.icon;
+          return itemLocked ? (
+            <div key={item.href} className="tab locked" aria-disabled="true">
+              <Icon size={21} />
+              {item.short}
             </div>
           ) : (
             <Link
-              key={i.href}
-              href={i.href}
+              key={item.href}
+              href={item.href}
               prefetch
-              style={{ ...tab, color: on ? PURPLE : "#8B929B" }}
+              className={active ? "tab active" : "tab"}
             >
-              <span style={{ ...tabIcon, position: "relative" }}>
-                {i.icon}
-                {i.href === "/worker/updates" && unread > 0 && (
-                  <span style={tabDot} />
+              <span className="tab-icon">
+                <Icon size={21} />
+                {item.href === "/worker/updates" && unread > 0 && (
+                  <span className="tab-dot" />
                 )}
               </span>
-              {i.short}
+              {item.short}
             </Link>
           );
         })}
@@ -245,12 +337,33 @@ export default function PortalNav({
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          padding: 13px 16px;
-          background: #fff;
-          border-bottom: 1px solid #eceef0;
           position: sticky;
           top: 0;
-          z-index: 30;
+          z-index: 40;
+          box-sizing: border-box;
+          width: 100%;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--ob-border);
+          background: color-mix(in srgb, var(--ob-surface) 96%, transparent);
+          backdrop-filter: blur(14px);
+        }
+        .mobile-brand {
+          color: var(--ob-text);
+          font-size: 20px;
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          text-decoration: none;
+        }
+        .mobile-brand b,
+        .brand b {
+          color: var(--ob-purple);
+        }
+        .mobile-status {
+          border-radius: 999px;
+          padding: 6px 10px;
+          font-size: 11px;
+          font-weight: 900;
+          white-space: nowrap;
         }
         .tabs {
           display: flex;
@@ -258,11 +371,54 @@ export default function PortalNav({
           left: 0;
           right: 0;
           bottom: 0;
-          z-index: 60;
-          background: #fff;
-          border-top: 1px solid #eceef0;
-          padding: 6px 4px 8px;
-          box-shadow: 0 -2px 12px rgba(22, 32, 42, 0.06);
+          z-index: 80;
+          box-sizing: border-box;
+          min-height: 66px;
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scrollbar-width: none;
+          padding: 7px max(5px, env(safe-area-inset-left))
+            calc(7px + env(safe-area-inset-bottom));
+          border-top: 1px solid var(--ob-border);
+          background: color-mix(in srgb, var(--ob-surface) 97%, transparent);
+          box-shadow: 0 -5px 22px var(--ob-shadow);
+          backdrop-filter: blur(16px);
+        }
+        .tabs::-webkit-scrollbar {
+          display: none;
+        }
+        .tab {
+          flex: 1 0 62px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 3px;
+          color: var(--ob-muted);
+          font-size: 10px;
+          font-weight: 800;
+          text-decoration: none;
+        }
+        .tab.active {
+          color: var(--ob-purple);
+        }
+        .tab.locked {
+          opacity: 0.42;
+        }
+        .tab-icon {
+          position: relative;
+          display: grid;
+          place-items: center;
+        }
+        .tab-dot {
+          position: absolute;
+          top: -2px;
+          right: -5px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--ob-purple);
+          box-shadow: 0 0 0 2px var(--ob-surface);
         }
         @media (min-width: 900px) {
           .side {
@@ -274,12 +430,279 @@ export default function PortalNav({
             height: 100vh;
             box-sizing: border-box;
             overflow-y: auto;
-            padding: 24px 16px;
-            background: #fff;
-            border-right: 1px solid #eceef0;
+            padding: 24px 16px 86px;
+            border-right: 1px solid var(--ob-border);
+            background: var(--ob-surface);
             position: sticky;
             top: 0;
             align-self: flex-start;
+            transition:
+              width 0.22s ease,
+              flex-basis 0.22s ease,
+              padding 0.22s ease;
+          }
+          .side.collapsed {
+            width: 92px;
+            flex-basis: 92px;
+            align-items: center;
+            padding-left: 14px;
+            padding-right: 14px;
+          }
+          .nav-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 7px;
+            width: 100%;
+          }
+          .brand {
+            min-width: 0;
+            color: var(--ob-text);
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.045em;
+            line-height: 1;
+            text-decoration: none;
+          }
+          .mini-brand {
+            display: none;
+          }
+          .collapse-toggle {
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            border: 1px solid var(--ob-border);
+            border-radius: 11px;
+            background: var(--ob-surface);
+            color: var(--ob-muted);
+            box-shadow: 0 4px 12px var(--ob-shadow);
+            cursor: pointer;
+          }
+          .collapse-toggle:hover {
+            color: var(--ob-purple);
+            border-color: var(--ob-purple);
+          }
+          .profile {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            min-width: 0;
+            padding: 10px;
+            border-radius: 17px;
+            background: var(--ob-surface-soft);
+          }
+          .avatar {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            border-radius: 50%;
+            background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 900;
+          }
+          .status-dot {
+            position: absolute;
+            right: 0;
+            bottom: 1px;
+            width: 11px;
+            height: 11px;
+            border: 2px solid var(--ob-surface);
+            border-radius: 50%;
+          }
+          .identity {
+            min-width: 0;
+          }
+          .identity strong,
+          .identity span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .identity strong {
+            color: var(--ob-text);
+            font-size: 14px;
+            font-weight: 900;
+          }
+          .identity span {
+            color: var(--ob-muted);
+            font-size: 11.5px;
+            font-weight: 650;
+          }
+          .status-chip {
+            align-self: flex-start;
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 11px;
+            font-weight: 900;
+          }
+          .nav-list {
+            display: grid;
+            gap: 7px;
+            width: 100%;
+          }
+          .nav-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 47px;
+            box-sizing: border-box;
+            border-radius: 14px;
+            padding: 7px 10px;
+            color: var(--ob-muted);
+            font-size: 14px;
+            font-weight: 850;
+            text-decoration: none;
+          }
+          .nav-item:hover {
+            color: var(--ob-text);
+            background: var(--ob-surface-soft);
+          }
+          .nav-item.active {
+            color: var(--ob-purple);
+            background: var(--ob-purple-soft);
+          }
+          .nav-item.locked {
+            opacity: 0.42;
+            cursor: not-allowed;
+          }
+          .nav-icon {
+            display: grid;
+            place-items: center;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+          }
+          .nav-count {
+            display: grid;
+            place-items: center;
+            min-width: 21px;
+            height: 21px;
+            margin-left: auto;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 900;
+          }
+          .rail-separator {
+            width: calc(100% - 20px);
+            height: 1px;
+            margin: 0 auto;
+            background: var(--ob-border);
+          }
+          .availability {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 50px;
+            box-sizing: border-box;
+            border-radius: 15px;
+            background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
+            color: #fff;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 900;
+            text-decoration: none;
+          }
+          .availability.locked {
+            filter: grayscale(0.65);
+            opacity: 0.45;
+          }
+          .rail-separator.lower {
+            margin-top: 2px;
+          }
+          .foot {
+            margin-top: auto;
+            width: 100%;
+          }
+          .foot-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 46px;
+            border: 0;
+            border-radius: 13px;
+            background: transparent;
+            color: var(--ob-muted);
+            padding: 9px 11px;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+          }
+          .foot-action:hover {
+            background: var(--ob-surface-soft);
+            color: var(--ob-text);
+          }
+          .collapsed .full-brand,
+          .collapsed .nav-copy {
+            display: none;
+          }
+          .collapsed .mini-brand {
+            display: inline;
+            font-size: 23px;
+          }
+          .collapsed .nav-head {
+            gap: 3px;
+          }
+          .collapsed .collapse-toggle {
+            width: 30px;
+            height: 30px;
+            flex-basis: 30px;
+          }
+          .collapsed .profile {
+            padding: 0;
+            background: transparent;
+          }
+          .collapsed .avatar {
+            width: 52px;
+            height: 52px;
+            flex-basis: 52px;
+          }
+          .collapsed .nav-item {
+            justify-content: center;
+            width: 54px;
+            height: 52px;
+            min-height: 52px;
+            padding: 0;
+          }
+          .collapsed .nav-icon {
+            width: auto;
+            height: auto;
+          }
+          .collapsed .nav-count {
+            position: absolute;
+            top: 1px;
+            right: 0;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 4px;
+          }
+          .collapsed .rail-separator {
+            width: 54px;
+          }
+          .collapsed .availability {
+            width: 54px;
+            height: 54px;
+            min-height: 54px;
+            padding: 0;
+          }
+          .collapsed .foot-action {
+            justify-content: center;
+            width: 54px;
+            height: 50px;
+            padding: 0;
           }
           .mtop,
           .tabs {
@@ -290,167 +713,3 @@ export default function PortalNav({
     </>
   );
 }
-
-/* ---------- inline styles ---------- */
-
-const brand: React.CSSProperties = {
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  fontSize: 24,
-  fontWeight: 900,
-  letterSpacing: "-0.035em",
-  lineHeight: 1,
-  color: INK,
-  textDecoration: "none",
-  padding: "0 8px 4px",
-};
-
-const profile: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 11,
-  padding: "12px 10px",
-  background: "#F7F8F9",
-  borderRadius: 16,
-};
-
-const avatar: React.CSSProperties = {
-  width: 42,
-  height: 42,
-  borderRadius: "50%",
-  background: `linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)`,
-  color: "#fff",
-  display: "grid",
-  placeItems: "center",
-  fontWeight: 900,
-  fontSize: 18,
-  flexShrink: 0,
-};
-
-const pName: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 800,
-  color: INK,
-  lineHeight: 1.25,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const pMeta: React.CSSProperties = {
-  fontSize: 12.5,
-  fontWeight: 600,
-  color: MUTED,
-};
-
-const chip: React.CSSProperties = {
-  alignSelf: "flex-start",
-  fontSize: 12,
-  fontWeight: 800,
-  padding: "5px 12px",
-  borderRadius: 999,
-  whiteSpace: "nowrap",
-};
-
-const sectionLabel: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 800,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  color: "#A9AFB7",
-  padding: "6px 10px 0",
-};
-
-const row: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 11,
-  padding: "10px 12px",
-  borderRadius: 12,
-  fontSize: 15,
-  fontWeight: 800,
-  textDecoration: "none",
-  fontFamily: "'Nunito', system-ui, sans-serif",
-};
-
-const badge: React.CSSProperties = {
-  width: 28,
-  height: 28,
-  borderRadius: 9,
-  display: "grid",
-  placeItems: "center",
-  fontSize: 13,
-  fontWeight: 900,
-  flexShrink: 0,
-};
-
-const joinBtn: React.CSSProperties = {
-  background: `linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)`,
-  color: "#fff",
-  textAlign: "center",
-  textDecoration: "none",
-  fontWeight: 900,
-  fontSize: 14.5,
-  padding: "12px",
-  borderRadius: 999,
-  marginTop: 4,
-};
-
-const foot: React.CSSProperties = {
-  marginTop: "auto",
-  display: "grid",
-  gap: 10,
-  paddingTop: 16,
-  borderTop: "1px solid #F1F2F4",
-};
-
-const footBtn: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  padding: "0 10px",
-  textAlign: "left",
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  fontSize: 13.5,
-  fontWeight: 700,
-  color: MUTED,
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
-const tab: React.CSSProperties = {
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  gap: 3,
-  fontSize: 11,
-  fontWeight: 800,
-  textDecoration: "none",
-  padding: "4px 0",
-  fontFamily: "'Nunito', system-ui, sans-serif",
-};
-
-const tabIcon: React.CSSProperties = { fontSize: 16, lineHeight: 1 };
-
-const pill: React.CSSProperties = {
-  minWidth: 20,
-  height: 20,
-  padding: "0 6px",
-  borderRadius: 999,
-  background: GRAD,
-  color: "#fff",
-  fontSize: 11,
-  fontWeight: 900,
-  display: "grid",
-  placeItems: "center",
-};
-
-const tabDot: React.CSSProperties = {
-  position: "absolute",
-  top: -2,
-  right: -6,
-  width: 8,
-  height: 8,
-  borderRadius: "50%",
-  background: "#7B2FF7",
-  boxShadow: "0 0 0 2px #fff",
-};

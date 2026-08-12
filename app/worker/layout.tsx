@@ -23,9 +23,7 @@ export default async function WorkerLayout({
         <div style={gateCard}>
           <div style={{ fontSize: 38 }}>🔑</div>
           <h1 style={gateTitle}>Provider portal</h1>
-          <p style={gateBody}>
-            Log in to see your jobs, hours and earnings.
-          </p>
+          <p style={gateBody}>Log in to see your jobs, hours and earnings.</p>
           <a href="/login" style={btn}>
             Log in
           </a>
@@ -70,33 +68,20 @@ export default async function WorkerLayout({
 
   const { data: prov } = await supabase
     .from("providers")
-    .select("id, display_name, joining_fee_paid, vetting_status, rating_avg, rating_count")
+    .select(
+      "id, display_name, joining_fee_paid, vetting_status, rating_avg, rating_count",
+    )
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  // Is there a visit today? Drives whether "Current job" appears at all.
-  let hasJobToday = false;
+  // The live-job shortcut exists only while a provider is actually checked in.
+  let hasCurrentJob = false;
   if (prov?.id) {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-
-    const { count } = await supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .in("status", ["scheduled", "in_progress"])
-      .gte("scheduled_at", start.toISOString())
-      .lt("scheduled_at", end.toISOString());
-
-    // Anything already in progress counts too, whatever day it was booked for —
-    // otherwise an early check-in would leave the tab hidden.
     const { count: live } = await supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("status", "in_progress");
-
-    hasJobToday = (count ?? 0) > 0 || (live ?? 0) > 0;
+    hasCurrentJob = (live ?? 0) > 0;
   }
 
   const registered = !!prov;
@@ -104,7 +89,7 @@ export default async function WorkerLayout({
   const approved = prov?.vetting_status === "approved";
 
   return (
-    <div style={shell}>
+    <div className="portal-shell worker-shell" style={shell}>
       <PortalNav
         name={prov?.display_name ?? prof?.full_name ?? user.email ?? "Provider"}
         rating={prov?.rating_avg ? Number(prov.rating_avg) : null}
@@ -112,10 +97,10 @@ export default async function WorkerLayout({
         registered={registered}
         paid={paid}
         approved={approved}
-        hasJobToday={hasJobToday}
+        hasCurrentJob={hasCurrentJob}
       />
 
-      <div style={main}>
+      <div className="portal-main" style={main}>
         {/* One honest banner at the top of the portal */}
         {!registered && (
           <Banner
@@ -233,10 +218,11 @@ const shell: React.CSSProperties = {
 
 const main: React.CSSProperties = {
   flex: 1,
+  width: "100%",
   minWidth: 0,
+  boxSizing: "border-box",
   background: "transparent",
   padding: "26px 22px 96px",
-  maxWidth: 1240,
 };
 
 const gateWrap: React.CSSProperties = {
