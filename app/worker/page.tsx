@@ -10,6 +10,7 @@ import JobActions from "./JobActions";
 
 type Row = {
   id: string;
+  customer_id: string | null;
   scheduled_at: string;
   status: string;
   address: string | null;
@@ -95,7 +96,7 @@ export default async function WorkerPage() {
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, household_notes, customer_email, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass)",
+      "id, customer_id, scheduled_at, status, address, household_notes, customer_email, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass)",
     )
     .order("scheduled_at", { ascending: true });
 
@@ -107,7 +108,7 @@ export default async function WorkerPage() {
     const { data: offerRows } = await supabase
       .from("booking_offers")
       .select(
-        "booking_id, bookings(id, scheduled_at, status, address, household_notes, customer_email, offer_expires_at, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass))",
+        "booking_id, bookings(id, customer_id, scheduled_at, status, address, household_notes, customer_email, offer_expires_at, provider_payout, packages(name, duration_minutes), check_ins(arrived_at, left_at, geofence_pass))",
       )
       .eq("provider_id", prov.id)
       .eq("status", "open");
@@ -167,19 +168,35 @@ export default async function WorkerPage() {
       full_name: string | null;
       client_rating_avg: number | null;
       client_rating_count: number | null;
+      completedWithProvider: number;
     }
   >();
   await Promise.all(
     assigned.map(async (booking) => {
-      const { data } = await supabase.rpc("booking_customer_summary", {
-        p_booking_id: booking.id,
-      });
+      const [{ data }, completedResult] = await Promise.all([
+        supabase.rpc("booking_customer_summary", {
+          p_booking_id: booking.id,
+        }),
+        booking.customer_id && prov?.id
+          ? supabase
+              .from("bookings")
+              .select("*", { count: "exact", head: true })
+              .eq("customer_id", booking.customer_id)
+              .eq("provider_id", prov.id)
+              .eq("status", "completed")
+          : Promise.resolve({ count: 0 }),
+      ]);
       const summary = one(data as never) as {
         full_name: string | null;
         client_rating_avg: number | null;
         client_rating_count: number | null;
       } | null;
-      if (summary) customerSummaryMap.set(booking.id, summary);
+      if (summary) {
+        customerSummaryMap.set(booking.id, {
+          ...summary,
+          completedWithProvider: completedResult.count ?? 0,
+        });
+      }
     }),
   );
 
@@ -201,6 +218,7 @@ export default async function WorkerPage() {
           ? null
           : Number(customer.client_rating_avg),
       clientRatingCount: customer?.client_rating_count ?? 0,
+      clientCompletedBookings: customer?.completedWithProvider ?? 0,
       service: pkg?.name ?? "Service",
       durationMinutes: pkg?.duration_minutes ?? null,
       earns: earnMap.get(booking.id) ?? null,

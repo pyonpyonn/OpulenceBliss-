@@ -12,8 +12,9 @@ import {
   Info,
   MapPin,
   MessageSquare,
+  RotateCcw,
+  ShieldCheck,
   Star,
-  UserRound,
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
 
@@ -26,6 +27,8 @@ export type Visit = {
   durationMinutes: number | null;
   providerName: string | null;
   providerPhoto?: string | null;
+  providerYearsExperience?: number | null;
+  providerVerified?: boolean;
   providerRating: number | null;
   providerRatingCount?: number | null;
   paymentAmount?: number | null;
@@ -217,11 +220,7 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
       </header>
 
       <div className="summary-grid">
-        <Summary
-          tone="mint"
-          icon={<UserRound size={19} />}
-          label="Professional"
-        >
+        <div className="identity-card professional-identity">
           {assigned ? (
             <div className="professional-row">
               {visit.providerPhoto ? (
@@ -230,12 +229,25 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
               ) : (
                 <span className="avatar fallback">{providerInitial}</span>
               )}
-              <div>
+              <div className="identity-copy">
                 <strong>{visit.providerName}</strong>
-                <small className="rating">
-                  {visit.providerRating !== null
-                    ? `${Number(visit.providerRating).toFixed(1)} ★ (${visit.providerRatingCount ?? 0})`
-                    : "Verified professional"}
+                <div className="identity-meta">
+                  <b className="rating">
+                    {visit.providerRating !== null
+                      ? `${Number(visit.providerRating).toFixed(1)} ★ (${visit.providerRatingCount ?? 0})`
+                      : "Not yet rated"}
+                  </b>
+                  {visit.providerVerified && (
+                    <span>
+                      <ShieldCheck size={11} /> Verified
+                    </span>
+                  )}
+                </div>
+                <small className="history">
+                  <RotateCcw size={13} />
+                  {visit.providerYearsExperience
+                    ? `${visit.providerYearsExperience}+ years experience`
+                    : `${visit.providerRatingCount ?? 0} client reviews`}
                 </small>
               </div>
             </div>
@@ -245,7 +257,7 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
               <small>Assigning a professional</small>
             </>
           )}
-        </Summary>
+        </div>
 
         <Summary tone="sky" icon={<MapPin size={19} />} label="Location">
           <strong>{visit.address ?? "Address unavailable"}</strong>
@@ -396,10 +408,70 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
         .professional-row > div {
           min-width: 0;
         }
+        .identity-card {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          min-height: 88px;
+          box-sizing: border-box;
+          border: 1px solid
+            color-mix(in srgb, var(--ob-border) 75%, transparent);
+          border-radius: 13px;
+          padding: 10px 12px;
+          background: var(--ob-mint);
+          color: var(--ob-text);
+        }
+        .identity-copy {
+          display: grid;
+          gap: 3px;
+          min-width: 0;
+        }
+        .identity-copy > strong {
+          overflow: hidden;
+          color: var(--ob-text);
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1.2;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .identity-meta {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
+        }
+        .identity-meta b {
+          font-size: 12px;
+        }
+        .identity-meta span {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          border-radius: 999px;
+          background: color-mix(
+            in srgb,
+            var(--ob-success-text) 12%,
+            transparent
+          );
+          color: var(--ob-success-text);
+          padding: 2px 7px;
+          font-size: 10px;
+          font-weight: 900;
+        }
+        .history {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          color: var(--ob-muted);
+          font-size: 10.5px;
+          font-weight: 750;
+          line-height: 1.25;
+        }
         .avatar {
-          width: 36px;
-          height: 36px;
-          flex: 0 0 36px;
+          width: 48px;
+          height: 48px;
+          flex: 0 0 48px;
           border-radius: 50%;
           object-fit: cover;
         }

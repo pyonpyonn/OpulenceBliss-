@@ -13,7 +13,7 @@ import {
   MapPin,
   MessageSquare,
   Navigation,
-  UserRound,
+  RotateCcw,
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
 import JobActions from "./JobActions";
@@ -28,6 +28,7 @@ export type ActiveJobData = {
   clientEmail?: string | null;
   clientRating?: number | null;
   clientRatingCount?: number | null;
+  clientCompletedBookings?: number;
   service: string;
   durationMinutes: number | null;
   earns: number | null;
@@ -211,19 +212,30 @@ export default function ActiveJob({
       </header>
 
       <div className="summary-grid">
-        <Summary tone="mint" icon={<UserRound size={19} />} label="Client">
+        <div className="identity-card client-identity">
           <div className="client-row">
             <span className="avatar">{customerInitial}</span>
-            <div>
+            <div className="identity-copy">
               <strong>{job.client ?? "Customer"}</strong>
-              <small className="rating">
-                {job.clientRating !== null && job.clientRating !== undefined
-                  ? `${Number(job.clientRating).toFixed(1)} ★ (${job.clientRatingCount ?? 0})`
-                  : "Not yet rated"}
+              <div className="identity-meta">
+                <b className="rating">
+                  {job.clientRating !== null && job.clientRating !== undefined
+                    ? `${Number(job.clientRating).toFixed(1)} ★ (${job.clientRatingCount ?? 0})`
+                    : "Not yet rated"}
+                </b>
+                {(job.clientCompletedBookings ?? 0) > 0 && (
+                  <span>Repeat client</span>
+                )}
+              </div>
+              <small className="history">
+                <RotateCcw size={13} />
+                {(job.clientCompletedBookings ?? 0) > 0
+                  ? `${job.clientCompletedBookings} completed ${job.clientCompletedBookings === 1 ? "booking" : "bookings"} with you`
+                  : "First booking with you"}
               </small>
             </div>
           </div>
-        </Summary>
+        </div>
 
         <Summary tone="sky" icon={<MapPin size={19} />} label="Location">
           <strong>{job.address ?? "Address unavailable"}</strong>
@@ -373,12 +385,69 @@ export default function ActiveJob({
         .client-row > div {
           min-width: 0;
         }
+        .identity-card {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          min-height: 88px;
+          box-sizing: border-box;
+          border: 1px solid
+            color-mix(in srgb, var(--ob-border) 75%, transparent);
+          border-radius: 13px;
+          padding: 10px 12px;
+          background: var(--ob-mint);
+          color: var(--ob-text);
+        }
+        .identity-copy {
+          display: grid;
+          gap: 3px;
+          min-width: 0;
+        }
+        .identity-copy > strong {
+          overflow: hidden;
+          color: var(--ob-text);
+          font-size: 14px;
+          font-weight: 900;
+          line-height: 1.2;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .identity-meta {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          flex-wrap: wrap;
+        }
+        .identity-meta b {
+          font-size: 12px;
+        }
+        .identity-meta span {
+          border-radius: 999px;
+          background: color-mix(
+            in srgb,
+            var(--ob-success-text) 12%,
+            transparent
+          );
+          color: var(--ob-success-text);
+          padding: 2px 7px;
+          font-size: 10px;
+          font-weight: 900;
+        }
+        .history {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          color: var(--ob-muted);
+          font-size: 10.5px;
+          font-weight: 750;
+          line-height: 1.25;
+        }
         .avatar {
           display: grid;
           place-items: center;
-          width: 36px;
-          height: 36px;
-          flex: 0 0 36px;
+          width: 48px;
+          height: 48px;
+          flex: 0 0 48px;
           border-radius: 50%;
           background: linear-gradient(100deg, #f5c542, #c86fc9 55%, #7b2ff7);
           color: #fff;

@@ -22,12 +22,16 @@ type Row = {
     | {
         display_name: string | null;
         photo_url: string | null;
+        years_experience: number | null;
+        vetting_status: string | null;
         rating_avg: number | null;
         rating_count: number | null;
       }
     | {
         display_name: string | null;
         photo_url: string | null;
+        years_experience: number | null;
+        vetting_status: string | null;
         rating_avg: number | null;
         rating_count: number | null;
       }[]
@@ -115,7 +119,7 @@ export default async function AccountPage({
   const { data: rowsData } = await supabase
     .from("bookings")
     .select(
-      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, photo_url, rating_avg, rating_count), check_ins(arrived_at, left_at)",
+      "id, scheduled_at, status, address, package_id, packages(name, duration_minutes, price), providers(display_name, photo_url, years_experience, vetting_status, rating_avg, rating_count), check_ins(arrived_at, left_at)",
     )
     .order("scheduled_at", { ascending: false });
 
@@ -220,6 +224,8 @@ export default async function AccountPage({
       durationMinutes: pkg?.duration_minutes ?? null,
       providerName: prv?.display_name ?? null,
       providerPhoto: prv?.photo_url ?? null,
+      providerYearsExperience: prv?.years_experience ?? null,
+      providerVerified: prv?.vetting_status === "approved",
       providerRating: prv?.rating_avg ?? null,
       providerRatingCount: prv?.rating_count ?? 0,
       paymentAmount: amount > 0 ? amount : null,
