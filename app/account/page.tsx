@@ -136,14 +136,23 @@ export default async function AccountPage({
 
   const { data: reviewData } = await supabase
     .from("reviews")
-    .select("booking_id, rating, comment, reviewer")
-    .eq("reviewer", "client");
-  const reviews = new Map(
-    (reviewData ?? []).map((r) => [
-      r.booking_id as string,
-      { rating: r.rating as number, comment: r.comment as string | null },
-    ]),
-  );
+    .select("booking_id, rating, comment, reviewer");
+  const clientReviewMap = new Map<
+    string,
+    { rating: number; comment: string | null }
+  >();
+  const providerReviewMap = new Map<
+    string,
+    { rating: number; comment: string | null }
+  >();
+  for (const review of reviewData ?? []) {
+    const target =
+      review.reviewer === "provider" ? providerReviewMap : clientReviewMap;
+    target.set(review.booking_id as string, {
+      rating: review.rating as number,
+      comment: review.comment as string | null,
+    });
+  }
 
   const { data: paymentData } = await supabase
     .from("payments")
@@ -237,7 +246,7 @@ export default async function AccountPage({
   };
 
   const unrated = history.filter(
-    (b) => b.status === "completed" && !reviews.has(b.id),
+    (b) => b.status === "completed" && !clientReviewMap.has(b.id),
   );
 
   return (
@@ -333,7 +342,8 @@ export default async function AccountPage({
               const prv = one(b.providers);
               const ci = one(b.check_ins);
               const st = LABEL[b.status] ?? LABEL.completed;
-              const review = reviews.get(b.id);
+              const clientReview = clientReviewMap.get(b.id);
+              const providerReview = providerReviewMap.get(b.id);
               const payment = paymentMap.get(b.id);
               const actualDuration = elapsed(ci?.arrived_at, ci?.left_at);
               return (
@@ -347,9 +357,19 @@ export default async function AccountPage({
                     b.status === "completed"
                       ? {
                           label: "Your rating for the provider",
-                          rating: review?.rating ?? null,
-                          comment: review?.comment ?? null,
+                          rating: clientReview?.rating ?? null,
+                          comment: clientReview?.comment ?? null,
                           pending: "Your rating is still needed",
+                        }
+                      : null
+                  }
+                  secondaryRating={
+                    b.status === "completed"
+                      ? {
+                          label: "Provider's rating of you",
+                          rating: providerReview?.rating ?? null,
+                          comment: providerReview?.comment ?? null,
+                          pending: "The provider has not rated this visit yet",
                         }
                       : null
                   }
@@ -386,7 +406,9 @@ export default async function AccountPage({
                 >
                   {b.status === "completed" && (
                     <>
-                      {!review && <RateBooking id={b.id} existing={null} />}
+                      {!clientReview && (
+                        <RateBooking id={b.id} existing={null} />
+                      )}
                       <TipBooking id={b.id} />
                       <p style={{ margin: "12px 0 0" }}>
                         <a
