@@ -172,8 +172,8 @@ export default function ProviderProfilePage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fff;
-          color: #16202A;
+          background: transparent;
+          color: var(--ob-text);
           font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
@@ -202,8 +202,8 @@ export default function ProviderProfilePage() {
           margin: 0 0 26px;
         }
         .card {
-          background: #fff;
-          border: 1px solid #EDEFF1;
+          background: var(--ob-surface-raised);
+          border: 1px solid var(--ob-border);
           border-radius: 16px;
           padding: 24px 22px;
           margin-bottom: 20px;
@@ -215,12 +215,13 @@ export default function ProviderProfilePage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #FFFFFF;
+          background: var(--ob-surface-soft);
+          border: 1px solid var(--ob-border);
           border-radius: 10px;
           padding: 12px 14px;
           margin-bottom: 22px;
           font-size: 14.5px;
-          color: #7A828C;
+          color: var(--ob-muted);
         }
         .rating strong {
           color: #6D28D9;
@@ -229,7 +230,7 @@ export default function ProviderProfilePage() {
         label {
           display: block;
           font-size: 13.5px;
-          color: #7A828C;
+          color: var(--ob-muted);
           margin: 0 0 6px;
         }
         input,
@@ -237,12 +238,12 @@ export default function ProviderProfilePage() {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #E5E7EA;
+          border: 1.5px solid var(--ob-border);
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
-          background: #fff;
-          color: #16202A;
+          background: var(--ob-surface-soft);
+          color: var(--ob-text);
           margin-bottom: 18px;
           resize: vertical;
         }
@@ -256,7 +257,7 @@ export default function ProviderProfilePage() {
           height: 84px;
           object-fit: cover;
           border-radius: 50%;
-          border: 2px solid #EDEFF1;
+          border: 2px solid var(--ob-border);
         }
         .cta {
           background: #16202A;
@@ -276,15 +277,15 @@ export default function ProviderProfilePage() {
           cursor: wait;
         }
         .msg {
-          background: #F4ECFE;
-          color: #16202A;
+          background: var(--ob-purple-soft);
+          color: var(--ob-text);
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14.5px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #7A828C;
+          color: var(--ob-muted);
         }
         .links {
           display: flex;

@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 
 const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
-const PURPLE = "#6D28D9";
+const PURPLE = "var(--ob-purple)";
 
 type Note = {
   id: string;
@@ -86,7 +86,7 @@ export default function NotificationsList() {
         <strong style={{ fontSize: 17, fontWeight: 900, marginTop: 8 }}>
           Nothing yet
         </strong>
-        <p style={{ margin: "5px 0 0", color: "#7A828C", fontWeight: 600 }}>
+        <p style={{ margin: "5px 0 0", color: "var(--ob-muted)", fontWeight: 600 }}>
           Updates about your bookings will appear here.
         </p>
       </div>
@@ -122,7 +122,7 @@ export default function NotificationsList() {
             ...card,
             backgroundImage: n.read
               ? "none"
-              : `${GRAD}, linear-gradient(#fff,#fff)`,
+              : `${GRAD}, linear-gradient(var(--ob-surface-raised),var(--ob-surface-raised))`,
             backgroundSize: n.read ? "auto" : "4px 100%, 100% 100%",
             backgroundPosition: n.read ? "center" : "left center, center",
             backgroundRepeat: "no-repeat",
@@ -146,7 +146,7 @@ export default function NotificationsList() {
 /* ---------- styles ---------- */
 
 const muted: React.CSSProperties = {
-  color: "#7A828C",
+  color: "var(--ob-muted)",
   fontSize: 14.5,
   fontWeight: 700,
 };
@@ -160,8 +160,8 @@ const topRow: React.CSSProperties = {
 };
 
 const markBtn: React.CSSProperties = {
-  background: "#fff",
-  border: "2px solid #EDEFF1",
+  background: "var(--ob-surface-raised)",
+  border: "2px solid var(--ob-border)",
   borderRadius: 999,
   padding: "8px 16px",
   fontFamily: "'Nunito', system-ui, sans-serif",
@@ -175,12 +175,12 @@ const card: React.CSSProperties = {
   display: "flex",
   gap: 14,
   alignItems: "flex-start",
-  background: "#fff",
-  border: "2px solid #EDEFF1",
+  background: "var(--ob-surface-raised)",
+  border: "2px solid var(--ob-border)",
   borderRadius: 16,
   padding: "16px 18px",
   textDecoration: "none",
-  color: "#16202A",
+  color: "var(--ob-text)",
 };
 
 const noteTitle: React.CSSProperties = {
@@ -194,20 +194,20 @@ const noteBody: React.CSSProperties = {
   margin: 0,
   fontSize: 14,
   fontWeight: 600,
-  color: "#7A828C",
+  color: "var(--ob-muted)",
   lineHeight: 1.5,
 };
 
 const when: React.CSSProperties = {
   fontSize: 12.5,
   fontWeight: 700,
-  color: "#A9AFB7",
+  color: "var(--ob-muted)",
   whiteSpace: "nowrap",
 };
 
 const empty: React.CSSProperties = {
-  background: "#fff",
-  border: "2px dashed #E5E7EA",
+  background: "var(--ob-surface-raised)",
+  border: "2px dashed var(--ob-border-strong)",
   borderRadius: 20,
   padding: "36px 24px",
   textAlign: "center",

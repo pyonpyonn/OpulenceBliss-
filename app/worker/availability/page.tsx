@@ -201,8 +201,8 @@ export default function AvailabilityPage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fff;
-          color: #16202A;
+          background: transparent;
+          color: var(--ob-text);
           font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
@@ -231,8 +231,8 @@ export default function AvailabilityPage() {
           margin: 0 0 26px;
         }
         .card {
-          background: #fff;
-          border: 1px solid #EDEFF1;
+          background: var(--ob-surface-raised);
+          border: 1px solid var(--ob-border);
           border-radius: 16px;
           padding: 6px 22px;
           margin-bottom: 22px;
@@ -247,7 +247,7 @@ export default function AvailabilityPage() {
           justify-content: space-between;
           gap: 14px;
           padding: 14px 0;
-          border-bottom: 1px solid #F1F2F4;
+          border-bottom: 1px solid var(--ob-border);
           flex-wrap: wrap;
         }
         .row:last-child {
@@ -268,7 +268,7 @@ export default function AvailabilityPage() {
         }
         .row.on .toggle span {
           font-weight: 600;
-          color: #16202A;
+          color: var(--ob-text);
         }
         .hours {
           display: flex;
@@ -276,21 +276,21 @@ export default function AvailabilityPage() {
           gap: 8px;
         }
         .hours select {
-          border: 1.5px solid #E5E7EA;
+          border: 1.5px solid var(--ob-border);
           border-radius: 10px;
           padding: 7px 10px;
           font: inherit;
           font-size: 14.5px;
-          background: #fff;
-          color: #16202A;
+          background: var(--ob-surface-soft);
+          color: var(--ob-text);
         }
         .hours em {
           font-style: normal;
-          color: #7A828C;
+          color: var(--ob-muted);
           font-size: 14px;
         }
         .off {
-          color: #A9AFB7;
+          color: var(--ob-muted);
           font-size: 14px;
         }
         .cta {
@@ -314,15 +314,15 @@ export default function AvailabilityPage() {
           cursor: wait;
         }
         .msg {
-          background: #F4ECFE;
-          color: #16202A;
+          background: var(--ob-purple-soft);
+          color: var(--ob-text);
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14.5px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #7A828C;
+          color: var(--ob-muted);
         }
         .links {
           margin-top: 30px;

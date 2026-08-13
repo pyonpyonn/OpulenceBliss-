@@ -139,8 +139,8 @@ export default function ClientProfilePage() {
       <style jsx>{`
         .wrap {
           min-height: 100vh;
-          background: #fbf7f0;
-          color: #26302a;
+          background: transparent;
+          color: var(--ob-text);
           font-family: "Hanken Grotesk", system-ui, sans-serif;
           padding: 0 20px 80px;
         }
@@ -154,23 +154,23 @@ export default function ClientProfilePage() {
           letter-spacing: 0.14em;
           font-size: 12px;
           font-weight: 600;
-          color: #cf854f;
+          color: var(--ob-purple);
           margin: 0 0 6px;
         }
         h1 {
           font-family: "Fraunces", serif;
           font-weight: 500;
           font-size: 36px;
-          color: #2f4a3a;
+          color: var(--ob-text);
           margin: 0 0 8px;
         }
         .lede {
-          color: #6e7a70;
+          color: var(--ob-muted);
           margin: 0 0 26px;
         }
         .card {
-          background: #fff;
-          border: 1px solid #ece5d8;
+          background: var(--ob-surface-raised);
+          border: 1px solid var(--ob-border);
           border-radius: 16px;
           padding: 24px 22px;
           margin-bottom: 20px;
@@ -181,7 +181,7 @@ export default function ClientProfilePage() {
         label {
           display: block;
           font-size: 13.5px;
-          color: #6e7a70;
+          color: var(--ob-muted);
           margin: 0 0 6px;
         }
         input,
@@ -189,18 +189,18 @@ export default function ClientProfilePage() {
           width: 100%;
           box-sizing: border-box;
           padding: 12px 14px;
-          border: 1.5px solid #d8d2c6;
+          border: 1.5px solid var(--ob-border);
           border-radius: 12px;
           font: inherit;
           font-size: 15.5px;
-          background: #fff;
-          color: #26302a;
+          background: var(--ob-surface-soft);
+          color: var(--ob-text);
           margin-bottom: 18px;
           resize: vertical;
         }
         input:disabled {
-          background: #fbf7f0;
-          color: #8b948c;
+          background: var(--ob-surface-soft);
+          color: var(--ob-muted);
         }
         input:focus-visible,
         textarea:focus-visible {
@@ -225,15 +225,15 @@ export default function ClientProfilePage() {
           cursor: wait;
         }
         .msg {
-          background: #e7eee7;
-          color: #2f4a3a;
+          background: var(--ob-mint);
+          color: var(--ob-success-text);
           padding: 12px 14px;
           border-radius: 10px;
           font-size: 14.5px;
           margin: 16px 0 0;
         }
         .muted {
-          color: #6e7a70;
+          color: var(--ob-muted);
         }
         .links {
           display: flex;
@@ -241,7 +241,7 @@ export default function ClientProfilePage() {
           margin-top: 30px;
         }
         .links a {
-          color: #5b7a65;
+          color: var(--ob-purple);
           font-size: 14px;
           text-decoration: none;
         }
