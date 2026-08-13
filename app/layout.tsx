@@ -11,8 +11,6 @@ import SiteHeader from "@/components/SiteHeader";
 import Toaster from "@/components/Toaster";
 import RatingGate from "@/components/RatingGate";
 import SupportChat from "@/components/SupportChat";
-import ThemeProvider from "@/components/ThemeProvider";
-import AppearanceControl from "@/components/AppearanceControl";
 
 // Self-hosted by Next, so no extra request to Google and no flash of
 // unstyled text. Components ask for "Nunito" by name and get this.
@@ -49,15 +47,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        <ThemeProvider>
-          <TopBar />
-          <SiteHeader />
-          {children}
-          <Toaster />
-          <RatingGate />
-          <SupportChat />
-          <AppearanceControl />
-        </ThemeProvider>
+        <TopBar />
+        <SiteHeader />
+        {children}
+        <Toaster />
+        <RatingGate />
+        <SupportChat />
       </body>
     </html>
   );
