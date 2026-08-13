@@ -92,6 +92,7 @@ export default function BookPage() {
 
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
 
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [fullName, setFullName] = useState("");
@@ -144,6 +145,7 @@ export default function BookPage() {
       const wantType = q.get("type");
       const wantService = q.get("service");
       const wantSlot = q.get("slot");
+      const reviewHandoff = q.get("review") === "1";
 
       if (wantType) setServiceType(wantType);
       if (wantPc) setPostcode(wantPc);
@@ -161,7 +163,66 @@ export default function BookPage() {
 
       const match = wantService ? list.find((p) => p.id === wantService) : undefined;
 
-      if (match && wantSlot && covered) {
+      // Assistant handoffs are checked against live availability before opening
+      // the payment summary. If anything changed, keep the known service and
+      // postcode and show fresh times instead of silently returning to step one.
+      if (reviewHandoff && match && wantSlot && pcToCheck) {
+        try {
+          const response = await fetch(
+            `/api/slots?postcode=${encodeURIComponent(
+              pcToCheck,
+            )}&service=${encodeURIComponent(match.service_type ?? "")}`,
+            { cache: "no-store" },
+          );
+          const data = await response.json();
+          const liveSlots = (data.slots ?? []) as string[];
+          const wantedTime = new Date(wantSlot).getTime();
+          const liveSlot = liveSlots.find(
+            (candidate) => new Date(candidate).getTime() === wantedTime,
+          );
+
+          setSelected(match);
+          setSlots(liveSlots);
+          if (liveSlots.length) {
+            const first = new Date(liveSlots[0]);
+            setViewMonth(new Date(first.getFullYear(), first.getMonth(), 1));
+          }
+          setGate(
+            data.covered
+              ? { ok: true, area: areaList.find((area) =>
+                  area.postcode_prefixes.includes(outwardCode(pcToCheck)),
+                )?.name }
+              : { ok: false },
+          );
+
+          if (data.covered && liveSlot) {
+            setSlot(liveSlot);
+            setSlotDay(dayKey(liveSlot));
+            setStep(3);
+          } else {
+            if (liveSlots.length) {
+              setSlotDay(dayKey(liveSlots[0]));
+            }
+            setStep(data.covered ? 2 : 0);
+            setHandoffError(
+              data.covered
+                ? "That time was just taken. Choose another live time below."
+                : "That postcode is not currently in our service area.",
+            );
+          }
+        } catch {
+          setSelected(match);
+          setStep(2);
+          setHandoffError(
+            "We could not recheck that time. Please choose a live time below.",
+          );
+          loadSlots(pcToCheck, match.service_type ?? "");
+        }
+      } else if (reviewHandoff) {
+        setHandoffError(
+          "That booking link is incomplete. Please ask the assistant to prepare it again.",
+        );
+      } else if (match && wantSlot && covered) {
         setSelected(match);
         setSlot(wantSlot);
         setSlotDay(dayKey(wantSlot));
@@ -177,7 +238,6 @@ export default function BookPage() {
 
       setLoading(false);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------- actions ---------- */
@@ -372,6 +432,7 @@ export default function BookPage() {
       <div className="grid">
         {/* ================= MAIN ================= */}
         <main>
+          {handoffError && <p className="handoffError">{handoffError}</p>}
           {/* progress */}
           <p className="stepline">
             Step {step + 1} of 4 · <strong>{STEPS[step]}</strong>
@@ -610,10 +671,28 @@ export default function BookPage() {
           {/* ---- 3 CONFIRM ---- */}
           {step === 3 && selected && (
             <section>
-              <h1>Almost there</h1>
+              <h1>Review and pay</h1>
               <p className="lede">
-                Anything we should know before we arrive?
+                Check your visit and payment before continuing to secure checkout.
               </p>
+
+              <div className="reviewCard">
+                <div>
+                  <span>Service</span>
+                  <strong>{selected.name}</strong>
+                  <small>{duration(selected.duration_minutes) ?? "Visit"}</small>
+                </div>
+                <div>
+                  <span>Date and time</span>
+                  <strong>{slot ? fullLabel(slot) : "Choose a time"}</strong>
+                  <small>{postcode.toUpperCase()}</small>
+                </div>
+                <div>
+                  <span>Amount</span>
+                  <strong>{money(total)}</strong>
+                  <small>Held now, charged after completion</small>
+                </div>
+              </div>
 
               <p className="label">Requests (optional)</p>
               <textarea
@@ -1010,6 +1089,16 @@ export default function BookPage() {
           font-weight: 600;
           margin: 0 0 24px;
         }
+        .handoffError {
+          margin: 0 0 16px;
+          padding: 12px 14px;
+          border: 1.5px solid #f0c36a;
+          border-radius: 13px;
+          background: #fff9e8;
+          color: #7a5200;
+          font-size: 14px;
+          font-weight: 800;
+        }
         .label {
           font-size: 12px;
           font-weight: 900;
@@ -1191,6 +1280,46 @@ export default function BookPage() {
         }
 
         /* confirm */
+        .reviewCard {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+          margin-bottom: 24px;
+        }
+        .reviewCard > div {
+          min-width: 0;
+          padding: 15px 16px;
+          border: 1.5px solid #e8e2f2;
+          border-radius: 16px;
+          background: linear-gradient(145deg, #fff, #faf7ff);
+        }
+        .reviewCard span,
+        .reviewCard strong,
+        .reviewCard small {
+          display: block;
+        }
+        .reviewCard span {
+          margin-bottom: 6px;
+          color: #8b92a0;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+        }
+        .reviewCard strong {
+          color: var(--ink);
+          font-size: 15px;
+          font-weight: 900;
+          line-height: 1.3;
+          overflow-wrap: anywhere;
+        }
+        .reviewCard small {
+          margin-top: 4px;
+          color: var(--muted);
+          font-size: 12.5px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
         .acct {
           background: #fbfaff;
           border: 2px solid #ece5fb;
@@ -1388,6 +1517,9 @@ export default function BookPage() {
         }
 
         @media (max-width: 760px) {
+          .reviewCard {
+            grid-template-columns: 1fr;
+          }
           .picker {
             grid-template-columns: minmax(0, 1fr);
           }

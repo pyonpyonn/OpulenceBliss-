@@ -318,6 +318,7 @@ function postcodeFromAddress(value: string | null | undefined) {
 
 function friendlyDate(iso: string) {
   return new Date(iso).toLocaleString("en-GB", {
+    timeZone: "Europe/London",
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -551,7 +552,7 @@ async function runTool(
 
       const pc = String(args.postcode ?? "");
       const slot = String(args.slot ?? "");
-      const url = `/book?service=${match.id}&pc=${encodeURIComponent(
+      const url = `/book?review=1&source=assistant&service=${match.id}&pc=${encodeURIComponent(
         pc
       )}&slot=${encodeURIComponent(slot)}`;
 
