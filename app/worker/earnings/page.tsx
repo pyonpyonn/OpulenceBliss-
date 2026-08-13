@@ -6,6 +6,7 @@ import { SignedOut } from "@/app/account/page";
 
 const gbp = (n: number) =>
   "£" + Number(n || 0).toLocaleString("en-GB", { minimumFractionDigits: 2 });
+const REVIEW_PREVIEW_COUNT = 2;
 
 type Bk = {
   scheduled_at: string;
@@ -200,43 +201,22 @@ export default async function EarningsPage() {
           </div>
         ) : (
           <div style={reviewGrid}>
-            {receivedReviews.map((review) => {
-              const booking = one(review.bookings);
-              const pkg = one(booking?.packages ?? null);
-              return (
-                <article key={review.id} style={reviewCard}>
-                  <div style={reviewHead}>
-                    <strong style={reviewStars}>
-                      {"★".repeat(review.rating)}
-                      <span style={{ color: "#DDD6E8" }}>
-                        {"★".repeat(5 - review.rating)}
-                      </span>
-                    </strong>
-                    <time style={reviewDate} dateTime={review.created_at}>
-                      {new Date(review.created_at).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </time>
-                  </div>
-                  <p style={reviewComment}>
-                    {review.comment?.trim()
-                      ? `“${review.comment.trim()}”`
-                      : "The customer left a star rating without a written comment."}
-                  </p>
-                  <span style={reviewService}>
-                    {pkg?.name ?? "Completed visit"}
-                    {booking?.scheduled_at
-                      ? ` · ${new Date(booking.scheduled_at).toLocaleDateString(
-                          "en-GB",
-                          { day: "numeric", month: "short" },
-                        )}`
-                      : ""}
-                  </span>
-                </article>
-              );
-            })}
+            {receivedReviews.slice(0, REVIEW_PREVIEW_COUNT).map((review) => (
+              <ReceivedReviewCard key={review.id} review={review} />
+            ))}
+
+            {receivedReviews.length > REVIEW_PREVIEW_COUNT && (
+              <details style={reviewDetails}>
+                <summary style={reviewSummary}>
+                  View all reviews ({receivedReviews.length})
+                </summary>
+                <div style={hiddenReviewGrid}>
+                  {receivedReviews.slice(REVIEW_PREVIEW_COUNT).map((review) => (
+                    <ReceivedReviewCard key={review.id} review={review} />
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
         )}
 
@@ -302,6 +282,45 @@ export default async function EarningsPage() {
   );
 }
 
+function ReceivedReviewCard({ review }: { review: ReceivedReview }) {
+  const booking = one(review.bookings);
+  const pkg = one(booking?.packages ?? null);
+
+  return (
+    <article style={reviewCard}>
+      <div style={reviewHead}>
+        <strong style={reviewStars}>
+          {"★".repeat(review.rating)}
+          <span style={{ color: "#DDD6E8" }}>
+            {"★".repeat(5 - review.rating)}
+          </span>
+        </strong>
+        <time style={reviewDate} dateTime={review.created_at}>
+          {new Date(review.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+        </time>
+      </div>
+      <p style={reviewComment}>
+        {review.comment?.trim()
+          ? `“${review.comment.trim()}”`
+          : "The customer left a star rating without a written comment."}
+      </p>
+      <span style={reviewService}>
+        {pkg?.name ?? "Completed visit"}
+        {booking?.scheduled_at
+          ? ` · ${new Date(booking.scheduled_at).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+            })}`
+          : ""}
+      </span>
+    </article>
+  );
+}
+
 function Stat({
   label,
   value,
@@ -351,6 +370,26 @@ const reviewGrid: React.CSSProperties = {
   display: "grid",
   gap: 12,
   marginBottom: 34,
+};
+const reviewDetails: React.CSSProperties = {
+  display: "grid",
+};
+const reviewSummary: React.CSSProperties = {
+  listStylePosition: "inside",
+  padding: "13px 16px",
+  border: "1.5px solid #D8C8F5",
+  borderRadius: 12,
+  background: "#F8F4FE",
+  color: "#6D28D9",
+  fontSize: 14,
+  fontWeight: 900,
+  textAlign: "center",
+  cursor: "pointer",
+};
+const hiddenReviewGrid: React.CSSProperties = {
+  display: "grid",
+  gap: 12,
+  marginTop: 12,
 };
 const reviewCard: React.CSSProperties = {
   ...card,
