@@ -3,6 +3,7 @@
 // The provider portal shell. Everything under /worker lives inside this.
 
 import { createClient } from "@/lib/supabase/server";
+import PortalLiveSync from "@/components/PortalLiveSync";
 import PortalNav from "./PortalNav";
 import JoinButton from "./JoinButton";
 
@@ -90,6 +91,7 @@ export default async function WorkerLayout({
 
   return (
     <div className="portal-shell worker-shell" style={shell}>
+      <PortalLiveSync userId={user.id} />
       <PortalNav
         name={prov?.display_name ?? prof?.full_name ?? user.email ?? "Provider"}
         rating={prov?.rating_avg ? Number(prov.rating_avg) : null}

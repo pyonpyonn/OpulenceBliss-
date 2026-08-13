@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import PortalLiveSync from "@/components/PortalLiveSync";
 import ClientNav from "./ClientNav";
 
 export default async function AccountLayout({
@@ -49,6 +50,7 @@ export default async function AccountLayout({
     );
   return (
     <div className="portal-shell account-shell" style={shell}>
+      <PortalLiveSync userId={user.id} />
       <ClientNav name={prof?.full_name ?? ""} email={user.email ?? ""} />
       <div className="portal-main" style={main}>
         {children}

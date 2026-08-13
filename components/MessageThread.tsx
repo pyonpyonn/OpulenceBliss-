@@ -110,9 +110,27 @@ export default function MessageThread({
 
   useEffect(() => {
     void load();
-    const timer = setInterval(() => void load(), 15_000);
-    return () => clearInterval(timer);
-  }, [load]);
+    const channel = supabase
+      .channel(`booking-messages:${bookingId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "booking_messages",
+          filter: `booking_id=eq.${bookingId}`,
+        },
+        () => void load(),
+      )
+      .subscribe();
+
+    // Recovery path for a sleeping tab or a temporarily dropped socket.
+    const timer = setInterval(() => void load(), 30_000);
+    return () => {
+      clearInterval(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, [bookingId, load]);
 
   useEffect(() => {
     if (messages.length) {
