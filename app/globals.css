@@ -566,6 +566,16 @@ select {
   background: var(--ob-surface) !important;
 }
 
+/* React normalises inline colours to rgb() after client-side navigation.
+   Mirror the hex rules so dark mode remains intact without a hard refresh. */
+.dark
+  :where(
+    [style*="background: rgb(255, 255, 255)" i],
+    [style*="background-color: rgb(255, 255, 255)" i]
+  ) {
+  background-color: var(--ob-surface) !important;
+}
+
 .dark
   :where(
     [style*="background:#f7f8f9" i],
@@ -583,6 +593,20 @@ select {
 
 .dark
   :where(
+    [style*="background: rgb(247, 248, 249)" i],
+    [style*="background: rgb(248, 249, 250)" i],
+    [style*="background: rgb(246, 246, 247)" i],
+    [style*="background: rgb(244, 245, 247)" i],
+    [style*="background: rgb(243, 244, 246)" i],
+    [style*="background: rgb(241, 242, 244)" i],
+    [style*="background: rgb(241, 241, 242)" i],
+    [style*="background: rgb(239, 239, 241)" i]
+  ) {
+  background-color: var(--ob-surface-soft) !important;
+}
+
+.dark
+  :where(
     [style*="background:#fbf7f0" i],
     [style*="background:#fdf6f0" i],
     [style*="background:#fcfaff" i],
@@ -590,6 +614,17 @@ select {
     [style*="background:#f8f5ff" i]
   ) {
   background: var(--ob-page) !important;
+}
+
+.dark
+  :where(
+    [style*="background: rgb(251, 247, 240)" i],
+    [style*="background: rgb(253, 246, 240)" i],
+    [style*="background: rgb(252, 250, 255)" i],
+    [style*="background: rgb(251, 250, 255)" i],
+    [style*="background: rgb(248, 245, 255)" i]
+  ) {
+  background-color: var(--ob-page) !important;
 }
 
 .dark
@@ -602,8 +637,26 @@ select {
   background: var(--ob-mint) !important;
 }
 
+.dark
+  :where(
+    [style*="background: rgb(228, 246, 236)" i],
+    [style*="background: rgb(223, 245, 232)" i],
+    [style*="background: rgb(240, 250, 244)" i],
+    [style*="background: rgb(244, 251, 247)" i]
+  ) {
+  background-color: var(--ob-mint) !important;
+}
+
 .dark :where([style*="background:#e3f0fb" i], [style*="background:#ddedfb" i]) {
   background: var(--ob-sky) !important;
+}
+
+.dark
+  :where(
+    [style*="background: rgb(227, 240, 251)" i],
+    [style*="background: rgb(221, 237, 251)" i]
+  ) {
+  background-color: var(--ob-sky) !important;
 }
 
 .dark
@@ -617,8 +670,27 @@ select {
   background: var(--ob-butter) !important;
 }
 
+.dark
+  :where(
+    [style*="background: rgb(255, 243, 214)" i],
+    [style*="background: rgb(255, 248, 232)" i],
+    [style*="background: rgb(255, 250, 240)" i],
+    [style*="background: rgb(255, 248, 230)" i],
+    [style*="background: rgb(255, 245, 217)" i]
+  ) {
+  background-color: var(--ob-butter) !important;
+}
+
 .dark :where([style*="background:#ffe6ea" i], [style*="background:#fff8f9" i]) {
   background: var(--ob-blush) !important;
+}
+
+.dark
+  :where(
+    [style*="background: rgb(255, 230, 234)" i],
+    [style*="background: rgb(255, 248, 249)" i]
+  ) {
+  background-color: var(--ob-blush) !important;
 }
 
 .dark
@@ -636,6 +708,19 @@ select {
 
 .dark
   :where(
+    [style*="background: rgb(244, 236, 254)" i],
+    [style*="background: rgb(237, 228, 253)" i],
+    [style*="background: rgb(247, 243, 255)" i],
+    [style*="background: rgb(248, 243, 255)" i],
+    [style*="background: rgb(246, 241, 255)" i],
+    [style*="background: rgb(237, 228, 251)" i],
+    [style*="background: rgb(236, 229, 251)" i]
+  ) {
+  background-color: var(--ob-purple-soft) !important;
+}
+
+.dark
+  :where(
     [style^="color:#16202a" i],
     [style*=";color:#16202a" i],
     [style^="color:#1f2933" i],
@@ -646,6 +731,17 @@ select {
     [style*=";color:#2f4a3a" i],
     [style^="color:#3a424b" i],
     [style*=";color:#3a424b" i]
+  ) {
+  color: var(--ob-text) !important;
+}
+
+.dark
+  :where(
+    [style*="color: rgb(22, 32, 42)" i],
+    [style*="color: rgb(31, 41, 51)" i],
+    [style*="color: rgb(38, 48, 42)" i],
+    [style*="color: rgb(47, 74, 58)" i],
+    [style*="color: rgb(58, 66, 75)" i]
   ) {
   color: var(--ob-text) !important;
 }
@@ -670,7 +766,24 @@ select {
   color: var(--ob-muted) !important;
 }
 
+.dark
+  :where(
+    [style*="color: rgb(122, 130, 140)" i],
+    [style*="color: rgb(107, 114, 128)" i],
+    [style*="color: rgb(110, 122, 112)" i],
+    [style*="color: rgb(75, 85, 99)" i],
+    [style*="color: rgb(112, 121, 133)" i],
+    [style*="color: rgb(169, 175, 183)" i],
+    [style*="color: rgb(160, 167, 176)" i]
+  ) {
+  color: var(--ob-muted) !important;
+}
+
 .dark :where([style^="color:#6d28d9" i], [style*=";color:#6d28d9" i]) {
+  color: var(--ob-purple) !important;
+}
+
+.dark :where([style*="color: rgb(109, 40, 217)" i]) {
   color: var(--ob-purple) !important;
 }
 
@@ -699,6 +812,19 @@ select {
     [style*="#e5e7ea" i],
     [style*="#f1f2f4" i],
     [style*="#f1f1f2" i]
+  ) {
+  border-color: var(--ob-border) !important;
+}
+
+.dark
+  :where(
+    [style*="rgb(237, 239, 241)" i],
+    [style*="rgb(236, 238, 240)" i],
+    [style*="rgb(236, 229, 216)" i],
+    [style*="rgb(230, 232, 235)" i],
+    [style*="rgb(229, 231, 234)" i],
+    [style*="rgb(241, 242, 244)" i],
+    [style*="rgb(241, 241, 242)" i]
   ) {
   border-color: var(--ob-border) !important;
 }
