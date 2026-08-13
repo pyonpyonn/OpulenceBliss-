@@ -482,6 +482,37 @@ select {
   color: var(--ob-text) !important;
 }
 
+/* Public pages still use local styled-jsx names. Keep their root canvas and
+   repeated controls in the same theme system without changing page logic. */
+.dark :where(body > .wrap, body > main.wrap) {
+  background: transparent !important;
+  color: var(--ob-text) !important;
+}
+
+.dark :where(.chip, .q, .plan, .chk, button.tab) {
+  background: var(--ob-surface-raised) !important;
+  border-color: var(--ob-border) !important;
+  color: var(--ob-text) !important;
+  box-shadow: 0 8px 24px var(--ob-shadow-soft);
+}
+
+.dark main.wrap .fee,
+.dark .prog {
+  background: var(--ob-surface-soft) !important;
+  border-color: var(--ob-border) !important;
+  color: var(--ob-text) !important;
+}
+
+.dark :where(.chip.on, .chip.alt, .chk.on, button.tab.on, .type.on) {
+  background: var(--ob-purple-soft) !important;
+  border-color: var(--ob-purple) !important;
+  color: var(--ob-text) !important;
+}
+
+.dark :where(.chip, .q, .plan, .chk, button.tab) :where(strong, small, p) {
+  color: inherit !important;
+}
+
 .dark :where(.band-alt, .quotes-wrap, .reviews, .services, .faq, .also) {
   background: color-mix(in srgb, var(--ob-surface) 42%, var(--ob-page)) !important;
   border-color: var(--ob-border) !important;
