@@ -209,6 +209,12 @@ export default async function VisitPage({
                 id={row.id}
                 postcode={row.address}
                 showCancel={false}
+                service={booking.service}
+                durationMinutes={booking.durationMinutes}
+                scheduledAt={booking.scheduledAt}
+                providerName={booking.provider.name}
+                address={booking.address}
+                paymentAmount={booking.paymentAmount}
               />
             </div>
           )}

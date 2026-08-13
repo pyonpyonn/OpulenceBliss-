@@ -186,14 +186,25 @@ export async function loadRescheduleWindow(id: string) {
 }
 
 // Reschedule — move the visit to a new slot.
-export async function rescheduleBooking(id: string, newSlot: string) {
+export async function rescheduleBooking(
+  id: string,
+  newSlot: string,
+  reason?: string,
+  note?: string,
+) {
   if (!newSlot) return { ok: false, message: "Choose a new time." };
   const supabase = await createClient();
+  const cleanReason = reason?.trim().slice(0, 120) || "Schedule changed";
+  const cleanNote = note?.trim().slice(0, 250) || null;
 
   try {
     await rescheduleBookingState(supabase, id, newSlot, {
-      reason: "Customer rescheduled the booking",
-      meta: { source: "account" },
+      reason: `Customer rescheduled: ${cleanReason}`,
+      meta: {
+        source: "account",
+        reschedule_reason: cleanReason,
+        ...(cleanNote ? { customer_message: cleanNote } : {}),
+      },
     });
   } catch (error) {
     return {
@@ -217,7 +228,9 @@ export async function rescheduleBooking(id: string, newSlot: string) {
   await notifyProvider(
     id,
     "Booking time changed",
-    `The customer moved this visit to ${when}. If you can no longer attend, withdraw from the job so it can be re-offered.`,
+    `The customer moved this visit to ${when}.${
+      cleanNote ? ` Their message: ${cleanNote}` : ""
+    } If you can no longer attend, withdraw from the job so it can be re-offered.`,
   );
 
   revalidatePath("/account");
