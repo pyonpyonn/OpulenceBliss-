@@ -11,9 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
-const CORAL = "#6D28D9";
 const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
-const INK = "#16202A";
 
 type NavLink = { href: string; label: string; match: string[] };
 
@@ -30,7 +28,6 @@ const NAV: NavLink[] = [
 export default function SiteHeader() {
   const path = usePathname() ?? "";
   const [role, setRole] = useState<string | null>(null);
-  const [hover, setHover] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -101,71 +98,44 @@ export default function SiteHeader() {
     return null;
 
   return (
-    <header style={wrap}>
+    <header className="site-header">
       {/* ---------- row 1 ---------- */}
-      <div style={bar}>
-        <Link href="/" style={logo}>
-          opulence<span style={{ color: CORAL }}>bliss</span>
+      <div className="site-header-bar">
+        <Link href="/" className="site-header-logo">
+          opulence<span>bliss</span>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="site-header-actions">
           <Link
             href={accountHref}
-            style={{ ...ghostBtn, position: "relative" }}
+            className="site-header-account"
           >
             {role ? "My account" : "Log in"}
             {unread > 0 && (
               <span
-                style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -6,
-                  minWidth: 20,
-                  height: 20,
-                  padding: "0 6px",
-                  borderRadius: 999,
-                  background: GRAD,
-                  color: "#fff",
-                  fontSize: 11,
-                  fontWeight: 900,
-                  display: "grid",
-                  placeItems: "center",
-                  boxShadow: "0 0 0 2px #fff",
-                }}
+                className="site-header-count"
               >
                 {unread}
               </span>
             )}
           </Link>
-          <Link href="/book" style={cta}>
+          <Link href="/book" className="site-header-cta">
             Book now
           </Link>
         </div>
       </div>
 
       {/* ---------- row 2 ---------- */}
-      <nav style={navRow} aria-label="Main">
-        <div style={navInner}>
+      <nav className="site-header-nav" aria-label="Main">
+        <div className="site-header-nav-inner">
           {NAV.map((l) => {
             const on = active === l.href;
-            const hot = hover === l.href;
             return (
               <Link
                 key={l.href + l.label}
                 href={l.href}
                 prefetch
-                onMouseEnter={() => setHover(l.href)}
-                onMouseLeave={() => setHover(null)}
-                style={{
-                  ...navItem,
-                  color: on || hot ? CORAL : INK,
-                  borderBottom: "4px solid transparent",
-                  borderImage: on ? `${GRAD} 1` : "none",
-                  backgroundImage: on ? GRAD : "none",
-                  backgroundSize: "100% 4px",
-                  backgroundPosition: "bottom",
-                  backgroundRepeat: "no-repeat",
-                }}
+                className={on ? "site-header-link active" : "site-header-link"}
               >
                 {l.label}
               </Link>
@@ -173,85 +143,162 @@ export default function SiteHeader() {
           })}
         </div>
       </nav>
+
+      <style jsx>{`
+        .site-header {
+          position: sticky;
+          top: 0;
+          z-index: 40;
+          background: var(--ob-surface-glass);
+          color: var(--ob-text);
+          border-bottom: 1px solid var(--ob-border);
+          box-shadow: 0 8px 28px var(--ob-shadow-soft);
+          backdrop-filter: blur(20px) saturate(150%);
+          font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
+        }
+        .site-header-bar {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 17px 26px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        .site-header-logo {
+          color: var(--ob-text);
+          font-size: clamp(26px, 4vw, 34px);
+          font-weight: 900;
+          line-height: 1;
+          letter-spacing: -0.04em;
+          text-decoration: none;
+        }
+        .site-header-logo span {
+          color: var(--ob-purple);
+        }
+        .site-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .site-header-account,
+        .site-header-cta {
+          position: relative;
+          border-radius: 999px;
+          white-space: nowrap;
+          text-decoration: none;
+          font-size: 15px;
+          font-weight: 900;
+          transition: transform 0.18s ease, border-color 0.18s ease,
+            box-shadow 0.18s ease;
+        }
+        .site-header-account {
+          padding: 9px 16px;
+          color: var(--ob-text);
+          border: 1px solid var(--ob-border-strong);
+          background: color-mix(in srgb, var(--ob-surface) 72%, transparent);
+        }
+        .site-header-cta {
+          padding: 11px 22px;
+          color: #fff;
+          background: ${GRAD};
+          box-shadow: 0 7px 20px color-mix(in srgb, #7b2ff7 28%, transparent);
+        }
+        .site-header-account:hover,
+        .site-header-cta:hover {
+          transform: translateY(-1px);
+        }
+        .site-header-account:hover {
+          border-color: var(--ob-purple);
+          color: var(--ob-purple);
+        }
+        .site-header-count {
+          position: absolute;
+          top: -7px;
+          right: -7px;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 6px;
+          border-radius: 999px;
+          display: grid;
+          place-items: center;
+          background: ${GRAD};
+          color: #fff;
+          box-shadow: 0 0 0 2px var(--ob-surface);
+          font-size: 11px;
+          font-weight: 900;
+        }
+        .site-header-nav {
+          background: color-mix(in srgb, var(--ob-purple-soft) 68%, var(--ob-surface));
+          border-top: 1px solid color-mix(in srgb, var(--ob-purple) 14%, var(--ob-border));
+        }
+        .site-header-nav-inner {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 0 26px;
+          display: flex;
+          gap: 30px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .site-header-nav-inner::-webkit-scrollbar {
+          display: none;
+        }
+        .site-header-link {
+          position: relative;
+          padding: 13px 0 12px;
+          color: var(--ob-text);
+          text-decoration: none;
+          white-space: nowrap;
+          font-size: 15.5px;
+          font-weight: 800;
+        }
+        .site-header-link::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 3px;
+          border-radius: 999px 999px 0 0;
+          background: ${GRAD};
+          transform: scaleX(0);
+          transition: transform 0.18s ease;
+        }
+        .site-header-link:hover,
+        .site-header-link.active {
+          color: var(--ob-purple);
+        }
+        .site-header-link:hover::after,
+        .site-header-link.active::after {
+          transform: scaleX(1);
+        }
+        @media (max-width: 620px) {
+          .site-header-bar {
+            padding: 13px 15px 11px;
+          }
+          .site-header-actions {
+            gap: 7px;
+          }
+          .site-header-account,
+          .site-header-cta {
+            padding: 9px 13px;
+            font-size: 13.5px;
+          }
+          .site-header-nav-inner {
+            padding: 0 15px;
+            gap: 22px;
+          }
+        }
+        @media (max-width: 390px) {
+          .site-header-logo {
+            font-size: 23px;
+          }
+          .site-header-account {
+            display: none;
+          }
+        }
+      `}</style>
     </header>
   );
 }
-
-/* ---------- styles ---------- */
-
-const wrap: React.CSSProperties = {
-  background: "#fff",
-  position: "sticky",
-  top: 0,
-  zIndex: 40,
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  boxShadow: "0 1px 0 rgba(22,32,42,0.06)",
-};
-
-const bar: React.CSSProperties = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: "18px 26px 14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 16,
-};
-
-const logo: React.CSSProperties = {
-  fontFamily: "'Nunito', system-ui, sans-serif",
-  fontSize: "clamp(26px, 4vw, 34px)",
-  fontWeight: 900,
-  lineHeight: 1,
-  letterSpacing: "-0.035em",
-  color: INK,
-  textDecoration: "none",
-};
-
-const ghostBtn: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 800,
-  color: INK,
-  textDecoration: "none",
-  padding: "10px 16px",
-  borderRadius: 999,
-  border: "2px solid #EDEDEF",
-  whiteSpace: "nowrap",
-};
-
-const cta: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 900,
-  color: "#fff",
-  textDecoration: "none",
-  padding: "12px 22px",
-  borderRadius: 999,
-  background: `linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)`,
-  whiteSpace: "nowrap",
-  boxShadow: "0 6px 16px rgba(109,40,217,0.26)",
-};
-
-const navRow: React.CSSProperties = {
-  background: "#F8F3FF",
-  borderTop: "1px solid #E8DCFA",
-  borderBottom: "1px solid #E8DCFA",
-};
-
-const navInner: React.CSSProperties = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: "0 26px",
-  display: "flex",
-  gap: 30,
-  overflowX: "auto",
-};
-
-const navItem: React.CSSProperties = {
-  fontSize: 16.5,
-  fontWeight: 800,
-  textDecoration: "none",
-  padding: "14px 0 11px",
-  borderBottom: "4px solid transparent",
-  marginBottom: -1,
-  whiteSpace: "nowrap",
-};

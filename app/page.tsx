@@ -43,12 +43,6 @@ export default function Home() {
 
   return (
     <div className="site">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
-      />
-
       {/* ---------- HERO ---------- */}
       <header className="hero">
         <div className="hero-inner">
@@ -205,24 +199,24 @@ export default function Home() {
 
       <style jsx>{`
         .site {
-          --cream: #ffffff;
-          --green: #16202A;
-          --green-mid: #6D28D9;
-          --green-pale: #F4ECFE;
-          --apricot: #F5C542;
-          --apricot-deep: #6D28D9;
-          --ink: #16202A;
-          --muted: #7A828C;
-          --line: #EDEFF1;
-          background: var(--cream);
+          --cream: var(--ob-surface);
+          --green: var(--ob-text);
+          --green-mid: var(--ob-purple);
+          --green-pale: var(--ob-purple-soft);
+          --apricot: #f5c542;
+          --apricot-deep: var(--ob-purple);
+          --ink: var(--ob-text);
+          --muted: var(--ob-muted);
+          --line: var(--ob-border);
+          background: transparent;
           color: var(--ink);
-          font-family: "Nunito", system-ui, sans-serif;
+          font-family: var(--font-nunito), "Nunito", system-ui, sans-serif;
           overflow-x: hidden;
         }
         h1,
         h2,
         h3 {
-          font-family: "Nunito", system-ui, sans-serif;
+          font-family: inherit;
           font-weight: 900;
           color: var(--green);
         }
@@ -302,8 +296,34 @@ export default function Home() {
 
         /* HERO */
         .hero {
-          background: linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7);
-          padding: 84px 28px 92px;
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          background: linear-gradient(112deg, #d8a72d, #bd66ba 53%, #6d28d9);
+          padding: 88px 28px 96px;
+        }
+        .hero::before,
+        .hero::after {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          border-radius: 999px;
+          pointer-events: none;
+        }
+        .hero::before {
+          width: 420px;
+          height: 420px;
+          top: -270px;
+          right: 8%;
+          background: rgba(255, 255, 255, 0.2);
+          filter: blur(3px);
+        }
+        .hero::after {
+          width: 300px;
+          height: 300px;
+          left: -120px;
+          bottom: -220px;
+          background: rgba(71, 22, 143, 0.24);
         }
         .hero-inner {
           max-width: 1080px;
@@ -326,11 +346,13 @@ export default function Home() {
         .composer {
           display: flex;
           gap: 10px;
-          background: #fff;
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(255, 255, 255, 0.56);
           border-radius: 999px;
           padding: 7px 7px 7px 22px;
           max-width: 500px;
-          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+          box-shadow: 0 18px 48px rgba(45, 19, 73, 0.22);
+          backdrop-filter: blur(12px);
         }
         .composer input {
           flex: 1;
@@ -349,13 +371,16 @@ export default function Home() {
           text-decoration: none;
           border-radius: 999px;
           padding: 13px 26px;
-          font-weight: 700;
+          font-weight: 900;
           font-size: 15.5px;
           white-space: nowrap;
           display: inline-block;
+          box-shadow: 0 7px 18px rgba(72, 28, 142, 0.2);
+          transition: transform 0.18s ease, filter 0.18s ease;
         }
         .btn:hover {
           filter: brightness(1.06);
+          transform: translateY(-1px);
         }
         .btn.light {
           background: var(--cream);
@@ -381,13 +406,15 @@ export default function Home() {
           justify-content: space-between;
           min-height: 168px;
           padding: 30px 34px;
-          border-radius: 18px;
+          border: 1px solid var(--line);
+          border-radius: 22px;
           text-decoration: none;
           transition: transform 0.18s ease, box-shadow 0.18s ease;
+          box-shadow: 0 9px 26px var(--ob-shadow-soft);
         }
         .band:hover {
           transform: translateY(-3px);
-          box-shadow: 0 16px 40px rgba(22,32,42, 0.16);
+          box-shadow: 0 18px 46px var(--ob-shadow);
         }
         .band h2 {
           font-size: clamp(30px, 4.4vw, 46px);
@@ -401,7 +428,8 @@ export default function Home() {
         }
         .from {
           display: inline-block;
-          background: rgba(255, 255, 255, 0.8);
+          background: rgba(255, 255, 255, 0.82);
+          border: 1px solid rgba(255, 255, 255, 0.48);
           color: var(--green);
           font-size: 13.5px;
           font-weight: 700;
@@ -427,11 +455,15 @@ export default function Home() {
         .strip {
           border-top: 1px solid var(--line);
           border-bottom: 1px solid var(--line);
-          background: #fff;
+          background: var(--ob-surface);
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           max-width: 1080px;
           margin: 44px auto 0;
+          border: 1px solid var(--line);
+          border-radius: 20px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px var(--ob-shadow-soft);
         }
         .strip > div {
           padding: 26px 24px;
@@ -453,7 +485,7 @@ export default function Home() {
 
         /* BANDS / SECTIONS */
         .band-alt {
-          background: #F7F8F9;
+          background: color-mix(in srgb, var(--ob-surface-soft) 74%, transparent);
           padding: 78px 28px;
           margin-top: 0;
         }
@@ -483,9 +515,9 @@ export default function Home() {
           width: 38px;
           height: 38px;
           border-radius: 50%;
-          background: var(--green);
-          color: var(--cream);
-          font-family: "Nunito", system-ui, sans-serif;
+          background: linear-gradient(135deg, #c86fc9, #6d28d9);
+          color: #fff;
+          font-family: inherit;
           font-size: 17px;
         }
         .steps strong {
@@ -505,14 +537,15 @@ export default function Home() {
           margin-top: 42px;
         }
         blockquote {
-          background: #fff;
+          background: var(--ob-surface-raised);
           border: 1px solid var(--line);
           border-radius: 18px;
           padding: 28px 26px;
           margin: 0;
+          box-shadow: 0 10px 30px var(--ob-shadow-soft);
         }
         blockquote p {
-          font-family: "Nunito", system-ui, sans-serif;
+          font-family: inherit;
           font-size: 17.5px;
           line-height: 1.5;
           color: var(--ink);
@@ -525,13 +558,13 @@ export default function Home() {
 
         /* CTA */
         .cta-band {
-          background: var(--green);
-          color: var(--cream);
+          background: linear-gradient(135deg, #18202d, #302040);
+          color: #fff;
           text-align: center;
           padding: 76px 28px;
         }
         .cta-band h2 {
-          color: var(--cream);
+          color: #fff;
           font-size: clamp(30px, 4.4vw, 44px);
           margin: 0 0 10px;
         }
@@ -544,14 +577,14 @@ export default function Home() {
         .foot {
           max-width: 1080px;
           margin: 0 auto;
-          padding: 40px 28px 60px;
+          padding: 44px 28px 76px;
           display: flex;
           justify-content: space-between;
           gap: 24px;
           flex-wrap: wrap;
         }
         .foot strong {
-          font-family: "Nunito", system-ui, sans-serif;
+          font-family: inherit;
           font-size: 18px;
           color: var(--green);
         }
@@ -583,6 +616,10 @@ export default function Home() {
           }
           .strip > div:nth-child(2) {
             border-right: none;
+          }
+          .strip {
+            margin-left: 20px;
+            margin-right: 20px;
           }
         }
         @media (max-width: 620px) {
@@ -617,6 +654,15 @@ export default function Home() {
             flex-direction: column;
             border-radius: 18px;
             padding: 14px;
+          }
+          .composer .btn {
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+          }
+          .strip {
+            margin-left: 16px;
+            margin-right: 16px;
           }
         }
       `}</style>

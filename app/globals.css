@@ -5,11 +5,15 @@
 :root {
   --ob-page: #f7f8f9;
   --ob-surface: #ffffff;
-  --ob-surface-soft: #f3f4f6;
+  --ob-surface-soft: #f2f4f7;
+  --ob-surface-raised: #ffffff;
+  --ob-surface-glass: rgba(255, 255, 255, 0.9);
   --ob-text: #16202a;
   --ob-muted: #6b7280;
   --ob-border: #e4e7eb;
-  --ob-shadow: rgba(22, 32, 42, 0.14);
+  --ob-border-strong: #d4d9e0;
+  --ob-shadow: rgba(22, 32, 42, 0.12);
+  --ob-shadow-soft: rgba(22, 32, 42, 0.07);
   --ob-purple: #6d28d9;
   --ob-purple-soft: #f4ecfe;
   --ob-mint: #e4f6ec;
@@ -24,24 +28,28 @@
 }
 
 .dark {
-  --ob-page: #0c1119;
-  --ob-surface: #151c27;
-  --ob-surface-soft: #1d2633;
-  --ob-text: #f4f5f7;
-  --ob-muted: #aab3c0;
-  --ob-border: #303b4b;
-  --ob-shadow: rgba(0, 0, 0, 0.42);
-  --ob-purple: #c5a7ff;
-  --ob-purple-soft: #2b2040;
-  --ob-mint: #183128;
-  --ob-sky: #172d3e;
-  --ob-butter: #352c19;
-  --ob-blush: #351e27;
-  --ob-success-text: #82dfb2;
-  --ob-info-text: #8bcaff;
-  --ob-warning-text: #f2ce78;
-  --ob-danger-text: #ff9baf;
-  --ob-rating-text: #f2ce78;
+  --ob-page: #0d1018;
+  --ob-surface: #171b27;
+  --ob-surface-soft: #202635;
+  --ob-surface-raised: #242b3a;
+  --ob-surface-glass: rgba(23, 27, 39, 0.9);
+  --ob-text: #f8f5fb;
+  --ob-muted: #adb5c5;
+  --ob-border: #30384a;
+  --ob-border-strong: #424c63;
+  --ob-shadow: rgba(0, 0, 0, 0.46);
+  --ob-shadow-soft: rgba(0, 0, 0, 0.26);
+  --ob-purple: #c9b1ff;
+  --ob-purple-soft: #302644;
+  --ob-mint: #19352c;
+  --ob-sky: #192f43;
+  --ob-butter: #3a301c;
+  --ob-blush: #3a202a;
+  --ob-success-text: #8ee8bc;
+  --ob-info-text: #91cfff;
+  --ob-warning-text: #f3d482;
+  --ob-danger-text: #ff9eb1;
+  --ob-rating-text: #f3d482;
 }
 
 @layer base {
@@ -112,6 +120,7 @@
 html {
   color-scheme: light;
   background: var(--ob-page);
+  min-height: 100%;
 }
 
 html.dark {
@@ -119,8 +128,31 @@ html.dark {
 }
 
 body {
-  background: var(--ob-page);
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 8% -10%, color-mix(in srgb, var(--ob-purple) 8%, transparent) 0, transparent 34rem),
+    var(--ob-page);
   color: var(--ob-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ob-purple) 42%, transparent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ob-purple) 72%, #7b2ff7);
+  color: #ffffff;
 }
 
 /* Shared provider check-in control used on dashboard and full job details. */
@@ -183,12 +215,12 @@ body {
   gap: 8px;
   min-height: 42px;
   padding: 9px 14px;
-  border: 1px solid var(--ob-border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ob-surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ob-border-strong) 82%, transparent);
+  border-radius: 14px;
+  background: var(--ob-surface-glass);
   color: var(--ob-text);
-  box-shadow: 0 9px 26px var(--ob-shadow);
-  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px var(--ob-shadow-soft);
+  backdrop-filter: blur(18px) saturate(150%);
   font: inherit;
   font-size: 13px;
   font-weight: 900;
@@ -198,7 +230,8 @@ body {
 .appearance-trigger:hover,
 .appearance-trigger:focus-visible {
   border-color: var(--ob-purple);
-  outline: none;
+  color: var(--ob-purple);
+  transform: translateY(-1px);
 }
 
 .appearance-menu {
@@ -208,11 +241,12 @@ body {
   width: min(280px, calc(100vw - 36px));
   box-sizing: border-box;
   padding: 14px;
-  border: 1px solid var(--ob-border);
+  border: 1px solid var(--ob-border-strong);
   border-radius: 18px;
-  background: var(--ob-surface);
+  background: var(--ob-surface-glass);
   color: var(--ob-text);
-  box-shadow: 0 18px 50px var(--ob-shadow);
+  box-shadow: 0 22px 60px var(--ob-shadow);
+  backdrop-filter: blur(22px) saturate(150%);
 }
 
 .appearance-menu > strong,
@@ -255,6 +289,21 @@ body {
 .appearance-option.active {
   background: var(--ob-purple-soft);
   color: var(--ob-purple);
+}
+
+.appearance-option + .appearance-option {
+  margin-top: 2px;
+}
+
+.portal-shell {
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ob-purple) 7%, transparent), transparent 28rem),
+    var(--ob-page) !important;
+  color: var(--ob-text) !important;
+}
+
+.portal-main {
+  color: var(--ob-text);
 }
 
 .appearance-check {
@@ -343,9 +392,15 @@ body {
 
 /* ---------- Dark palette for the existing application ---------- */
 
-.dark body,
+.dark body {
+  background:
+    radial-gradient(circle at 8% -10%, rgba(123, 47, 247, 0.18) 0, transparent 34rem),
+    radial-gradient(circle at 92% 20%, rgba(200, 111, 201, 0.09) 0, transparent 28rem),
+    var(--ob-page);
+  color: var(--ob-text) !important;
+}
+
 .dark main {
-  background-color: var(--ob-page) !important;
   color: var(--ob-text) !important;
 }
 
@@ -408,7 +463,17 @@ body {
   ) {
   background-color: var(--ob-surface) !important;
   border-color: var(--ob-border) !important;
-  box-shadow: none;
+  box-shadow: 0 12px 34px var(--ob-shadow-soft);
+}
+
+.dark :where(.modal, .toast, .thread, .panel, .card, .visit, .job) {
+  background-color: var(--ob-surface-raised) !important;
+}
+
+.dark :where(.side, .mtop, .tabs, .strip, .topbar, .servicenav) {
+  background: var(--ob-surface-glass) !important;
+  border-color: var(--ob-border) !important;
+  backdrop-filter: blur(18px) saturate(135%);
 }
 
 .dark :where(.row.them p, .chips button) {
@@ -418,12 +483,38 @@ body {
 }
 
 .dark :where(.band-alt, .quotes-wrap, .reviews, .services, .faq, .also) {
-  background: var(--ob-page) !important;
+  background: color-mix(in srgb, var(--ob-surface) 42%, var(--ob-page)) !important;
   border-color: var(--ob-border) !important;
 }
 
+.dark .site .band.clean {
+  background: linear-gradient(120deg, #29223c, #34294b) !important;
+  border-color: #44355f !important;
+}
+
+.dark .site .band.massage {
+  background: linear-gradient(120deg, #352b21, #3d3023) !important;
+  border-color: #51402a !important;
+}
+
+.dark .site .band.member {
+  background: linear-gradient(120deg, #1d2532, #252d3a) !important;
+  border-color: #364153 !important;
+}
+
+.dark .site .band p,
+.dark .site .arrow {
+  color: var(--ob-muted) !important;
+}
+
+.dark .site .from {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--ob-text) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .dark .site :where(.cta-band, .foot) {
-  background: #090d14 !important;
+  background: linear-gradient(135deg, #121622, #20162f) !important;
   color: #f4f5f7 !important;
   border-color: var(--ob-border) !important;
 }
@@ -624,6 +715,7 @@ body {
   border-color: var(--ob-border) !important;
   background: var(--ob-surface-soft) !important;
   color: var(--ob-text) !important;
+  color-scheme: dark;
 }
 
 .dark input::placeholder,
@@ -632,9 +724,14 @@ body {
   opacity: 0.8;
 }
 
-.dark ::selection {
-  background: #7b2ff7;
-  color: #ffffff;
+.dark :where(input, textarea, select):focus {
+  border-color: var(--ob-purple) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ob-purple) 18%, transparent);
+}
+
+.dark :where(.side, .mtop, .tabs) a:hover,
+.dark :where(.side, .mtop, .tabs) button:hover {
+  color: var(--ob-purple) !important;
 }
 
 * {
@@ -683,6 +780,11 @@ dd,
   article {
     padding-left: 18px !important;
     padding-right: 18px !important;
+  }
+
+  .appearance-control {
+    left: 12px;
+    bottom: 12px;
   }
   .track .lbl {
     font-size: 10.5px !important;

@@ -213,8 +213,8 @@ const shell: React.CSSProperties = {
   display: "flex",
   alignItems: "stretch",
   minHeight: "100vh",
-  background: "#F7F8F9",
-  color: "#16202A",
+  background: "var(--ob-page)",
+  color: "var(--ob-text)",
   fontFamily: "'Nunito', system-ui, sans-serif",
 };
 
@@ -229,7 +229,7 @@ const main: React.CSSProperties = {
 
 const gateWrap: React.CSSProperties = {
   minHeight: "80vh",
-  background: "#F7F8F9",
+  background: "var(--ob-page)",
   display: "grid",
   placeItems: "center",
   padding: 24,
@@ -237,12 +237,13 @@ const gateWrap: React.CSSProperties = {
 };
 
 const gateCard: React.CSSProperties = {
-  background: "#fff",
-  border: "2px solid #EDEFF1",
+  background: "var(--ob-surface-raised)",
+  border: "1px solid var(--ob-border)",
   borderRadius: 24,
   padding: "34px 30px",
   maxWidth: 420,
   textAlign: "center",
+  boxShadow: "0 18px 50px var(--ob-shadow-soft)",
 };
 
 const gateTitle: React.CSSProperties = {
@@ -250,11 +251,11 @@ const gateTitle: React.CSSProperties = {
   fontWeight: 900,
   letterSpacing: "-0.02em",
   margin: "10px 0 6px",
-  color: "#16202A",
+  color: "var(--ob-text)",
 };
 
 const gateBody: React.CSSProperties = {
-  color: "#6b7280",
+  color: "var(--ob-muted)",
   fontSize: 15,
   fontWeight: 600,
   margin: "0 0 22px",
@@ -272,7 +273,7 @@ const btn: React.CSSProperties = {
 };
 
 const quiet: React.CSSProperties = {
-  color: "#6b7280",
+  color: "var(--ob-muted)",
   fontSize: 14,
   fontWeight: 700,
   textDecoration: "none",

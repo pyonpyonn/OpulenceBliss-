@@ -10,10 +10,10 @@ import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
-const PURPLE = "#6D28D9";
+const PURPLE = "var(--ob-purple)";
 const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
-const INK = "#16202A";
-const MUTED = "#7A828C";
+const INK = "var(--ob-text)";
+const MUTED = "var(--ob-muted)";
 
 type Item = {
   href: string;
@@ -145,7 +145,11 @@ export default function ClientNav({
                 onMouseLeave={() => setHover(null)}
                 style={{
                   ...row,
-                  background: on ? "#F7F3FF" : hot ? "#F8F9FA" : "transparent",
+                  background: on
+                    ? "var(--ob-purple-soft)"
+                    : hot
+                      ? "var(--ob-surface-soft)"
+                      : "transparent",
                   color: on ? PURPLE : INK,
                   borderLeft: on
                     ? `3px solid ${PURPLE}`
@@ -156,7 +160,9 @@ export default function ClientNav({
                 <span
                   style={{
                     ...badge,
-                    background: on ? "#EDE4FD" : "#F3F4F6",
+                    background: on
+                      ? "var(--ob-purple-soft)"
+                      : "var(--ob-surface-soft)",
                     color: on ? PURPLE : MUTED,
                   }}
                 >
@@ -229,7 +235,7 @@ export default function ClientNav({
               key={i.href}
               href={i.href}
               prefetch
-              style={{ ...tab, color: on ? PURPLE : "#8B929B" }}
+              style={{ ...tab, color: on ? PURPLE : MUTED }}
             >
               <span style={{ ...tabIcon, position: "relative" }}>
                 {i.icon}
@@ -256,8 +262,9 @@ export default function ClientNav({
           justify-content: space-between;
           gap: 12px;
           padding: 13px 16px;
-          background: #fff;
-          border-bottom: 1px solid #eceef0;
+          background: var(--ob-surface-glass);
+          border-bottom: 1px solid var(--ob-border);
+          backdrop-filter: blur(18px) saturate(140%);
           position: sticky;
           top: 0;
           z-index: 30;
@@ -269,10 +276,11 @@ export default function ClientNav({
           right: 0;
           bottom: 0;
           z-index: 60;
-          background: #fff;
-          border-top: 1px solid #eceef0;
+          background: var(--ob-surface-glass);
+          border-top: 1px solid var(--ob-border);
           padding: 6px 4px 8px;
-          box-shadow: 0 -2px 12px rgba(22, 32, 42, 0.06);
+          box-shadow: 0 -8px 26px var(--ob-shadow-soft);
+          backdrop-filter: blur(18px) saturate(140%);
         }
         @media (min-width: 900px) {
           .side {
@@ -285,11 +293,13 @@ export default function ClientNav({
             box-sizing: border-box;
             overflow-y: auto;
             padding: 24px 16px;
-            background: #fff;
-            border-right: 1px solid #eceef0;
+            background: var(--ob-surface-glass);
+            border-right: 1px solid var(--ob-border);
             position: sticky;
             top: 0;
             align-self: flex-start;
+            box-shadow: 10px 0 32px var(--ob-shadow-soft);
+            backdrop-filter: blur(20px) saturate(145%);
             transition:
               width 0.22s ease,
               flex-basis 0.22s ease,
@@ -405,7 +415,8 @@ const profile: React.CSSProperties = {
   alignItems: "center",
   gap: 11,
   padding: "12px 10px",
-  background: "#F7F8F9",
+  background: "var(--ob-surface-soft)",
+  border: "1px solid var(--ob-border)",
   borderRadius: 16,
 };
 
@@ -446,7 +457,7 @@ const sectionLabel: React.CSSProperties = {
   fontWeight: 800,
   letterSpacing: "0.12em",
   textTransform: "uppercase",
-  color: "#A9AFB7",
+  color: "var(--ob-muted)",
   padding: "6px 10px 0",
 };
 
@@ -514,7 +525,7 @@ const foot: React.CSSProperties = {
   display: "grid",
   gap: 10,
   paddingTop: 16,
-  borderTop: "1px solid #F1F2F4",
+  borderTop: "1px solid var(--ob-border)",
 };
 
 const footBtn: React.CSSProperties = {
@@ -553,5 +564,5 @@ const tabDot: React.CSSProperties = {
   height: 8,
   borderRadius: "50%",
   background: "#7B2FF7",
-  boxShadow: "0 0 0 2px #fff",
+  boxShadow: "0 0 0 2px var(--ob-surface)",
 };
