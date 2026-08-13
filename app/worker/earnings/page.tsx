@@ -23,9 +23,26 @@ type Pay = {
   bookings: Bk | Bk[] | null;
 };
 
+type ReceivedReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  bookings:
+    | {
+        scheduled_at: string;
+        packages: { name: string } | { name: string }[] | null;
+      }
+    | {
+        scheduled_at: string;
+        packages: { name: string } | { name: string }[] | null;
+      }[]
+    | null;
+};
+
 function one<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
-  return Array.isArray(v) ? v[0] ?? null : v;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
 function svc(p: Pay) {
@@ -47,10 +64,24 @@ export default async function EarningsPage() {
     .eq("profile_id", user.id)
     .maybeSingle();
 
+  let receivedReviews: ReceivedReview[] = [];
+  if (prov?.id) {
+    const { data } = await supabase
+      .from("reviews")
+      .select(
+        "id, rating, comment, created_at, bookings!inner(provider_id, scheduled_at, packages(name))",
+      )
+      .eq("reviewer", "client")
+      .eq("bookings.provider_id", prov.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    receivedReviews = (data ?? []) as unknown as ReceivedReview[];
+  }
+
   const { data: paysData } = await supabase
     .from("payments")
     .select(
-      "id, gross_amount, split_breakdown, status, kind, created_at, bookings(scheduled_at, status, packages(name))"
+      "id, gross_amount, split_breakdown, status, kind, created_at, bookings(scheduled_at, status, packages(name))",
     )
     .order("created_at", { ascending: false });
 
@@ -58,7 +89,7 @@ export default async function EarningsPage() {
   const { data: payoutData } = await supabase
     .from("payouts")
     .select(
-      "id, amount, status, note, created_at, bookings(scheduled_at, status, packages(name))"
+      "id, amount, status, note, created_at, bookings(scheduled_at, status, packages(name))",
     )
     .order("created_at", { ascending: false });
 
@@ -115,8 +146,8 @@ export default async function EarningsPage() {
         p.status === "succeeded"
           ? "Paid"
           : p.status === "refunded"
-          ? "Cancelled"
-          : "Pending",
+            ? "Cancelled"
+            : "Pending",
       gross: p.gross_amount,
     })),
     ...payouts.map((p) => ({
@@ -160,6 +191,54 @@ export default async function EarningsPage() {
             }
           />
         </div>
+
+        <h2 style={sectionTitle}>Reviews I received</h2>
+        {receivedReviews.length === 0 ? (
+          <div style={{ ...empty, marginBottom: 32 }}>
+            No customer reviews yet. Written feedback will appear here after a
+            completed visit.
+          </div>
+        ) : (
+          <div style={reviewGrid}>
+            {receivedReviews.map((review) => {
+              const booking = one(review.bookings);
+              const pkg = one(booking?.packages ?? null);
+              return (
+                <article key={review.id} style={reviewCard}>
+                  <div style={reviewHead}>
+                    <strong style={reviewStars}>
+                      {"★".repeat(review.rating)}
+                      <span style={{ color: "#DDD6E8" }}>
+                        {"★".repeat(5 - review.rating)}
+                      </span>
+                    </strong>
+                    <time style={reviewDate} dateTime={review.created_at}>
+                      {new Date(review.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </time>
+                  </div>
+                  <p style={reviewComment}>
+                    {review.comment?.trim()
+                      ? `“${review.comment.trim()}”`
+                      : "The customer left a star rating without a written comment."}
+                  </p>
+                  <span style={reviewService}>
+                    {pkg?.name ?? "Completed visit"}
+                    {booking?.scheduled_at
+                      ? ` · ${new Date(booking.scheduled_at).toLocaleDateString(
+                          "en-GB",
+                          { day: "numeric", month: "short" },
+                        )}`
+                      : ""}
+                  </span>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
         <h2 style={sectionTitle}>Every payment</h2>
         {rows.length === 0 ? (
@@ -267,6 +346,43 @@ const statGrid: React.CSSProperties = {
   gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
   gap: 12,
   marginBottom: 34,
+};
+const reviewGrid: React.CSSProperties = {
+  display: "grid",
+  gap: 12,
+  marginBottom: 34,
+};
+const reviewCard: React.CSSProperties = {
+  ...card,
+  padding: "18px 20px",
+};
+const reviewHead: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 14,
+};
+const reviewStars: React.CSSProperties = {
+  color: "#6D28D9",
+  fontSize: 18,
+  letterSpacing: 1,
+};
+const reviewDate: React.CSSProperties = {
+  color: "#7A828C",
+  fontSize: 12.5,
+  whiteSpace: "nowrap",
+};
+const reviewComment: React.CSSProperties = {
+  color: "#34404C",
+  fontSize: 15,
+  fontWeight: 600,
+  lineHeight: 1.55,
+  margin: "10px 0 8px",
+};
+const reviewService: React.CSSProperties = {
+  color: "#7A828C",
+  fontSize: 12.5,
+  fontWeight: 700,
 };
 const row: React.CSSProperties = {
   display: "flex",
