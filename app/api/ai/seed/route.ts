@@ -69,7 +69,7 @@ const DOCS: { title: string; content: string }[] = [
   {
     title: "How booking works",
     content:
-      "Booking takes four steps: choose your service, enter your postcode so we can check we cover you, pick a time from the slots our providers actually have free, then confirm and pay. You must be logged in to book. Bookings need at least two hours' notice. Once you book, the job is offered to every available provider who matches your service, area and time — the first to accept it is confirmed as yours, and you'll be notified.",
+      "Booking takes four steps: choose your service, enter your postcode so we can check we cover you, pick a time from the slots our providers actually have free, then confirm and pay. You must be logged in to book. Bookings need at least two hours' notice. Once you book, matching providers are asked one at a time until somebody accepts, and you'll be notified as soon as one is confirmed.",
   },
   {
     title: "Where we cover",
@@ -124,7 +124,7 @@ const DOCS: { title: string; content: string }[] = [
   {
     title: "Provider availability and offers",
     content:
-      "Providers set the days and hours they work, and only those times appear as bookable slots to clients. Each job offer is sent to every matching provider, and the first to accept gets it. Declining an offer passes it to the others. If nobody accepts by two hours before the appointment, the booking is cancelled and the client is not charged.",
+      "Providers set the days and hours they work, and only those times appear as bookable slots to clients. A matching provider gets the offer first; if they decline or their response time ends, it moves automatically to the next provider. Each provider gets 60 minutes when a visit is at least a week away, 30 minutes when it is three to six days away, and 15 minutes when it is closer. If nobody accepts by two hours before the appointment, the booking is cancelled and the client is not charged.",
   },
   {
     title: "Getting help",

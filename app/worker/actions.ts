@@ -8,6 +8,7 @@ import { createClient as createAdmin } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
+import { rotateBookingOffer } from "@/lib/offerRotation";
 import {
   claimMoneyOperation,
   maybeReleasePayout,
@@ -203,6 +204,10 @@ export async function declineJob(id: string) {
     .eq("booking_id", id)
     .eq("provider_id", me.id);
 
+  await rotateBookingOffer(admin, id).catch((error) => {
+    console.error("Could not advance declined offer:", error);
+  });
+
   revalidatePath("/worker");
 }
 
@@ -215,6 +220,18 @@ export async function checkInJob(
   force = false
 ) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      blocked: true,
+      pass: null,
+      distance: null,
+      reason: "Please sign in again before checking in.",
+      canForce: false,
+    };
+  }
   const ctx = await bookingContext(id);
 
   // You can only check in on the day of the visit, from 30 minutes before.
@@ -306,44 +323,182 @@ export async function checkInJob(
     }
   }
 
-  try {
-    await transitionBooking(supabase, id, "in_progress", {
-      meta: { geofence_pass: pass, distance_metres: distance, forced: force },
+  // A development-only forced check-in retains the fast path so the complete
+  // checkout/payment flow can be exercised from a desk. Live/testable normal
+  // check-in always requires the customer's booking-specific OTP.
+  if (force && testPayments) {
+    try {
+      await transitionBooking(supabase, id, "in_progress", {
+        meta: {
+          geofence_pass: pass,
+          distance_metres: distance,
+          forced: true,
+          otp_bypassed: true,
+        },
+      });
+    } catch (cause) {
+      return {
+        blocked: true,
+        pass,
+        distance,
+        reason:
+          cause instanceof Error ? cause.message : "Could not start this job.",
+        canForce: true,
+      };
+    }
+
+    await supabase.from("check_ins").insert({
+      booking_id: id,
+      arrived_at: new Date().toISOString(),
+      gps_lat: typeof lat === "number" ? lat : null,
+      gps_lng: typeof lng === "number" ? lng : null,
+      geofence_pass: pass,
     });
-  } catch (e) {
+
+    await notify(
+      ctx.customerId,
+      "Your provider has arrived",
+      `${ctx.service} — development check-in was completed.`,
+      `/account/visit/${id}`,
+    );
+    revalidatePath("/worker");
+    revalidatePath("/account");
+    return {
+      blocked: false,
+      pass,
+      distance,
+      reason: `${reason} Development check-in completed without an OTP.`,
+      canForce: false,
+      otpRequired: false,
+    };
+  }
+
+  const { data: challengeData, error: challengeError } = await admin.rpc(
+    "request_checkin_challenge",
+    {
+      p_booking_id: id,
+      p_provider_profile_id: user.id,
+      p_gps_lat: lat,
+      p_gps_lng: lng,
+      p_distance_metres: distance,
+    },
+  );
+
+  if (challengeError) {
     return {
       blocked: true,
       pass,
       distance,
-      reason: e instanceof Error ? e.message : "Could not start this job.",
+      reason: challengeError.message,
+      canForce: testPayments,
     };
   }
 
-  await supabase.from("check_ins").insert({
-    booking_id: id,
-    arrived_at: new Date().toISOString(),
-    gps_lat: typeof lat === "number" ? lat : null,
-    gps_lng: typeof lng === "number" ? lng : null,
-    geofence_pass: pass,
+  const challenge = challengeData as {
+    challenge_id: string;
+    expires_at: string;
+    newly_created: boolean;
+    locked?: boolean;
+  };
+
+  if (challenge.locked) {
+    return {
+      blocked: true,
+      pass,
+      distance,
+      reason:
+        "Too many incorrect codes. Wait for this code to expire, then request a new one.",
+      canForce: testPayments,
+    };
+  }
+
+  if (challenge.newly_created) {
+    const { data: deliveryData, error: deliveryError } = await admin.rpc(
+      "system_get_checkin_code",
+      { p_challenge_id: challenge.challenge_id },
+    );
+
+    if (deliveryError) {
+      return {
+        blocked: true,
+        pass,
+        distance,
+        reason: `Location passed, but the code could not be delivered: ${deliveryError.message}`,
+        canForce: testPayments,
+      };
+    }
+
+    const delivery = deliveryData as {
+      code: string;
+      customer_id: string | null;
+      customer_email: string | null;
+      service: string;
+    };
+
+    await Promise.allSettled([
+      notify(
+        delivery.customer_id,
+        `Check-in code: ${delivery.code}`,
+        `Share this six-digit code with your provider at the door. It expires in 10 minutes.`,
+        `/account/visit/${id}`,
+      ),
+      sendEmail({
+        to: delivery.customer_email,
+        subject: `Your check-in code is ${delivery.code}`,
+        title: "Your provider is at the door",
+        body: `<p>Share this code with your provider to start <strong>${delivery.service}</strong>:</p><p style="font-size:32px;font-weight:800;letter-spacing:8px">${delivery.code}</p><p>It expires in 10 minutes. Only share it when your provider is with you.</p>`,
+        cta: { text: "View your visit", url: `/account/visit/${id}` },
+      }),
+    ]);
+  }
+
+  return {
+    blocked: false,
+    pass,
+    distance,
+    reason: challenge.newly_created
+      ? `${reason} A six-digit code was sent to the client.`
+      : `${reason} The client's existing code is still active.`,
+    canForce: false,
+    otpRequired: true,
+    expiresAt: challenge.expires_at,
+  };
+}
+
+export async function verifyCheckInOtp(id: string, code: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("verify_checkin_challenge", {
+    p_booking_id: id,
+    p_code: code.replace(/\D/g, "").slice(0, 6),
   });
 
-  await notify(
-    ctx.customerId,
-    "Your provider has arrived",
-    `${ctx.service} — they've checked in and started work.`,
-    "/account"
-  );
-  await sendEmail({
-    to: ctx.email,
-    subject: "Your provider has arrived",
-    title: "They're here",
-    body: `<p>Your provider has checked in and started your <strong>${ctx.service}</strong>.</p>`,
-    cta: { text: "View your booking", url: "/account" },
-  });
+  if (error) return { ok: false, reason: error.message };
+  const result = data as { ok: boolean; reason: string };
+  if (!result.ok) return result;
+
+  const ctx = await bookingContext(id);
+  await Promise.allSettled([
+    notify(
+      ctx.customerId,
+      "Check-in confirmed",
+      `${ctx.service} has started.`,
+      `/account/visit/${id}`,
+    ),
+    sendEmail({
+      to: ctx.email,
+      subject: "Your visit has started",
+      title: "Check-in confirmed",
+      body: `<p>Your code was confirmed and <strong>${ctx.service}</strong> is now in progress.</p>`,
+      cta: { text: "View your visit", url: `/account/visit/${id}` },
+    }),
+  ]);
 
   revalidatePath("/worker");
+  revalidatePath("/worker/current");
+  revalidatePath(`/worker/job/${id}`);
   revalidatePath("/account");
-  return { blocked: false, pass, distance, reason, canForce: false };
+  revalidatePath(`/account/visit/${id}`);
+  return result;
 }
 
 // Job finished — complete it AND settle the money.

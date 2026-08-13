@@ -4,6 +4,7 @@
 
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { seedAndStartOfferRotation } from "@/lib/offerRotation";
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,7 +47,7 @@ export async function buildSplit(opts: {
   };
 }
 
-/** Create this cycle's visits and broadcast them to matching providers. */
+/** Create this cycle's visits and queue matching providers one at a time. */
 export async function generateBookings(subId: string, cycleStart: Date) {
   const { data: sub } = await admin
     .from("subscriptions")
@@ -158,23 +159,11 @@ export async function generateBookings(subId: string, cycleStart: Date) {
     if (!booking) continue;
     created++;
 
-    if (provs.length) {
-      await admin.from("booking_offers").insert(
-        provs.map((p) => ({
-          booking_id: booking.id,
-          provider_id: p.id,
-          status: "open",
-        }))
-      );
-      await admin.from("notifications").insert(
-        provs.map((p) => ({
-          user_id: p.profile_id,
-          title: "New recurring job offer",
-          body: `${pkg?.name ?? "Visit"} in ${sub.postcode} — first to accept gets it.`,
-          href: "/worker",
-        }))
-      );
-    }
+    await seedAndStartOfferRotation(
+      admin,
+      booking.id,
+      provs.map((provider) => provider.id),
+    );
   }
 
   return { created };

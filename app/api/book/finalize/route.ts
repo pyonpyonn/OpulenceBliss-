@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { seedAndStartOfferRotation } from "@/lib/offerRotation";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const admin = createClient(
@@ -112,15 +113,11 @@ export async function GET(req: NextRequest) {
         .single();
       if (bookingError || !booking) throw bookingError ?? new Error("Booking insert failed");
 
-      if (matched.length) {
-        await admin.from("booking_offers").insert(
-          matched.map((provider) => ({
-            booking_id: booking.id,
-            provider_id: provider.id,
-            status: "open",
-          }))
-        );
-      }
+      await seedAndStartOfferRotation(
+        admin,
+        booking.id,
+        matched.map((provider) => provider.id),
+      );
 
       const total = pi.amount;
       const platform = pi.application_fee_amount ?? 0;
@@ -136,21 +133,11 @@ export async function GET(req: NextRequest) {
       });
       if (paymentError) throw paymentError;
 
-      if (matched.length) {
-        await admin.from("notifications").insert(
-          matched.map((provider) => ({
-            user_id: provider.profile_id,
-            title: "New job offer",
-            body: `${m.package || "Service"} in ${postcode ?? "your area"} — first to accept gets it.`,
-            href: "/worker",
-          }))
-        );
-      }
       await admin.from("notifications").insert({
         user_id: user.id,
         title: matched.length ? "Booking received" : "Looking for a provider",
         body: matched.length
-          ? `${m.package || "Service"} — sent to ${matched.length} available provider${matched.length === 1 ? "" : "s"}. We'll confirm shortly.`
+          ? `${m.package || "Service"} — we're asking matching providers one at a time and will confirm as soon as one accepts.`
           : `${m.package || "Service"} — we'll keep looking and cancel free of charge if we can't fill it.`,
         href: "/account",
       });

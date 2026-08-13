@@ -347,7 +347,6 @@ export function projectVisitStatus(f: VisitFacts): VisitStatus {
   switch (f.bookingStatus) {
     case "offered":
     case "declined": {
-      const many = f.openOfferCount > 1;
       actions.push(
         { kind: "wait", label: "We'll let you know", primary: true },
         { kind: "cancel", label: "Cancel booking" },
@@ -356,9 +355,7 @@ export function projectVisitStatus(f: VisitFacts): VisitStatus {
 
       return {
         headline: "Finding your provider",
-        detail: many
-          ? `${service} has gone out to ${f.openOfferCount} available providers in your area. The first to accept becomes yours.`
-          : `We're offering ${service} to available providers in your area.`,
+        detail: `We're offering ${service} to matching providers one at a time. If one doesn't answer, the next provider gets a turn automatically.`,
         tone: "neutral",
         nextActor: "provider",
         nextActorLabel: ACTOR_LABEL.provider,

@@ -101,7 +101,7 @@ export default async function WorkerPage() {
 
   const rows = (rowsData ?? []) as unknown as Row[];
 
-  // Open offers broadcast to this provider (first to accept wins)
+  // Only the currently active offer is visible to this provider.
   let offers: Row[] = [];
   if (prov?.id) {
     const { data: offerRows } = await supabase

@@ -8,6 +8,7 @@ import {
   acceptJob,
   declineJob,
   checkInJob,
+  verifyCheckInOtp,
   checkOutJob,
   rateClient,
 } from "./actions";
@@ -222,6 +223,8 @@ export function CheckInControl({
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
+  const [otpStep, setOtpStep] = useState(false);
+  const [otp, setOtp] = useState("");
   const [blocked, setBlocked] = useState<{
     lat: number | null;
     lng: number | null;
@@ -231,6 +234,9 @@ export function CheckInControl({
     start(async () => {
       const result = await checkInJob(id, lat, lng, force);
       setNote(result?.reason ?? null);
+      setOtpStep(
+        Boolean(result && "otpRequired" in result && result.otpRequired),
+      );
       setBlocked(
         result?.blocked && "canForce" in result && result.canForce
           ? { lat: lat ?? null, lng: lng ?? null }
@@ -252,20 +258,110 @@ export function CheckInControl({
     );
   };
 
-  const good = note?.startsWith("Location confirmed");
+  const good =
+    note?.startsWith("Location confirmed") ||
+    note?.startsWith("Code confirmed");
 
   return (
     <div className="worker-checkin-control">
-      <button
-        type="button"
-        className={
-          animated ? "worker-checkin-button animated" : "worker-checkin-button"
-        }
-        onClick={() => locate()}
-        disabled={pending}
-      >
-        {pending ? "Checking location…" : label}
-      </button>
+      {!otpStep && (
+        <button
+          type="button"
+          className={
+            animated
+              ? "worker-checkin-button animated"
+              : "worker-checkin-button"
+          }
+          onClick={() => locate()}
+          disabled={pending}
+        >
+          {pending ? "Checking location…" : label}
+        </button>
+      )}
+      {otpStep && (
+        <div
+          style={{
+            marginTop: compact ? 0 : 10,
+            padding: compact ? "10px 12px" : "14px",
+            border: "1.5px solid var(--ob-border)",
+            borderRadius: 14,
+            background: "var(--ob-surface)",
+          }}
+        >
+          <strong
+            style={{
+              display: "block",
+              color: "var(--ob-text)",
+              fontSize: 14,
+              marginBottom: 7,
+            }}
+          >
+            Enter the client&apos;s 6-digit code
+          </strong>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              aria-label="Client check-in code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              onChange={(event) =>
+                setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              placeholder="000000"
+              style={{
+                flex: "1 1 120px",
+                minWidth: 0,
+                border: "1.5px solid var(--ob-border)",
+                borderRadius: 10,
+                padding: "10px 12px",
+                background: "var(--ob-surface)",
+                color: "var(--ob-text)",
+                font: "inherit",
+                fontSize: 18,
+                fontWeight: 900,
+                letterSpacing: "0.18em",
+                textAlign: "center",
+              }}
+            />
+            <button
+              type="button"
+              className="worker-checkin-button"
+              disabled={pending || otp.length !== 6}
+              onClick={() =>
+                start(async () => {
+                  const result = await verifyCheckInOtp(id, otp);
+                  setNote(result.reason);
+                  if (result.ok) setOtpStep(false);
+                })
+              }
+            >
+              {pending ? "Checking…" : "Confirm code"}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOtpStep(false);
+              setOtp("");
+              setNote(null);
+            }}
+            style={{
+              marginTop: 8,
+              padding: 0,
+              border: 0,
+              background: "none",
+              color: "var(--ob-muted)",
+              font: "inherit",
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Check location again
+          </button>
+        </div>
+      )}
       {!compact && (
         <p
           style={{ color: "var(--ob-muted)", fontSize: 13, margin: "10px 0 0" }}

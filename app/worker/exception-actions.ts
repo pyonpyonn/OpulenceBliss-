@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient as ssr } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { seedAndStartOfferRotation } from "@/lib/offerRotation";
 
 const admin = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -206,7 +207,7 @@ export async function cannotAttend(
 
   if (error) return { ok: false, message: error.message };
 
-  // ---- re-broadcast to everyone else who fits ----
+  // ---- queue everyone else who fits, then ask them one at a time ----
   const district = (booking.address ?? "")
     .toUpperCase()
     .replace(/\s+/g, "")
@@ -259,35 +260,12 @@ export async function cannotAttend(
         : { data: [] };
 
       if (provs?.length) {
-        const { data: opened, error: offersError } = await admin
-          .from("booking_offers")
-          .upsert(
-            provs.map((p) => ({
-              booking_id: bookingId,
-              provider_id: p.id,
-              status: "open",
-            })),
-            { onConflict: "booking_id,provider_id" },
-          )
-          .select("provider_id");
-
-        if (!offersError && opened?.length) {
-          const openedIds = new Set(opened.map((offer) => offer.provider_id));
-          const recipients = provs.filter((provider) =>
-            openedIds.has(provider.id),
-          );
-          await admin.from("notifications").insert(
-            recipients.map((p) => ({
-              user_id: p.profile_id,
-              title: "Job available",
-              body: `${pkg?.name ?? "A visit"} in ${
-                booking.address ?? "your area"
-              } — the original provider dropped out.`,
-              href: "/worker",
-            })),
-          );
-          offered = recipients.length;
-        }
+        await seedAndStartOfferRotation(
+          admin,
+          bookingId,
+          provs.map((provider) => provider.id),
+        );
+        offered = provs.length;
       }
     }
   }
