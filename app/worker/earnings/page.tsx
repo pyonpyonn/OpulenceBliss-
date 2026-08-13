@@ -152,7 +152,7 @@ export default async function EarningsPage() {
           <Stat label="Tips received" value={gbp(tipTotal)} />
           <Stat label="Visits completed" value={String(visitCount)} />
           <Stat
-            label="Your rating"
+            label="Reviews"
             value={
               prov?.rating_avg
                 ? `${Number(prov.rating_avg).toFixed(1)} ★ (${prov.rating_count})`
