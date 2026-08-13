@@ -53,6 +53,7 @@ export default function PortalLiveSync({ userId }: { userId: string }) {
         refresh();
       }
     };
+    const refreshNow = () => refresh();
 
     const fallback = window.setInterval(() => {
       if (document.visibilityState === "visible") refresh();
@@ -60,6 +61,7 @@ export default function PortalLiveSync({ userId }: { userId: string }) {
 
     window.addEventListener("focus", refreshIfVisible);
     window.addEventListener("online", refreshIfVisible);
+    window.addEventListener("opulence:refresh", refreshNow);
     document.addEventListener("visibilitychange", refreshIfVisible);
 
     return () => {
@@ -67,6 +69,7 @@ export default function PortalLiveSync({ userId }: { userId: string }) {
       window.clearInterval(fallback);
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("online", refreshIfVisible);
+      window.removeEventListener("opulence:refresh", refreshNow);
       document.removeEventListener("visibilitychange", refreshIfVisible);
       void supabase.removeChannel(channel);
     };

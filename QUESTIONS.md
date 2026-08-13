@@ -83,7 +83,7 @@ Not blocking launch, but someone has to own them.
 | 4.1 | **Who monitors the resolution desk**, and what response time do we promise?                | SLAs are set by case priority: 1h urgent, 4h high, 1 day normal. Invented — needs confirming against real staffing. |
 | 4.2 | **Who reads the reconciliation findings** each morning?                                    | Nobody assigned.                                                                                                    |
 | 4.3 | **Transactional email sender domain.** Which address do customers see?                     | `onboarding@resend.dev`. Needs a real domain.                                                                       |
-| 4.4 | **AI assistant.** Happy for it to answer customers directly? Any topics it must refuse?    | Live, answers from a knowledge base, cannot book or charge.                                                         |
+| 4.4 | **AI assistant.** Happy for it to answer customers directly? Any topics it must refuse?    | Live with account lookups. It may prepare booking, cancellation, reschedule and support-request actions, but every mutation needs an explicit customer confirmation and checkout still requires Stripe. |
 | 4.5 | **Data retention.** How long do we keep addresses, GPS check-in coordinates and chat logs? | Kept indefinitely. **Needs a policy — GPS and addresses are personal data.**                                        |
 | 4.6 | **Provider suspension.** Who can suspend a provider, and on what grounds?                  | Admin can reject at vetting. No suspension flow.                                                                    |
 

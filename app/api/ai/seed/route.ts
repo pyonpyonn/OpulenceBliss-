@@ -84,7 +84,7 @@ const DOCS: { title: string; content: string }[] = [
   {
     title: "Cancelling and rescheduling",
     content:
-      "You can cancel or reschedule from My bookings in your account. If you cancel before the visit is complete, the hold on your card is released and you are not charged. If you reschedule, the job goes back out to providers to accept the new time. If a booking is already paid and you cancel, it is refunded.",
+      "You can cancel or reschedule from My bookings in your account or ask the assistant to prepare the action. The assistant always shows a confirmation button before changing anything. Rescheduling normally needs 48 hours' notice and only currently available times can be selected. If you cancel before the visit is complete, the card hold is released; if an eligible paid booking is cancelled, the refund process starts. If you reschedule, the job keeps its audited history and providers are told about the new time.",
   },
   {
     title: "Tipping",
@@ -104,7 +104,7 @@ const DOCS: { title: string; content: string }[] = [
   {
     title: "What happens on the day",
     content:
-      "Your provider checks in when they arrive, and we confirm their location to make sure they're at your address. You can watch the visit's progress live in your account, including a timer once they've started. When they finish they check out, which completes the job and charges your card. You'll then be asked to rate the visit.",
+      "Your provider starts check-in near the service address. The platform checks their location and sends the customer a booking-specific six-digit code; the provider enters that code to begin the visit. The plaintext code is not stored. You can watch progress live in your account, including a timer once work starts. When the provider finishes they check out, which completes the job and captures the authorised payment. Both sides are then asked to rate the visit.",
   },
   {
     title: "How to prepare for a visit",
@@ -129,7 +129,17 @@ const DOCS: { title: string; content: string }[] = [
   {
     title: "Getting help",
     content:
-      "For anything this assistant can't answer — complaints, damage or insurance claims, payment disputes, or a provider who hasn't arrived — contact the Opulence Bliss team directly and a person will help. Don't share card details or passwords in chat.",
+      "For a booking-specific problem, the assistant can prepare a request to the resolution desk and will submit it only after the customer confirms. A provider no-show can also be reported from the booking after the grace period. Complaints, damage, injury, safeguarding and payment disputes require a person to review the evidence; the assistant never decides fault, refunds or compensation. For immediate danger or a medical emergency call 999. Don't share card details or passwords in chat.",
+  },
+  {
+    title: "What the assistant can do",
+    content:
+      "The Opulence Bliss assistant answers service, price, membership, coverage, payment, provider and visit questions from the platform knowledge base. For signed-in customers it can read their own booking and payment status, find live availability, prepare a secure booking link, prepare a cancellation, prepare a reschedule and prepare a booking-help request. Cancellation, rescheduling and help requests always require a visible confirmation button. New bookings always finish on the secure Stripe review-and-pay page; the assistant never takes card details or charges invisibly. Providers can ask about their jobs, offers, earnings and availability, but check-in, check-out, accepting, declining and withdrawing stay in the dedicated worker screens.",
+  },
+  {
+    title: "Booking messages and live updates",
+    content:
+      "Once a provider accepts a booking, the customer and provider can use its private message thread for arrival details, access instructions, delays, pets and other booking-related information. Messages are immutable and the thread closes seven days after the visit. Portal pages listen for booking notifications and refresh automatically, with focus and timed refreshes as a fallback.",
   },
 ];
 

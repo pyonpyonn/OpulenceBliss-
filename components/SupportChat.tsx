@@ -14,11 +14,30 @@ const PURPLE = "#6D28D9";
 
 type Msg = { role: "user" | "assistant"; text: string };
 
+type AssistantAction =
+  | {
+      kind: "navigate";
+      label: string;
+      summary: string;
+      href: string;
+      tone: "primary" | "danger";
+    }
+  | {
+      kind: "confirm";
+      label: string;
+      summary: string;
+      confirmText: string;
+      token: string;
+      tone: "primary" | "danger";
+    };
+
+type ChatMsg = Msg & { action?: AssistantAction };
+
 const SUGGESTIONS = [
-  "Do you cover my postcode?",
-  "What's free this week?",
-  "When am I charged?",
-  "How do I become a provider?",
+  "What's my next booking status?",
+  "Help me reschedule",
+  "Book a service for me",
+  "Cancel my next booking",
 ];
 
 /* ---------- link handling ---------- */
@@ -91,10 +110,10 @@ function Linkified({ text }: { text: string }) {
 
 export default function SupportChat() {
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
     {
       role: "assistant",
-      text: "Hi! I can check whether we cover your postcode, find times that are actually free, and look up your bookings. What do you need?",
+      text: "Hi! I can answer questions, find live times, check your booking and payment status, prepare a booking, or help you cancel and reschedule safely. What would you like to do?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -141,6 +160,7 @@ export default function SupportChat() {
             data.reply ??
             data.error ??
             "Sorry, I couldn't answer that. Please contact the team.",
+          action: data.action,
         },
       ]);
     } catch {
@@ -149,6 +169,60 @@ export default function SupportChat() {
         {
           role: "assistant",
           text: "I couldn't reach the server. Try again shortly.",
+        },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmAction(index: number, action: AssistantAction) {
+    if (busy) return;
+    if (action.kind === "navigate") {
+      window.location.href = action.href;
+      return;
+    }
+    if (!window.confirm(action.confirmText)) return;
+
+    setBusy(true);
+    setMsgs((current) =>
+      current.map((message, messageIndex) =>
+        messageIndex === index ? { ...message, action: undefined } : message,
+      ),
+    );
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ actionToken: action.token }),
+      });
+      const data = await response.json();
+      setMsgs((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text:
+            data.reply ??
+            data.error ??
+            "That action could not be completed. Please try again.",
+        },
+      ]);
+      if (response.ok && data.actionCompleted) {
+        window.dispatchEvent(new Event("opulence:refresh"));
+        window.dispatchEvent(new Event("opulence:notification"));
+      }
+    } catch {
+      setMsgs((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text: "I couldn't reach the server, so nothing was changed. Please try again.",
         },
       ]);
     } finally {
@@ -304,9 +378,49 @@ export default function SupportChat() {
       <div className="log">
         {msgs.map((m, i) => (
           <div key={i} className={m.role === "user" ? "row me" : "row them"}>
-            <p>
-              {m.role === "assistant" ? <Linkified text={m.text} /> : m.text}
-            </p>
+            <div className="message-stack">
+              <p>
+                {m.role === "assistant" ? <Linkified text={m.text} /> : m.text}
+              </p>
+              {m.role === "assistant" && m.action && (
+                <div
+                  className={`action-card ${
+                    m.action.tone === "danger" ? "danger" : ""
+                  }`}
+                >
+                  <span>{m.action.summary}</span>
+                  <div className="action-row">
+                    {m.action.kind === "navigate" ? (
+                      <a href={m.action.href}>{m.action.label}</a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void confirmAction(i, m.action!)}
+                        disabled={busy}
+                      >
+                        {m.action.label}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="dismiss"
+                      disabled={busy}
+                      onClick={() =>
+                        setMsgs((current) =>
+                          current.map((message, messageIndex) =>
+                            messageIndex === i
+                              ? { ...message, action: undefined }
+                              : message,
+                          ),
+                        )
+                      }
+                    >
+                      Not now
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
 
@@ -353,7 +467,7 @@ export default function SupportChat() {
       </div>
 
       <p className="note">
-        An assistant, not a person. For complaints or claims, contact the team.
+        Actions only run after you confirm. Never share card details or passwords.
       </p>
 
       <style jsx>{`
@@ -444,6 +558,14 @@ export default function SupportChat() {
         .row.me {
           justify-content: flex-end;
         }
+        .message-stack {
+          display: grid;
+          gap: 7px;
+          max-width: 88%;
+        }
+        .row.me .message-stack {
+          justify-items: end;
+        }
         .row p {
           margin: 0;
           padding: 11px 14px;
@@ -451,7 +573,8 @@ export default function SupportChat() {
           font-size: 14.5px;
           font-weight: 600;
           line-height: 1.5;
-          max-width: 86%;
+          max-width: 100%;
+          box-sizing: border-box;
           white-space: pre-wrap;
         }
         .row.them p {
@@ -479,6 +602,59 @@ export default function SupportChat() {
           border-radius: 999px;
           text-decoration: none;
           font-size: 14px;
+        }
+        .action-card {
+          padding: 11px;
+          border: 1.5px solid #d9c6fa;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #fff, #f7f2ff);
+          box-shadow: 0 8px 22px rgba(109, 40, 217, 0.09);
+        }
+        .action-card.danger {
+          border-color: #f3cbd4;
+          background: linear-gradient(135deg, #fff, #fff5f7);
+        }
+        .action-card > span {
+          display: block;
+          color: #4b5563;
+          font-size: 12.5px;
+          font-weight: 700;
+          line-height: 1.45;
+        }
+        .action-row {
+          display: flex;
+          gap: 7px;
+          margin-top: 9px;
+        }
+        .action-row a,
+        .action-row button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 36px;
+          padding: 8px 12px;
+          border: 0;
+          border-radius: 10px;
+          background: ${GRAD};
+          color: #fff;
+          text-decoration: none;
+          font: inherit;
+          font-size: 12.5px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+        .danger .action-row a,
+        .danger .action-row button:not(.dismiss) {
+          background: #b0384f;
+        }
+        .action-row .dismiss {
+          border: 1.5px solid #e3e5e8;
+          background: #fff;
+          color: #6b7280;
+        }
+        .action-row button:disabled {
+          cursor: wait;
+          opacity: 0.55;
         }
         .dots {
           display: flex;
