@@ -17,6 +17,7 @@ import {
   Star,
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
+import CheckInCodePanel from "@/components/CheckInCodePanel";
 
 export type Visit = {
   id: string;
@@ -280,6 +281,14 @@ export default function CurrentVisit({ visit }: { visit: Visit }) {
           <small>{paymentState(visit)}</small>
         </Summary>
       </div>
+
+      {visit.status === "scheduled" && (
+        <CheckInCodePanel
+          bookingId={visit.id}
+          providerName={visit.providerName}
+          compact
+        />
+      )}
 
       <footer className="state-bar">
         {state.tone === "booked" ? (

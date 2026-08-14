@@ -260,6 +260,7 @@ export function CheckInControl({
 
   const good =
     note?.startsWith("Location confirmed") ||
+    note?.startsWith("Development location bypass") ||
     note?.startsWith("Code confirmed");
 
   return (

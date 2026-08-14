@@ -27,7 +27,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // Service role — needed because providers can't read the payments table.
 const admin = createAdmin(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 // Write a notification for someone (service role — bypasses RLS).
@@ -35,7 +35,7 @@ async function notify(
   userId: string | null | undefined,
   title: string,
   body: string,
-  href: string
+  href: string,
 ) {
   if (!userId) return;
   await admin.from("notifications").insert({
@@ -50,12 +50,13 @@ async function notify(
 async function bookingContext(id: string) {
   const { data } = await admin
     .from("bookings")
-    .select("customer_id, customer_email, address, scheduled_at, packages(name)")
+    .select(
+      "customer_id, customer_email, address, scheduled_at, packages(name)",
+    )
     .eq("id", id)
     .maybeSingle();
   const p = data?.packages as { name: string } | { name: string }[] | null;
-  const name =
-    (Array.isArray(p) ? p[0]?.name : p?.name) ?? "your booking";
+  const name = (Array.isArray(p) ? p[0]?.name : p?.name) ?? "your booking";
   return {
     customerId: data?.customer_id ?? null,
     email: data?.customer_email ?? null,
@@ -84,7 +85,7 @@ async function geocode(raw: string | null) {
   try {
     const res = await fetch(
       `https://api.postcodes.io/postcodes/${encodeURIComponent(pc)}`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     if (res.ok) {
       const j = await res.json();
@@ -101,7 +102,7 @@ async function geocode(raw: string | null) {
   try {
     const res = await fetch(
       `https://api.postcodes.io/outcodes/${encodeURIComponent(outcode)}`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     if (res.ok) {
       const j = await res.json();
@@ -119,7 +120,7 @@ async function geocode(raw: string | null) {
 // Straight-line distance in metres.
 function metresBetween(
   a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
+  b: { lat: number; lng: number },
 ) {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -157,7 +158,7 @@ export async function acceptJob(id: string) {
     customerId,
     "Your provider is confirmed",
     `${service} — a vetted provider has accepted your booking.`,
-    "/account"
+    "/account",
   );
   await sendEmail({
     to: email,
@@ -217,7 +218,7 @@ export async function checkInJob(
   id: string,
   lat?: number | null,
   lng?: number | null,
-  force = false
+  force = false,
 ) {
   const supabase = await createClient();
   const {
@@ -242,8 +243,7 @@ export async function checkInJob(
   const testPayments = (process.env.STRIPE_SECRET_KEY ?? "").startsWith(
     "sk_test_",
   );
-  const allowEarly =
-    process.env.ALLOW_EARLY_CHECKIN === "true" && testPayments;
+  const allowEarly = process.env.ALLOW_EARLY_CHECKIN === "true" && testPayments;
 
   if (ctx.scheduledAt && !allowEarly && !(force && testPayments)) {
     const start = new Date(ctx.scheduledAt);
@@ -317,60 +317,18 @@ export async function checkInJob(
         blocked: true,
         pass,
         distance,
-        reason: "Location could not be confirmed. Development bypass is disabled.",
+        reason:
+          "Location could not be confirmed. Development bypass is disabled.",
         canForce: false,
       };
     }
   }
 
-  // A development-only forced check-in retains the fast path so the complete
-  // checkout/payment flow can be exercised from a desk. Live/testable normal
-  // check-in always requires the customer's booking-specific OTP.
+  // Development may bypass the clock/geofence so the flow can be exercised
+  // from a desk, but it must never bypass the customer's OTP. Otherwise the
+  // exact path that needs testing is skipped.
   if (force && testPayments) {
-    try {
-      await transitionBooking(supabase, id, "in_progress", {
-        meta: {
-          geofence_pass: pass,
-          distance_metres: distance,
-          forced: true,
-          otp_bypassed: true,
-        },
-      });
-    } catch (cause) {
-      return {
-        blocked: true,
-        pass,
-        distance,
-        reason:
-          cause instanceof Error ? cause.message : "Could not start this job.",
-        canForce: true,
-      };
-    }
-
-    await supabase.from("check_ins").insert({
-      booking_id: id,
-      arrived_at: new Date().toISOString(),
-      gps_lat: typeof lat === "number" ? lat : null,
-      gps_lng: typeof lng === "number" ? lng : null,
-      geofence_pass: pass,
-    });
-
-    await notify(
-      ctx.customerId,
-      "Your provider has arrived",
-      `${ctx.service} — development check-in was completed.`,
-      `/account/visit/${id}`,
-    );
-    revalidatePath("/worker");
-    revalidatePath("/account");
-    return {
-      blocked: false,
-      pass,
-      distance,
-      reason: `${reason} Development check-in completed without an OTP.`,
-      canForce: false,
-      otpRequired: false,
-    };
+    reason = "Development location bypass accepted.";
   }
 
   const { data: challengeData, error: challengeError } = await admin.rpc(
@@ -515,7 +473,9 @@ export async function checkOutJob(id: string) {
   // Is this a one-off visit or part of a membership?
   const { data: bk } = await admin
     .from("bookings")
-    .select("subscription_id, provider_id, provider_payout, membership_fee_deducted")
+    .select(
+      "subscription_id, provider_id, provider_payout, membership_fee_deducted",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -536,18 +496,22 @@ export async function checkOutJob(id: string) {
 
     let payoutId = existing?.id ?? null;
     if (!payoutId && payout > 0 && bk.provider_id) {
-      const { data: created } = await admin.from("payouts").insert({
-        provider_id: bk.provider_id,
-        booking_id: id,
-        amount: payout,
-        status: "not_ready",
-        note:
-          Number(bk.membership_fee_deducted ?? 0) > 0
-            ? `Membership fee of £${Number(
-                bk.membership_fee_deducted
-              ).toFixed(2)} deducted`
-            : null,
-      }).select("id").single();
+      const { data: created } = await admin
+        .from("payouts")
+        .insert({
+          provider_id: bk.provider_id,
+          booking_id: id,
+          amount: payout,
+          status: "not_ready",
+          note:
+            Number(bk.membership_fee_deducted ?? 0) > 0
+              ? `Membership fee of £${Number(
+                  bk.membership_fee_deducted,
+                ).toFixed(2)} deducted`
+              : null,
+        })
+        .select("id")
+        .single();
       payoutId = created?.id ?? null;
     }
 
@@ -596,12 +560,13 @@ export async function checkOutJob(id: string) {
                     operation_key: operationKey,
                   },
                 },
-                { idempotencyKey: operationKey }
+                { idempotencyKey: operationKey },
               );
             } catch (e) {
               const reason =
                 e instanceof Error ? e.message : "Stripe transfer failed";
-              const definite = e instanceof Stripe.errors.StripeInvalidRequestError;
+              const definite =
+                e instanceof Stripe.errors.StripeInvalidRequestError;
               await systemFinaliseMoneyOperation(
                 admin,
                 op.id,
@@ -609,7 +574,9 @@ export async function checkOutJob(id: string) {
                 { error: reason },
               );
               if (definite) {
-                await systemTransitionPayout(admin, payoutId, "failed", { reason });
+                await systemTransitionPayout(admin, payoutId, "failed", {
+                  reason,
+                });
               }
             }
 
@@ -647,7 +614,7 @@ export async function checkOutJob(id: string) {
       ["authorised", "capture_failed"].includes(pay.status)
     ) {
       earned = Number(
-        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0
+        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0,
       );
       const operationKey = `capture:booking:${id}`;
       await systemTransitionPayment(admin, pay.id, "capturing");
@@ -663,7 +630,7 @@ export async function checkOutJob(id: string) {
           intent = await stripe.paymentIntents.capture(
             pay.stripe_payment_ref,
             {},
-            { idempotencyKey: operationKey }
+            { idempotencyKey: operationKey },
           );
         } catch (e) {
           const reason = e instanceof Error ? e.message : "Capture failed";
@@ -686,7 +653,7 @@ export async function checkOutJob(id: string) {
             id,
             "needs_review",
             "Payment capture failed after completion",
-            { payment_id: pay.id, operation_id: op.id }
+            { payment_id: pay.id, operation_id: op.id },
           );
           await admin.rpc("open_review_case", {
             p_booking_id: id,
@@ -712,7 +679,7 @@ export async function checkOutJob(id: string) {
           id,
           "needs_review",
           "Payment capture outcome is ambiguous",
-          { payment_id: pay.id, operation_id: op.id }
+          { payment_id: pay.id, operation_id: op.id },
         );
         await admin.rpc("open_review_case", {
           p_booking_id: id,
@@ -730,7 +697,7 @@ export async function checkOutJob(id: string) {
     } else if (pay?.status === "succeeded") {
       paymentSettled = true;
       earned = Number(
-        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0
+        (pay.split_breakdown as { provider?: number } | null)?.provider ?? 0,
       );
     }
   }
@@ -738,13 +705,15 @@ export async function checkOutJob(id: string) {
   const { customerId, service, email } = await bookingContext(id);
   await notify(
     customerId,
-    paymentSettled ? "Visit completed" : "Visit completed — payment under review",
+    paymentSettled
+      ? "Visit completed"
+      : "Visit completed — payment under review",
     bk?.subscription_id
       ? `${service} — all done. This visit is covered by your membership.`
       : paymentSettled
         ? `${service} — all done. Your card has now been charged.`
         : `${service} — all done. We are checking the payment and you do not need to retry anything.`,
-    "/account"
+    "/account",
   );
   await sendEmail({
     to: email,
@@ -782,11 +751,7 @@ export async function markAllRead() {
 }
 
 // Provider rates the client after a completed visit.
-export async function rateClient(
-  id: string,
-  rating: number,
-  comment: string
-) {
+export async function rateClient(id: string, rating: number, comment: string) {
   const supabase = await createClient();
   const clean = Math.min(5, Math.max(1, Math.round(rating)));
 
@@ -802,8 +767,10 @@ export async function rateClient(
     await notify(
       ctx.customerId,
       `Your provider rated you ${clean} stars`,
-      comment?.trim() ? comment.trim().slice(0, 120) : "Thanks for having them.",
-      "/account"
+      comment?.trim()
+        ? comment.trim().slice(0, 120)
+        : "Thanks for having them.",
+      "/account",
     );
   }
 

@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import BookingProgress from "@/components/BookingProgress";
+import CheckInCodePanel from "@/components/CheckInCodePanel";
 import MessageThread from "@/components/MessageThread";
 import type { VisitStatus } from "@/lib/visitStatus";
 import { cancelBooking } from "./actions";
@@ -445,6 +446,13 @@ export default function BookingWorkspace({
             <button onClick={() => setCancelOpen(true)}>Cancel booking</button>
           )}
         </section>
+
+        {booking.status === "scheduled" && (
+          <CheckInCodePanel
+            bookingId={booking.id}
+            providerName={booking.provider.name}
+          />
+        )}
 
         <div className="detail-grid">
           <section className="next-card">

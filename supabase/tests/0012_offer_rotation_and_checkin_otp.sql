@@ -112,6 +112,18 @@ begin
 
   perform set_config(
     'request.jwt.claims',
+    jsonb_build_object('role', 'authenticated', 'sub', v_customer)::text,
+    true
+  );
+
+  v_result := public.customer_checkin_code(v_otp_booking);
+  if coalesce((v_result->>'active')::boolean, false) is not true
+     or v_result->>'code' is distinct from v_delivery->>'code' then
+    raise exception 'customer could not see the active booking OTP: %', v_result;
+  end if;
+
+  perform set_config(
+    'request.jwt.claims',
     jsonb_build_object('role', 'authenticated', 'sub', v_provider_profile)::text,
     true
   );
