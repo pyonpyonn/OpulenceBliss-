@@ -1,16 +1,6 @@
--- One controlled reset for prototype activity. Accounts, providers, services,
--- service areas, availability, pricing and state-machine policy are preserved.
-
-create table if not exists public.prototype_reset_events (
-  id          uuid primary key default gen_random_uuid(),
-  actor_id    uuid not null references public.profiles(id) on delete restrict,
-  removed     jsonb not null,
-  created_at  timestamptz not null default now()
-);
-
-alter table public.prototype_reset_events enable row level security;
-revoke all on public.prototype_reset_events
-  from public, anon, authenticated, service_role;
+-- Supabase enables safe-update protection for API sessions. Keep the reset
+-- broad, but make the two cache resets explicitly scoped so the transaction
+-- is not rejected after the activity tables are truncated.
 
 create or replace function public.admin_reset_prototype_data(
   p_actor_id uuid,
@@ -52,8 +42,6 @@ begin
     'review_cases', (select count(*) from public.review_cases)
   ) into v_removed;
 
-  -- Explicitly list every activity table. CASCADE handles any future dependent
-  -- table, while the preserved identity/configuration tables remain untouched.
   truncate table
     public.check_in_challenge_events,
     public.check_in_challenges,
@@ -100,3 +88,4 @@ revoke all on function public.admin_reset_prototype_data(uuid, text)
   from public, anon, authenticated;
 grant execute on function public.admin_reset_prototype_data(uuid, text)
   to service_role;
+

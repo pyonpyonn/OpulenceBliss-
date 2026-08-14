@@ -3,6 +3,7 @@
 // Admin buttons with a confirm step. Save at: app/admin/AdminButtons.tsx
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   bringBookingToNow,
   wipeAvailability,
@@ -20,6 +21,7 @@ type Job = {
 };
 
 export default function AdminButtons() {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +105,7 @@ export default function AdminButtons() {
                   setDone(
                     result?.message ?? `Done — ${j.label.toLowerCase()}.`,
                   );
+                  router.refresh();
                 } catch (cause) {
                   setError(
                     cause instanceof Error
