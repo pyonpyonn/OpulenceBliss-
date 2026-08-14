@@ -4,8 +4,14 @@
 // Every action checks the caller is an admin first.
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { rescheduleBookingState } from "@/lib/bookingState";
+
+const admin = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -155,4 +161,30 @@ export async function resetJoiningFees() {
     })
     .neq("id", ALL);
   revalidatePath("/admin");
+}
+
+export async function resetPrototypeData() {
+  const s = await requireAdmin();
+  assertTestMode("Reset all prototype activity");
+  const {
+    data: { user },
+  } = await s.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { data, error } = await admin.rpc("admin_reset_prototype_data", {
+    p_actor_id: user.id,
+    p_confirmation: "RESET PROTOTYPE DATA",
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/review");
+  revalidatePath("/account");
+  revalidatePath("/worker");
+  revalidatePath("/notifications");
+
+  const removed = (data as { removed?: { bookings?: number } } | null)?.removed;
+  return {
+    message: `Prototype activity cleared${removed?.bookings !== undefined ? ` — ${removed.bookings} booking${removed.bookings === 1 ? "" : "s"} removed` : ""}.`,
+  };
 }

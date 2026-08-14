@@ -8,26 +8,30 @@ import {
   wipeAvailability,
   wipeReviews,
   resetJoiningFees,
+  resetPrototypeData,
 } from "./actions";
 
 type Job = {
   label: string;
   hint: string;
   confirm: string;
-  run: () => Promise<void>;
+  run: () => Promise<void | { message?: string }>;
   danger?: boolean;
 };
 
 export default function AdminButtons() {
   const [pending, start] = useTransition();
   const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const jobs: Job[] = [
     {
       label: "Move next booking to now",
       hint: "For testing: pulls the soonest upcoming visit forward a couple of minutes so you can check in and out straight away. Real rules still apply.",
       confirm: "Move the next upcoming booking to right now?",
-      run: async () => { await bringBookingToNow(); },
+      run: async () => {
+        await bringBookingToNow();
+      },
     },
     {
       label: "Clear all availability",
@@ -46,6 +50,14 @@ export default function AdminButtons() {
       hint: "Marks every provider as unpaid, so you can re-test the £150 paywall.",
       confirm: "Reset all providers to unpaid?",
       run: resetJoiningFees,
+    },
+    {
+      label: "Reset all prototype activity",
+      hint: "Clears test bookings, payments, payouts, subscriptions, reviews, messages, notifications and their workflow history. Accounts, providers, services, availability and configuration stay in place.",
+      confirm:
+        "Delete ALL prototype activity? Accounts, providers, services and availability will be kept. This cannot be undone.",
+      run: resetPrototypeData,
+      danger: true,
     },
   ];
 
@@ -84,9 +96,20 @@ export default function AdminButtons() {
             onClick={() => {
               if (!window.confirm(j.confirm)) return;
               setDone(null);
+              setError(null);
               start(async () => {
-                await j.run();
-                setDone(j.label);
+                try {
+                  const result = await j.run();
+                  setDone(
+                    result?.message ?? `Done — ${j.label.toLowerCase()}.`,
+                  );
+                } catch (cause) {
+                  setError(
+                    cause instanceof Error
+                      ? cause.message
+                      : "The reset could not be completed.",
+                  );
+                }
               });
             }}
             style={{
@@ -119,7 +142,22 @@ export default function AdminButtons() {
             margin: 0,
           }}
         >
-          Done — {done.toLowerCase()}.
+          {done}
+        </p>
+      )}
+
+      {error && (
+        <p
+          style={{
+            background: "#ffe6ea",
+            color: "#8a2f2f",
+            padding: "12px 14px",
+            borderRadius: 10,
+            fontSize: 14.5,
+            margin: 0,
+          }}
+        >
+          {error}
         </p>
       )}
     </div>
