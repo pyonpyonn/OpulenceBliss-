@@ -212,6 +212,7 @@ export default function WorkerJobWorkspace({
     compactDateTime(job.checkIn.arrivedAt ?? job.scheduledAt),
     compactDateTime(job.checkIn.leftAt ?? finish),
   ];
+  const checkInPanelId = `worker-checkin-panel-${job.id}`;
 
   function closeDialogs() {
     setChatOpen(false);
@@ -233,7 +234,13 @@ export default function WorkerJobWorkspace({
           </div>
           <div className="head-actions">
             {job.status === "scheduled" && (
-              <CheckInControl id={job.id} compact animated label="Check in" />
+              <CheckInControl
+                id={job.id}
+                compact
+                animated
+                label="Check in"
+                panelTargetId={checkInPanelId}
+              />
             )}
             <button className="message" onClick={() => setChatOpen(true)}>
               <MessageSquare size={18} /> Message {clientFirstName}
@@ -245,6 +252,10 @@ export default function WorkerJobWorkspace({
             )}
           </div>
         </header>
+
+        {job.status === "scheduled" && (
+          <div id={checkInPanelId} className="checkin-panel-row" />
+        )}
 
         <div className="date-chip">
           <span>
@@ -621,6 +632,15 @@ export default function WorkerJobWorkspace({
         .support-bar button {
           border-color: var(--ob-purple);
           color: var(--ob-purple);
+        }
+        .checkin-panel-row:not(:empty) {
+          width: 100%;
+          box-sizing: border-box;
+          margin-top: 14px;
+          padding: 14px;
+          border: 1px solid var(--ob-border);
+          border-radius: 14px;
+          background: var(--ob-purple-soft);
         }
         .date-chip {
           display: inline-flex;

@@ -3,7 +3,8 @@
 // Job actions — changes with the job's stage.
 // Save at: app/worker/JobActions.tsx
 
-import { useTransition, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   acceptJob,
   declineJob,
@@ -215,20 +216,29 @@ export function CheckInControl({
   compact = false,
   animated = false,
   label = "I've arrived — check in",
+  panelTargetId,
 }: {
   id: string;
   compact?: boolean;
   animated?: boolean;
   label?: string;
+  panelTargetId?: string;
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState<string | null>(null);
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState("");
+  const [panelTarget, setPanelTarget] = useState<HTMLElement | null>(null);
   const [blocked, setBlocked] = useState<{
     lat: number | null;
     lng: number | null;
   } | null>(null);
+
+  useEffect(() => {
+    setPanelTarget(
+      panelTargetId ? document.getElementById(panelTargetId) : null,
+    );
+  }, [panelTargetId]);
 
   const run = (lat?: number | null, lng?: number | null, force = false) =>
     start(async () => {
@@ -263,22 +273,9 @@ export function CheckInControl({
     note?.startsWith("Development location bypass") ||
     note?.startsWith("Code confirmed");
 
-  return (
-    <div className="worker-checkin-control">
-      {!otpStep && (
-        <button
-          type="button"
-          className={
-            animated
-              ? "worker-checkin-button animated"
-              : "worker-checkin-button"
-          }
-          onClick={() => locate()}
-          disabled={pending}
-        >
-          {pending ? "Checking location…" : label}
-        </button>
-      )}
+  const showFeedback = otpStep || Boolean(note) || Boolean(blocked) || !compact;
+  const feedback = showFeedback ? (
+    <div className="worker-checkin-feedback">
       {otpStep && (
         <div
           style={{
@@ -399,6 +396,26 @@ export function CheckInControl({
           Continue anyway — development only
         </button>
       )}
+    </div>
+  ) : null;
+
+  return (
+    <div className="worker-checkin-control">
+      {!otpStep && (
+        <button
+          type="button"
+          className={
+            animated
+              ? "worker-checkin-button animated"
+              : "worker-checkin-button"
+          }
+          onClick={() => locate()}
+          disabled={pending}
+        >
+          {pending ? "Checking location…" : label}
+        </button>
+      )}
+      {panelTarget ? createPortal(feedback, panelTarget) : feedback}
     </div>
   );
 }

@@ -181,6 +181,7 @@ export default function ActiveJob({
     : null;
   const status = statusCopy(job, elapsed);
   const detailHref = live ? "/worker/current" : `/worker/job/${job.id}`;
+  const checkInPanelId = `dashboard-checkin-panel-${job.id}`;
   const customerInitial = (job.client ?? "C").trim().charAt(0).toUpperCase();
 
   return (
@@ -262,6 +263,10 @@ export default function ActiveJob({
         </Summary>
       </div>
 
+      {job.status === "scheduled" && (
+        <div id={checkInPanelId} className="checkin-panel-row" />
+      )}
+
       <footer className="state-bar">
         {status.tone === "offer" ? (
           <Info size={22} />
@@ -301,7 +306,13 @@ export default function ActiveJob({
                 <Eye size={16} /> See full details
               </a>
               {job.status === "scheduled" && (
-                <CheckInControl id={job.id} compact animated label="Check in" />
+                <CheckInControl
+                  id={job.id}
+                  compact
+                  animated
+                  label="Check in"
+                  panelTargetId={checkInPanelId}
+                />
               )}
               <a className="primary-action" href={`${detailHref}?chat=1`}>
                 <MessageSquare size={16} /> Message client
@@ -330,6 +341,13 @@ export default function ActiveJob({
             var(--ob-border)
           );
           box-shadow: 0 12px 30px var(--ob-shadow);
+        }
+        .checkin-panel-row:not(:empty) {
+          margin: 0 14px 12px;
+          padding: 12px;
+          border: 1px solid var(--ob-border);
+          border-radius: 13px;
+          background: var(--ob-purple-soft);
         }
         .job-head {
           display: grid;
