@@ -15,28 +15,54 @@
 
 .ob-home .ob-service-card {
   min-height: 205px;
-  padding: 34px 190px 34px 30px;
+  padding: 36px 34px;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 0;
   border-radius: 24px;
+  box-shadow: 0 14px 34px rgba(66, 43, 70, .07);
 }
 
-/* Keep only the service title + price/action copy. */
+/* Plain distinct colors for each homepage card. */
+.ob-home .ob-service-card.cleaning {
+  background: #fff0f2 !important;
+  border-color: #f2b7c0 !important;
+}
+
+.ob-home .ob-service-card.massage {
+  background: #fff5e8 !important;
+  border-color: #f2cfaa !important;
+}
+
+.ob-home .ob-service-card.membership {
+  background: #f3edff !important;
+  border-color: #d8c5f6 !important;
+}
+
+.ob-home .ob-service-card.pros {
+  background: #fff4cf !important;
+  border-color: #ead28a !important;
+}
+
+/* Remove service illustrations, glow layers, icons, captions, badges and arrows. */
+.ob-home .ob-service-card::before,
+.ob-home .ob-service-card::after,
 .ob-home .ob-service-icon,
 .ob-home .ob-service-copy p,
 .ob-home .ob-service-title-row span,
 .ob-home .ob-service-card > i {
   display: none !important;
+  content: none !important;
 }
 
+/* Keep only the heading and price/action. */
 .ob-home .ob-service-copy {
   display: flex;
   min-width: 0;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  gap: 20px;
+  gap: 22px;
 }
 
 .ob-home .ob-service-title-row {
@@ -45,32 +71,25 @@
 
 .ob-home .ob-service-title-row h2 {
   margin: 0;
-  font-size: 28px;
+  color: #172235;
+  font-size: 30px;
   line-height: 1.08;
   letter-spacing: -.035em;
 }
 
 .ob-home .ob-service-copy strong {
   display: inline-block;
-  padding: 8px 13px;
-  font-size: 15px;
-  line-height: 1;
+  padding: 0;
+  background: transparent !important;
+  font-size: 16px;
+  line-height: 1.15;
+  font-weight: 900;
 }
 
-/* Give each illustration a dedicated visual zone on the right. */
-.ob-home .ob-service-card::after {
-  right: 18px;
-  bottom: 2px;
-  width: 166px;
-  height: 166px;
-}
-
-.ob-home .ob-service-card::before {
-  right: 38px;
-  bottom: 28px;
-  width: 122px;
-  height: 122px;
-}
+.ob-home .ob-service-card.cleaning .ob-service-copy strong { color: #d92e62; }
+.ob-home .ob-service-card.massage .ob-service-copy strong { color: #c56613; }
+.ob-home .ob-service-card.membership .ob-service-copy strong { color: #6f23cf; }
+.ob-home .ob-service-card.pros .ob-service-copy strong { color: #a36c00; }
 
 @media (min-width: 1600px) {
   .ob-home {
@@ -97,21 +116,15 @@
 
   .ob-home .ob-service-card {
     min-height: 220px;
-    padding: 38px 215px 38px 36px;
+    padding: 40px 38px;
   }
 
   .ob-home .ob-service-title-row h2 {
-    font-size: 30px;
+    font-size: 32px;
   }
 
   .ob-home .ob-service-copy strong {
-    font-size: 16px;
-  }
-
-  .ob-home .ob-service-card::after {
-    width: 185px;
-    height: 185px;
-    right: 22px;
+    font-size: 17px;
   }
 
   .ob-home-section,
@@ -132,26 +145,20 @@
   }
 
   .ob-home .ob-service-card {
-    min-height: 170px;
-    padding: 26px 145px 26px 24px;
+    min-height: 160px;
+    padding: 28px 24px;
   }
 
   .ob-home .ob-service-title-row h2 {
-    font-size: 24px;
+    font-size: 25px;
   }
 
   .ob-home .ob-service-copy {
-    gap: 16px;
+    gap: 17px;
   }
 
   .ob-home .ob-service-copy strong {
     font-size: 14px;
-  }
-
-  .ob-home .ob-service-card::after {
-    width: 128px;
-    height: 128px;
-    right: 10px;
   }
 }
 
@@ -161,27 +168,19 @@
   }
 
   .ob-home .ob-service-card {
-    min-height: 150px;
-    padding: 22px 106px 22px 20px;
+    min-height: 145px;
+    padding: 24px 20px;
   }
 
   .ob-home .ob-service-title-row h2 {
-    font-size: 21px;
+    font-size: 22px;
   }
 
   .ob-home .ob-service-copy {
-    gap: 13px;
+    gap: 14px;
   }
 
   .ob-home .ob-service-copy strong {
-    padding: 7px 10px;
-    font-size: 12px;
-  }
-
-  .ob-home .ob-service-card::after {
-    width: 92px;
-    height: 92px;
-    right: 5px;
-    bottom: 8px;
+    font-size: 13px;
   }
 }
