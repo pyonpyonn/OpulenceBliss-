@@ -1,14 +1,12 @@
-/* Homepage-only polish for the service area container. */
+/* Homepage-only polish for the service area. */
 
+/* Remove the large white container/background behind the four service tiles. */
 .ob-home .ob-home-shell {
-  border: 2px solid rgba(255,255,255,.92);
-  background: rgba(255,255,255,.56);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.95),
-    0 30px 90px rgba(74,35,78,.14);
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-/* Remove the large inner white panel feel behind the service tiles. */
 .ob-home .ob-service-grid-overlap {
   background: transparent !important;
   padding: 28px 0 18px;
@@ -16,10 +14,15 @@
   margin-right: auto;
 }
 
-/* More breathing room from the family hero and between cards. */
+/* Keep the existing vertical spacing, but open up the two columns significantly.
+   The grid width grows with the column gap so the cards themselves keep their size. */
 .ob-home .ob-service-grid {
-  gap: 24px;
-  width: min(86%, 1200px);
+  width: min(94%, 1248px);
+  max-width: 1248px;
+  row-gap: 24px;
+  column-gap: 72px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .ob-home .ob-service-card {
@@ -29,7 +32,7 @@
   transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
 }
 
-/* Simple hover only, no dramatic animations. */
+/* Keep the existing simple hover treatment. */
 .ob-home .ob-service-card:hover {
   transform: translateY(-3px);
   filter: brightness(1.03);
@@ -40,7 +43,17 @@
 
 @media (min-width:1600px){
   .ob-home .ob-service-grid {
-    width:min(84%, 1260px);
-    gap:28px;
+    width:min(90%, 1320px);
+    max-width:1320px;
+    row-gap:24px;
+    column-gap:96px;
+  }
+}
+
+@media (max-width:860px){
+  .ob-home .ob-service-grid {
+    width:100%;
+    row-gap:14px;
+    column-gap:0;
   }
 }
