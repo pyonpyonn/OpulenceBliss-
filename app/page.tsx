@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -41,6 +42,16 @@ export default function Home() {
     <main className="ob-home">
       <section className="ob-home-shell ob-home-shell-with-photo">
         <section className="ob-family-hero" aria-label="Premium home care">
+          <Image
+            className="ob-family-hero-photo"
+            src="/opulence-family-hero.webp"
+            alt=""
+            aria-hidden="true"
+            fill
+            priority
+            sizes="100vw"
+            unoptimized
+          />
           <div className="ob-family-hero-shade" />
           <div className="ob-family-progress-wrap">
             <div className="ob-booking-progress" aria-label="Booking steps">
