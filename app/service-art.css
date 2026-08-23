@@ -1,0 +1,47 @@
+.ob-service-card{overflow:hidden;isolation:isolate;}
+
+.ob-service-card::after{
+  content:"";
+  position:absolute;
+  right:-8px;
+  bottom:-12px;
+  width:120px;
+  height:120px;
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:center;
+  opacity:.95;
+  z-index:0;
+  pointer-events:none;
+  filter:drop-shadow(0 18px 25px rgba(80,30,80,.16));
+}
+
+.ob-service-card::before{
+  content:"";
+  position:absolute;
+  right:15px;
+  bottom:15px;
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  filter:blur(28px);
+  opacity:.45;
+  z-index:-1;
+}
+
+.ob-service-card.cleaning::after{background-image:url('/cleaning.webp');}
+.ob-service-card.cleaning::before{background:#ff5b8a;}
+.ob-service-card.massage::after{background-image:url('/massage.webp');}
+.ob-service-card.massage::before{background:#ff9a3d;}
+.ob-service-card.membership::after{background-image:url('/membership.webp');}
+.ob-service-card.membership::before{background:#9b4dff;}
+.ob-service-card.pros::after{background-image:url('/pros.webp');}
+.ob-service-card.pros::before{background:#ff4d9d;}
+
+.ob-service-card .ob-service-copy,
+.ob-service-card .ob-service-icon,
+.ob-service-card i{position:relative;z-index:2;}
+
+@media(max-width:560px){
+ .ob-service-card::after{width:90px;height:90px;}
+}
