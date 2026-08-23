@@ -1,5 +1,82 @@
-/* Homepage-only desktop width refinement.
-   This file intentionally targets .ob-home classes only so no other page changes. */
+/* Homepage-only layout refinements.
+   Every selector is scoped under .ob-home so no other page is affected. */
+
+/* Give the four service choices a clean, spacious single-column layout. */
+.ob-home .ob-service-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  width: min(94%, 1180px);
+  max-width: 1180px;
+}
+
+.ob-home .ob-service-grid-overlap {
+  margin-top: -36px;
+}
+
+.ob-home .ob-service-card {
+  min-height: 176px;
+  padding: 30px 190px 30px 30px;
+  grid-template-columns: 56px minmax(0, 1fr) 42px;
+  gap: 20px;
+  align-items: center;
+  border-radius: 24px;
+}
+
+.ob-home .ob-service-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  font-size: 22px;
+}
+
+.ob-home .ob-service-title-row {
+  justify-content: flex-start;
+  gap: 16px;
+}
+
+.ob-home .ob-service-title-row h2 {
+  font-size: 25px;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+}
+
+.ob-home .ob-service-title-row span {
+  padding: 5px 9px;
+  font-size: 9.5px;
+}
+
+.ob-home .ob-service-copy p {
+  max-width: 670px;
+  margin: 9px 0 16px;
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.ob-home .ob-service-copy strong {
+  padding: 7px 12px;
+  font-size: 14px;
+}
+
+.ob-home .ob-service-card > i {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+}
+
+/* Larger artwork has its own visual zone on the right, away from the copy. */
+.ob-home .ob-service-card::after {
+  right: 22px;
+  bottom: -8px;
+  width: 152px;
+  height: 152px;
+}
+
+.ob-home .ob-service-card::before {
+  right: 44px;
+  bottom: 24px;
+  width: 112px;
+  height: 112px;
+}
 
 @media (min-width: 1600px) {
   .ob-home {
@@ -12,13 +89,26 @@
     box-sizing: border-box;
   }
 
-  /* Let the functional homepage content breathe without making the cards
-     unnaturally long on ultra-wide screens. */
-  .ob-service-grid,
-  .ob-postcode-card,
-  .ob-home-actions {
+  .ob-home .ob-service-grid,
+  .ob-home .ob-postcode-card,
+  .ob-home .ob-home-actions {
     width: min(92%, 1320px);
     max-width: none;
+  }
+
+  .ob-home .ob-service-grid {
+    max-width: 1320px;
+  }
+
+  .ob-home .ob-service-card {
+    min-height: 188px;
+    padding: 34px 220px 34px 34px;
+  }
+
+  .ob-home .ob-service-card::after {
+    width: 170px;
+    height: 170px;
+    right: 28px;
   }
 
   .ob-home-section,
@@ -27,5 +117,87 @@
     width: min(82vw, 1640px);
     max-width: none;
     box-sizing: border-box;
+  }
+}
+
+@media (max-width: 860px) {
+  .ob-home .ob-service-grid {
+    width: 100%;
+    gap: 14px;
+  }
+
+  .ob-home .ob-service-card {
+    min-height: 156px;
+    padding: 24px 136px 24px 22px;
+    grid-template-columns: 48px minmax(0, 1fr) 34px;
+    gap: 14px;
+  }
+
+  .ob-home .ob-service-title-row h2 {
+    font-size: 21px;
+  }
+
+  .ob-home .ob-service-copy p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .ob-home .ob-service-card::after {
+    width: 112px;
+    height: 112px;
+    right: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .ob-home .ob-service-grid-overlap {
+    margin-top: -24px;
+  }
+
+  .ob-home .ob-service-card {
+    min-height: 150px;
+    padding: 20px 96px 20px 18px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .ob-home .ob-service-card > i {
+    display: none;
+  }
+
+  .ob-home .ob-service-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    font-size: 18px;
+  }
+
+  .ob-home .ob-service-title-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ob-home .ob-service-title-row h2 {
+    font-size: 19px;
+  }
+
+  .ob-home .ob-service-title-row span {
+    font-size: 8px;
+  }
+
+  .ob-home .ob-service-copy p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .ob-home .ob-service-copy strong {
+    font-size: 12px;
+  }
+
+  .ob-home .ob-service-card::after {
+    width: 84px;
+    height: 84px;
+    right: 4px;
+    bottom: 2px;
   }
 }
