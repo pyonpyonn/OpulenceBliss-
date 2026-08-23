@@ -25,20 +25,53 @@
   margin-right: auto;
 }
 
+/* Remove the previous animated sweep/lift/text motion.
+   Keep only a restrained, conventional hover response. */
 .ob-home .ob-service-card {
+  transform: none !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.7),
     0 16px 40px rgba(78,40,83,.10);
-  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+  transition: box-shadow .15s ease, filter .15s ease, border-color .15s ease !important;
 }
 
-/* Keep the existing simple hover treatment. */
+.ob-home .ob-service-card::before {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+
 .ob-home .ob-service-card:hover {
-  transform: translateY(-3px);
-  filter: brightness(1.03);
+  transform: none !important;
+  filter: brightness(1.02) !important;
+  border-color: rgba(255,255,255,.78) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.85),
-    0 22px 48px rgba(78,40,83,.14);
+    inset 0 1px 0 rgba(255,255,255,.82),
+    0 18px 42px rgba(78,40,83,.12) !important;
+}
+
+/* Preserve each card's normal background on hover. */
+.ob-home .ob-service-card.cleaning:hover {
+  background: linear-gradient(135deg, rgba(255,72,122,.52), rgba(255,132,164,.38)) !important;
+}
+
+.ob-home .ob-service-card.massage:hover {
+  background: linear-gradient(135deg, rgba(255,142,42,.52), rgba(255,188,86,.38)) !important;
+}
+
+.ob-home .ob-service-card.membership:hover {
+  background: linear-gradient(135deg, rgba(129,67,226,.50), rgba(170,127,246,.38)) !important;
+}
+
+.ob-home .ob-service-card.pros:hover {
+  background: linear-gradient(135deg, rgba(220,164,27,.52), rgba(255,205,67,.38)) !important;
+}
+
+.ob-home .ob-service-card:hover .ob-service-title-row h2,
+.ob-home .ob-service-card:hover .ob-service-copy strong {
+  transform: none !important;
+  letter-spacing: inherit;
 }
 
 @media (min-width:1600px){
