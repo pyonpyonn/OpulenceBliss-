@@ -45,25 +45,25 @@
     background .32s ease;
 }
 
-/* Transparent individual color tints. */
+/* Stronger, more solid individual color tints while preserving glass transparency. */
 .ob-home .ob-service-card.cleaning {
-  background: linear-gradient(135deg, rgba(255, 240, 244, .64), rgba(255, 208, 221, .34)) !important;
-  border-color: rgba(239, 127, 155, .40) !important;
+  background: linear-gradient(135deg, rgba(255, 72, 122, .52), rgba(255, 132, 164, .38)) !important;
+  border-color: rgba(223, 59, 104, .62) !important;
 }
 
 .ob-home .ob-service-card.massage {
-  background: linear-gradient(135deg, rgba(255, 247, 235, .66), rgba(255, 220, 174, .34)) !important;
-  border-color: rgba(231, 160, 82, .40) !important;
+  background: linear-gradient(135deg, rgba(255, 142, 42, .52), rgba(255, 188, 86, .38)) !important;
+  border-color: rgba(216, 118, 26, .62) !important;
 }
 
 .ob-home .ob-service-card.membership {
-  background: linear-gradient(135deg, rgba(247, 243, 255, .66), rgba(218, 201, 255, .36)) !important;
-  border-color: rgba(156, 113, 235, .38) !important;
+  background: linear-gradient(135deg, rgba(129, 67, 226, .50), rgba(170, 127, 246, .38)) !important;
+  border-color: rgba(104, 52, 192, .60) !important;
 }
 
 .ob-home .ob-service-card.pros {
-  background: linear-gradient(135deg, rgba(255, 249, 226, .66), rgba(255, 225, 132, .34)) !important;
-  border-color: rgba(213, 168, 47, .42) !important;
+  background: linear-gradient(135deg, rgba(220, 164, 27, .52), rgba(255, 205, 67, .38)) !important;
+  border-color: rgba(190, 135, 13, .62) !important;
 }
 
 /* Moving glass sheen. */
@@ -118,23 +118,23 @@
 }
 
 .ob-home .ob-service-card.cleaning:hover {
-  background: linear-gradient(135deg, rgba(255, 242, 246, .76), rgba(255, 196, 214, .44)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(213, 63, 110, .18);
+  background: linear-gradient(135deg, rgba(255, 52, 111, .66), rgba(255, 117, 157, .48)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(213, 63, 110, .24);
 }
 
 .ob-home .ob-service-card.massage:hover {
-  background: linear-gradient(135deg, rgba(255, 249, 239, .78), rgba(255, 211, 151, .44)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(218, 128, 42, .18);
+  background: linear-gradient(135deg, rgba(255, 126, 24, .66), rgba(255, 179, 68, .48)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(218, 128, 42, .24);
 }
 
 .ob-home .ob-service-card.membership:hover {
-  background: linear-gradient(135deg, rgba(249, 246, 255, .78), rgba(207, 184, 255, .45)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(123, 73, 211, .18);
+  background: linear-gradient(135deg, rgba(113, 50, 216, .64), rgba(158, 110, 240, .48)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(123, 73, 211, .24);
 }
 
 .ob-home .ob-service-card.pros:hover {
-  background: linear-gradient(135deg, rgba(255, 251, 232, .78), rgba(255, 217, 102, .44)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(190, 142, 24, .18);
+  background: linear-gradient(135deg, rgba(207, 146, 10, .66), rgba(245, 190, 35, .48)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 24px 54px rgba(190, 142, 24, .24);
 }
 
 /* Keep only the heading and price/action. */
@@ -181,10 +181,10 @@
   transform: translateX(4px);
 }
 
-.ob-home .ob-service-card.cleaning .ob-service-copy strong { color: #d92e62; }
-.ob-home .ob-service-card.massage .ob-service-copy strong { color: #c56613; }
-.ob-home .ob-service-card.membership .ob-service-copy strong { color: #6f23cf; }
-.ob-home .ob-service-card.pros .ob-service-copy strong { color: #a36c00; }
+.ob-home .ob-service-card.cleaning .ob-service-copy strong { color: #b9164d; }
+.ob-home .ob-service-card.massage .ob-service-copy strong { color: #9e4a00; }
+.ob-home .ob-service-card.membership .ob-service-copy strong { color: #4f16aa; }
+.ob-home .ob-service-card.pros .ob-service-copy strong { color: #7a5400; }
 
 @media (min-width: 1600px) {
   .ob-home {
