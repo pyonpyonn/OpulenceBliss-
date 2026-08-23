@@ -7,6 +7,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import "./opulence-theme.css";
 import "./opulence-components.css";
+import "./opulence-home.css";
 
 import TopBar from "@/components/TopBar";
 import SiteHeader from "@/components/SiteHeader";
