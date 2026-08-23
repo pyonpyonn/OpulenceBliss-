@@ -381,6 +381,64 @@ export default function ServicePage() {
         </div>
       </section>
 
+      {/* ---------- AREAS WE COVER: CLEANING ONLY ---------- */}
+      {slug === "cleaning" && (
+        <section className="areas" id="areas-we-cover">
+          <div className="inner">
+            <div className="areas-card">
+              <div className="areas-copy">
+                <p className="areas-kicker">Areas we cover</p>
+                <h2>Cleaning across Central, North & West London</h2>
+                <p className="areas-intro">
+                  From cosy apartments to busy family homes, our vetted cleaners
+                  are available across the neighbourhoods we serve.
+                </p>
+
+                <div className="area-list" aria-label="Cleaning areas">
+                  {[
+                    "Kensington",
+                    "Chelsea",
+                    "Fulham",
+                    "Notting Hill",
+                    "Mayfair",
+                    "Marylebone",
+                    "Hampstead",
+                    "Clapham",
+                    "Islington",
+                    "Maida Vale",
+                  ].map((area) => (
+                    <span className="area-tag" key={area}>
+                      {area}
+                    </span>
+                  ))}
+                  <span className="area-tag area-more">+ Many more</span>
+                </div>
+
+                <div className="area-check">
+                  <input
+                    placeholder="Enter your postcode"
+                    value={postcode}
+                    onChange={(e) => setPostcode(e.target.value)}
+                    aria-label="Check cleaning coverage by postcode"
+                  />
+                  <a className="btn" href={bookLink}>
+                    Check coverage →
+                  </a>
+                </div>
+              </div>
+
+              <div className="areas-visual" aria-hidden="true">
+                <div className="map-pin">⌖</div>
+                <div className="map-label">London</div>
+                <div className="map-ring ring-one" />
+                <div className="map-ring ring-two" />
+                <div className="map-ring ring-three" />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ---------- FAQ ---------- */}
       <section className="faq">
         <div className="inner">
@@ -809,6 +867,137 @@ export default function ServicePage() {
           border-color: var(--green-pale);
         }
 
+        /* areas we cover */
+        .areas {
+          padding: 62px 0 10px;
+        }
+        .areas-card {
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: 1.35fr 0.65fr;
+          gap: 32px;
+          align-items: center;
+          padding: 34px;
+          border: 1px solid #EEE7F5;
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 88% 18%, rgba(200,111,201,0.2), transparent 30%),
+            linear-gradient(120deg, #FFF9F4 0%, #FFF 46%, #F7F0FF 100%);
+          box-shadow: 0 18px 55px rgba(83, 46, 99, 0.08);
+        }
+        .areas-kicker {
+          margin: 0 0 8px;
+          color: #E84D91;
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+        .areas-card h2 {
+          max-width: 650px;
+          margin-bottom: 10px;
+        }
+        .areas-intro {
+          max-width: 62ch;
+          margin: 0 0 20px;
+          color: #5E6670;
+          font-size: 15.5px;
+          line-height: 1.6;
+        }
+        .area-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 9px;
+          margin-bottom: 22px;
+        }
+        .area-tag {
+          display: inline-flex;
+          align-items: center;
+          min-height: 34px;
+          padding: 7px 13px;
+          border: 1px solid #ECE6F0;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.88);
+          color: var(--green);
+          font-size: 13px;
+          font-weight: 700;
+          box-shadow: 0 5px 16px rgba(22,32,42,0.04);
+        }
+        .area-more {
+          color: var(--apricot-deep);
+          background: #F6EFFF;
+          border-color: #E9DDF8;
+        }
+        .area-check {
+          display: flex;
+          gap: 10px;
+          max-width: 570px;
+          padding: 7px 7px 7px 18px;
+          border: 1px solid #EEE9F0;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.94);
+          box-shadow: 0 10px 28px rgba(22,32,42,0.07);
+        }
+        .area-check input {
+          flex: 1;
+          min-width: 0;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: var(--ink);
+          font: inherit;
+          font-size: 14px;
+          text-transform: uppercase;
+        }
+        .areas-visual {
+          position: relative;
+          display: grid;
+          place-items: center;
+          min-height: 230px;
+          border-radius: 22px;
+          background: linear-gradient(145deg, rgba(255,255,255,0.76), rgba(246,232,255,0.92));
+          border: 1px solid rgba(255,255,255,0.95);
+        }
+        .map-pin {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          place-items: center;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #FF5B67, #E73E93 50%, #7B2FF7);
+          color: #fff;
+          font-size: 31px;
+          box-shadow: 0 14px 34px rgba(123,47,247,0.23);
+        }
+        .map-label {
+          position: relative;
+          z-index: 3;
+          margin-top: 10px;
+          color: var(--green);
+          font-weight: 900;
+          font-size: 16px;
+        }
+        .map-ring {
+          position: absolute;
+          border: 1px solid rgba(123,47,247,0.18);
+          border-radius: 50%;
+        }
+        .ring-one {
+          width: 108px;
+          height: 108px;
+        }
+        .ring-two {
+          width: 160px;
+          height: 160px;
+        }
+        .ring-three {
+          width: 212px;
+          height: 212px;
+        }
+
         /* faq */
         .faq {
           padding: 62px 0 20px;
@@ -856,7 +1045,6 @@ export default function ServicePage() {
           line-height: 1.6;
         }
 
-
         @media (max-width: 900px) {
           .hero-grid {
             grid-template-columns: 1fr;
@@ -866,6 +1054,12 @@ export default function ServicePage() {
           }
           .cards3 {
             grid-template-columns: 1fr;
+          }
+          .areas-card {
+            grid-template-columns: 1fr;
+          }
+          .areas-visual {
+            min-height: 190px;
           }
         }
         @media (max-width: 620px) {
@@ -882,6 +1076,22 @@ export default function ServicePage() {
             flex-direction: column;
             border-radius: 18px;
             padding: 14px;
+          }
+          .areas-card {
+            padding: 24px 18px;
+            border-radius: 20px;
+          }
+          .area-check {
+            flex-direction: column;
+            border-radius: 18px;
+            padding: 12px;
+          }
+          .area-check input {
+            min-height: 42px;
+            padding: 0 8px;
+          }
+          .area-check .btn {
+            text-align: center;
           }
         }
       `}</style>
