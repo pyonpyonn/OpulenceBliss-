@@ -8,6 +8,7 @@ import "./opulence-components.css";
 import "./opulence-home.css";
 import "./opulence-family-hero.css";
 import "./service-art.css";
+import "./homepage-width.css";
 
 import TopBar from "@/components/TopBar";
 import SiteHeader from "@/components/SiteHeader";
