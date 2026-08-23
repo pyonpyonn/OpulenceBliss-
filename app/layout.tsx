@@ -9,6 +9,7 @@ import "./opulence-theme.css";
 import "./opulence-components.css";
 import "./opulence-home.css";
 import "./opulence-family-hero.css";
+import "./opulence-family-hero-fix.css";
 
 import TopBar from "@/components/TopBar";
 import SiteHeader from "@/components/SiteHeader";
