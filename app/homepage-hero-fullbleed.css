@@ -1,5 +1,14 @@
 /* Homepage hero only: break the image section out of the centered content shell
    so it touches the browser viewport edges. Nothing else is affected. */
+
+/* Remove the shell's top inset/border that was peeking above the full-bleed hero. */
+.ob-home .ob-home-shell-with-photo {
+  padding-top: 0 !important;
+  border-top: 0 !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .ob-home .ob-family-hero {
   width: 100vw;
   max-width: none;
@@ -11,6 +20,13 @@
 }
 
 @media (max-width: 560px) {
+  .ob-home .ob-home-shell-with-photo {
+    padding-top: 0 !important;
+    border-top: 0 !important;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
   .ob-home .ob-family-hero {
     width: 100vw;
     left: 50%;
