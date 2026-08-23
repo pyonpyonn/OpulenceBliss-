@@ -1,0 +1,31 @@
+/* Homepage-only desktop width refinement.
+   This file intentionally targets .ob-home classes only so no other page changes. */
+
+@media (min-width: 1600px) {
+  .ob-home {
+    width: min(84vw, 1840px);
+    max-width: none;
+  }
+
+  .ob-home-shell {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Let the functional homepage content breathe without making the cards
+     unnaturally long on ultra-wide screens. */
+  .ob-service-grid,
+  .ob-postcode-card,
+  .ob-home-actions {
+    width: min(92%, 1320px);
+    max-width: none;
+  }
+
+  .ob-home-section,
+  .ob-final-cta,
+  .ob-home-footer {
+    width: min(82vw, 1640px);
+    max-width: none;
+    box-sizing: border-box;
+  }
+}
