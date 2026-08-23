@@ -1,6 +1,22 @@
 /* Homepage-only layout refinements.
    Every selector is scoped under .ob-home so no other page is affected. */
 
+/* Polish the large white homepage frame without changing its layout. */
+.ob-home .ob-home-shell {
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, .94);
+  border-radius: 34px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.76), rgba(255,249,252,.61));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(255,255,255,.52),
+    0 30px 86px rgba(92, 48, 96, .13),
+    0 8px 24px rgba(92, 48, 96, .06);
+  backdrop-filter: blur(32px) saturate(165%);
+  -webkit-backdrop-filter: blur(32px) saturate(165%);
+}
+
 /* Hero image only: extend it to the left/right borders of the homepage frame. */
 .ob-home .ob-family-hero {
   margin-left: calc(0px - clamp(26px, 4vw, 52px));
