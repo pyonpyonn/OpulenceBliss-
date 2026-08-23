@@ -39,23 +39,32 @@ export default function Home() {
 
   return (
     <main className="ob-home">
-      <section className="ob-home-shell">
-        <div className="ob-booking-progress" aria-label="Booking steps">
-          <div className="active"><b>01</b><span>Choose service</span></div>
-          <div><b>02</b><span>Pick time</span></div>
-          <div><b>03</b><span>Confirm booking</span></div>
-        </div>
+      <section className="ob-home-shell ob-home-shell-with-photo">
+        <section className="ob-family-hero" aria-label="Premium home care">
+          <div className="ob-family-hero-shade" />
+          <div className="ob-family-progress-wrap">
+            <div className="ob-booking-progress" aria-label="Booking steps">
+              <div className="active"><b>01</b><span>Choose service</span></div>
+              <div><b>02</b><span>Pick time</span></div>
+              <div><b>03</b><span>Confirm booking</span></div>
+            </div>
+          </div>
 
-        <div className="ob-home-intro">
-          <p className="ob-home-kicker">Premium home & wellness care</p>
-          <h1>Book premium home care in minutes</h1>
-          <p>
-            Vetted cleaners and massage therapists across London.<br />
-            Book a single visit or a monthly membership — your call.
-          </p>
-        </div>
+          <div className="ob-family-hero-copy">
+            <p className="ob-home-kicker">Premium home & wellness care</p>
+            <h1>Book premium home care in minutes</h1>
+            <p>
+              Vetted cleaners and massage therapists across London.
+              Book a single visit or a monthly membership — your call.
+            </p>
+            <div className="ob-family-hero-actions">
+              <a href={bookLink} data-ob-primary="true">Book my cleaning <span>→</span></a>
+              <a href="#services" className="ob-family-secondary">Explore services</a>
+            </div>
+          </div>
+        </section>
 
-        <div className="ob-service-grid">
+        <div className="ob-service-grid ob-service-grid-overlap" id="services">
           <a className="ob-service-card cleaning" href="/services/cleaning">
             <div className="ob-service-icon">✦</div>
             <div className="ob-service-copy">
