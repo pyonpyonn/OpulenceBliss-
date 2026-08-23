@@ -1,6 +1,13 @@
 /* Homepage-only layout refinements.
    Every selector is scoped under .ob-home so no other page is affected. */
 
+/* Hero image only: extend it to the left/right borders of the homepage frame. */
+.ob-home .ob-family-hero {
+  margin-left: calc(0px - clamp(26px, 4vw, 52px));
+  margin-right: calc(0px - clamp(26px, 4vw, 52px));
+  border-radius: 29px 29px 26px 26px;
+}
+
 /* Four service choices: clean 2x2 desktop grid. */
 .ob-home .ob-service-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -163,6 +170,12 @@
 }
 
 @media (max-width: 560px) {
+  .ob-home .ob-family-hero {
+    margin-left: -14px;
+    margin-right: -14px;
+    border-radius: 21px 21px 18px 18px;
+  }
+
   .ob-home .ob-service-grid-overlap {
     margin-top: -24px;
   }
