@@ -7,9 +7,12 @@
   box-shadow: none !important;
 }
 
+/* Keep one intentional gap between the hero image and service cards.
+   This overrides the older negative overlap so the cards never touch the image. */
 .ob-home .ob-service-grid-overlap {
   background: transparent !important;
-  padding: 20px 0 18px;
+  padding: 0 0 18px;
+  margin-top: 24px !important;
   margin-left: auto;
   margin-right: auto;
 }
@@ -84,6 +87,10 @@
 }
 
 @media (max-width:860px){
+  .ob-home .ob-service-grid-overlap {
+    margin-top:18px !important;
+  }
+
   .ob-home .ob-service-grid {
     width:100%;
     row-gap:14px;
