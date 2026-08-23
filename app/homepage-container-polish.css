@@ -1,0 +1,46 @@
+/* Homepage-only polish for the service area container. */
+
+.ob-home .ob-home-shell {
+  border: 2px solid rgba(255,255,255,.92);
+  background: rgba(255,255,255,.56);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 30px 90px rgba(74,35,78,.14);
+}
+
+/* Remove the large inner white panel feel behind the service tiles. */
+.ob-home .ob-service-grid-overlap {
+  background: transparent !important;
+  padding: 28px 0 18px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* More breathing room from the family hero and between cards. */
+.ob-home .ob-service-grid {
+  gap: 24px;
+  width: min(86%, 1200px);
+}
+
+.ob-home .ob-service-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    0 16px 40px rgba(78,40,83,.10);
+  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+}
+
+/* Simple hover only, no dramatic animations. */
+.ob-home .ob-service-card:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 22px 48px rgba(78,40,83,.14);
+}
+
+@media (min-width:1600px){
+  .ob-home .ob-service-grid {
+    width:min(84%, 1260px);
+    gap:28px;
+  }
+}
