@@ -1,12 +1,12 @@
 /* Homepage-only layout refinements.
    Every selector is scoped under .ob-home so no other page is affected. */
 
-/* Give the four service choices a clean, spacious single-column layout. */
+/* Four service choices: clean 2x2 desktop grid. */
 .ob-home .ob-service-grid {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 20px;
-  width: min(94%, 1180px);
-  max-width: 1180px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: min(94%, 1240px);
+  max-width: 1240px;
 }
 
 .ob-home .ob-service-grid-overlap {
@@ -14,68 +14,62 @@
 }
 
 .ob-home .ob-service-card {
-  min-height: 176px;
-  padding: 30px 190px 30px 30px;
-  grid-template-columns: 56px minmax(0, 1fr) 42px;
-  gap: 20px;
+  min-height: 205px;
+  padding: 34px 190px 34px 30px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
+  gap: 0;
   border-radius: 24px;
 }
 
-.ob-home .ob-service-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  font-size: 22px;
+/* Keep only the service title + price/action copy. */
+.ob-home .ob-service-icon,
+.ob-home .ob-service-copy p,
+.ob-home .ob-service-title-row span,
+.ob-home .ob-service-card > i {
+  display: none !important;
+}
+
+.ob-home .ob-service-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
 }
 
 .ob-home .ob-service-title-row {
-  justify-content: flex-start;
-  gap: 16px;
+  display: block;
 }
 
 .ob-home .ob-service-title-row h2 {
-  font-size: 25px;
-  line-height: 1.15;
-  letter-spacing: -.03em;
-}
-
-.ob-home .ob-service-title-row span {
-  padding: 5px 9px;
-  font-size: 9.5px;
-}
-
-.ob-home .ob-service-copy p {
-  max-width: 670px;
-  margin: 9px 0 16px;
-  font-size: 15.5px;
-  line-height: 1.55;
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
 }
 
 .ob-home .ob-service-copy strong {
-  padding: 7px 12px;
-  font-size: 14px;
+  display: inline-block;
+  padding: 8px 13px;
+  font-size: 15px;
+  line-height: 1;
 }
 
-.ob-home .ob-service-card > i {
-  width: 36px;
-  height: 36px;
-  font-size: 16px;
-}
-
-/* Larger artwork has its own visual zone on the right, away from the copy. */
+/* Give each illustration a dedicated visual zone on the right. */
 .ob-home .ob-service-card::after {
-  right: 22px;
-  bottom: -8px;
-  width: 152px;
-  height: 152px;
+  right: 18px;
+  bottom: 2px;
+  width: 166px;
+  height: 166px;
 }
 
 .ob-home .ob-service-card::before {
-  right: 44px;
-  bottom: 24px;
-  width: 112px;
-  height: 112px;
+  right: 38px;
+  bottom: 28px;
+  width: 122px;
+  height: 122px;
 }
 
 @media (min-width: 1600px) {
@@ -92,23 +86,32 @@
   .ob-home .ob-service-grid,
   .ob-home .ob-postcode-card,
   .ob-home .ob-home-actions {
-    width: min(92%, 1320px);
+    width: min(92%, 1360px);
     max-width: none;
   }
 
   .ob-home .ob-service-grid {
-    max-width: 1320px;
+    max-width: 1360px;
+    gap: 22px;
   }
 
   .ob-home .ob-service-card {
-    min-height: 188px;
-    padding: 34px 220px 34px 34px;
+    min-height: 220px;
+    padding: 38px 215px 38px 36px;
+  }
+
+  .ob-home .ob-service-title-row h2 {
+    font-size: 30px;
+  }
+
+  .ob-home .ob-service-copy strong {
+    font-size: 16px;
   }
 
   .ob-home .ob-service-card::after {
-    width: 170px;
-    height: 170px;
-    right: 28px;
+    width: 185px;
+    height: 185px;
+    right: 22px;
   }
 
   .ob-home-section,
@@ -120,32 +123,35 @@
   }
 }
 
+/* Keep the cards readable on tablets/phones. */
 @media (max-width: 860px) {
   .ob-home .ob-service-grid {
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
     gap: 14px;
   }
 
   .ob-home .ob-service-card {
-    min-height: 156px;
-    padding: 24px 136px 24px 22px;
-    grid-template-columns: 48px minmax(0, 1fr) 34px;
-    gap: 14px;
+    min-height: 170px;
+    padding: 26px 145px 26px 24px;
   }
 
   .ob-home .ob-service-title-row h2 {
-    font-size: 21px;
+    font-size: 24px;
   }
 
-  .ob-home .ob-service-copy p {
+  .ob-home .ob-service-copy {
+    gap: 16px;
+  }
+
+  .ob-home .ob-service-copy strong {
     font-size: 14px;
-    margin-bottom: 12px;
   }
 
   .ob-home .ob-service-card::after {
-    width: 112px;
-    height: 112px;
-    right: 12px;
+    width: 128px;
+    height: 128px;
+    right: 10px;
   }
 }
 
@@ -156,48 +162,26 @@
 
   .ob-home .ob-service-card {
     min-height: 150px;
-    padding: 20px 96px 20px 18px;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .ob-home .ob-service-card > i {
-    display: none;
-  }
-
-  .ob-home .ob-service-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    font-size: 18px;
-  }
-
-  .ob-home .ob-service-title-row {
-    gap: 8px;
-    flex-wrap: wrap;
+    padding: 22px 106px 22px 20px;
   }
 
   .ob-home .ob-service-title-row h2 {
-    font-size: 19px;
+    font-size: 21px;
   }
 
-  .ob-home .ob-service-title-row span {
-    font-size: 8px;
-  }
-
-  .ob-home .ob-service-copy p {
-    font-size: 13px;
-    line-height: 1.45;
+  .ob-home .ob-service-copy {
+    gap: 13px;
   }
 
   .ob-home .ob-service-copy strong {
+    padding: 7px 10px;
     font-size: 12px;
   }
 
   .ob-home .ob-service-card::after {
-    width: 84px;
-    height: 84px;
-    right: 4px;
-    bottom: 2px;
+    width: 92px;
+    height: 92px;
+    right: 5px;
+    bottom: 8px;
   }
 }
