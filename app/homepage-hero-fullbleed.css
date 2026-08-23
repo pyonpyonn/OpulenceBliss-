@@ -1,0 +1,22 @@
+/* Homepage hero only: break the image section out of the centered content shell
+   so it touches the browser viewport edges. Nothing else is affected. */
+.ob-home .ob-family-hero {
+  width: 100vw;
+  max-width: none;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-left: 0;
+  margin-right: 0;
+  border-radius: 0;
+}
+
+@media (max-width: 560px) {
+  .ob-home .ob-family-hero {
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0;
+  }
+}
