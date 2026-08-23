@@ -39,45 +39,6 @@ function outward(pc: string) {
 
 const money = (n: number) => "£" + Number(n).toFixed(0);
 
-function PlanIcon({ index }: { index: number }) {
-  const icon = index % 4;
-
-  if (icon === 0) {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 10.5 12 4l8 6.5v8A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5z" />
-        <path d="M9 12.5c1.1-1.6 4.9-1.6 6 0-.1 2.2-1.5 3.6-3 4.5-1.5-.9-2.9-2.3-3-4.5Z" />
-      </svg>
-    );
-  }
-
-  if (icon === 1) {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9L12 16.5 6.8 19.3l1-5.9-4.3-4.2 5.9-.9z" />
-      </svg>
-    );
-  }
-
-  if (icon === 2) {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 4.2c1.4 1.7 2.1 3.2 2.1 4.4A2.1 2.1 0 0 1 12 10.8a2.1 2.1 0 0 1-2.1-2.2c0-1.2.7-2.7 2.1-4.4Z" />
-        <path d="M7.2 8.2c2.2.4 3.6 1.1 4.3 2.1.7 1 .4 2.3-.6 3s-2.3.5-3-.5c-.7-1-1-2.5-.7-4.6Z" />
-        <path d="M16.8 8.2c-2.2.4-3.6 1.1-4.3 2.1-.7 1-.4 2.3.6 3s2.3.5 3-.5c.7-1 1-2.5.7-4.6Z" />
-        <path d="M5.5 17.2h13M8 20h8" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="m4 9 4-5h8l4 5-8 11z" />
-      <path d="m4 9 8 11 8-11M8 4l4 5 4-5M4 9h16" />
-    </svg>
-  );
-}
-
 export default function SubscribePage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
@@ -192,10 +153,6 @@ export default function SubscribePage() {
                     .join(" ")}
                 >
                   {i === 1 && <span className="pill">Most chosen</span>}
-
-                  <div className="plan-icon">
-                    <PlanIcon index={i} />
-                  </div>
 
                   <h2>{p.name}</h2>
                   <p className="price">
@@ -332,10 +289,7 @@ export default function SubscribePage() {
         )}
 
         <p className="alt">
-          <span className="alt-sparkle">✦</span>
-          <span>
-            Just want a one-off visit? <a href="/book">Book a single service →</a>
-          </span>
+          Just want a one-off visit? <a href="/book">Book a single service →</a>
         </p>
       </div>
 
@@ -343,9 +297,10 @@ export default function SubscribePage() {
         .wrap {
           min-height: 100vh;
           background:
-            radial-gradient(circle at 0% 2%, rgba(255, 193, 165, 0.18), transparent 29%),
-            radial-gradient(circle at 100% 2%, rgba(205, 157, 255, 0.2), transparent 31%),
-            #fff;
+            radial-gradient(circle at 7% 8%, rgba(255, 188, 151, 0.28), transparent 30%),
+            radial-gradient(circle at 92% 12%, rgba(214, 168, 255, 0.3), transparent 31%),
+            radial-gradient(circle at 62% 62%, rgba(255, 193, 219, 0.18), transparent 34%),
+            linear-gradient(120deg, #fff9f6 0%, #fffdfc 35%, #fff8fc 64%, #f8f1ff 100%);
           color: #16202a;
           font-family: "Nunito", system-ui, sans-serif;
           padding: 0 20px 86px;
@@ -393,20 +348,21 @@ export default function SubscribePage() {
           --accent-line: #ffd1e4;
           position: relative;
           min-width: 0;
-          background: rgba(255, 255, 255, 0.9);
-          border: 1.5px solid #eceef2;
+          background: rgba(255, 255, 255, 0.88);
+          border: 1.5px solid rgba(236, 238, 242, 0.96);
           border-radius: 18px;
-          padding: 26px 24px 20px;
+          padding: 30px 24px 20px;
           display: flex;
           flex-direction: column;
-          box-shadow: 0 16px 38px rgba(27, 32, 42, 0.035);
+          box-shadow: 0 18px 42px rgba(69, 39, 82, 0.055);
+          backdrop-filter: blur(8px);
           transition: transform 0.18s ease, border-color 0.18s ease,
             box-shadow 0.18s ease;
         }
         .plan:hover {
           transform: translateY(-3px);
           border-color: var(--accent-line);
-          box-shadow: 0 18px 42px rgba(27, 32, 42, 0.07);
+          box-shadow: 0 20px 46px rgba(69, 39, 82, 0.09);
         }
         .plan.featured {
           border-color: #f09cc7;
@@ -450,25 +406,6 @@ export default function SubscribePage() {
           border-radius: 999px;
           white-space: nowrap;
           box-shadow: 0 6px 14px rgba(124, 58, 237, 0.16);
-        }
-        .plan-icon {
-          width: 50px;
-          height: 50px;
-          display: grid;
-          place-items: center;
-          border-radius: 12px;
-          background: var(--accent-soft);
-          color: var(--accent);
-          margin-bottom: 16px;
-        }
-        .plan-icon :global(svg) {
-          width: 27px;
-          height: 27px;
-          fill: none;
-          stroke: currentColor;
-          stroke-width: 1.7;
-          stroke-linecap: round;
-          stroke-linejoin: round;
         }
         h2 {
           font-family: "Nunito", system-ui, sans-serif;
@@ -591,13 +528,14 @@ export default function SubscribePage() {
           box-shadow: 0 8px 20px rgba(124, 58, 237, 0.13);
         }
         .setup {
-          background: rgba(255, 255, 255, 0.94);
-          border: 1px solid #eceef2;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(236, 238, 242, 0.95);
           border-radius: 20px;
           padding: 30px 28px;
           margin: 34px auto 0;
           max-width: 680px;
-          box-shadow: 0 18px 42px rgba(27, 32, 42, 0.05);
+          box-shadow: 0 18px 42px rgba(69, 39, 82, 0.07);
+          backdrop-filter: blur(10px);
         }
         .setup-kicker {
           margin: 0 0 6px;
@@ -735,23 +673,9 @@ export default function SubscribePage() {
           margin: 12px 0 0;
         }
         .alt {
-          display: flex;
-          align-items: center;
-          gap: 12px;
           margin: 34px 0 0;
           color: #8a919a;
           font-size: 15px;
-        }
-        .alt-sparkle {
-          width: 42px;
-          height: 42px;
-          display: grid;
-          place-items: center;
-          flex: 0 0 auto;
-          border-radius: 11px;
-          background: #fff1f6;
-          color: #ec4899;
-          font-size: 18px;
         }
         .alt a {
           color: #16202a;
@@ -791,16 +715,13 @@ export default function SubscribePage() {
             gap: 16px;
           }
           .plan {
-            padding: 24px 20px 18px;
+            padding: 26px 20px 18px;
           }
           .setup {
             padding: 24px 18px;
           }
           .row {
             flex-direction: column;
-          }
-          .alt {
-            align-items: flex-start;
           }
         }
       `}</style>
