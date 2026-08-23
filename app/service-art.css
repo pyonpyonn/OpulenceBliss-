@@ -1,3 +1,11 @@
+.ob-family-progress-wrap{
+  display:none !important;
+}
+
+.ob-family-hero-copy{
+  padding-top:90px;
+}
+
 .ob-service-card{overflow:hidden;isolation:isolate;}
 
 .ob-service-card::after{
@@ -33,7 +41,7 @@
 .ob-service-card.cleaning::before{background:#ff5b8a;}
 .ob-service-card.massage::after{background-image:url('/massage.webp');}
 .ob-service-card.massage::before{background:#ff9a3d;}
-.ob-service-card.membership::after{background-image:url('/membership.webp');}
+.ob-service-card.membership::after{background-image:url('/memberships.webp');}
 .ob-service-card.membership::before{background:#9b4dff;}
 .ob-service-card.pros::after{background-image:url('/pros.webp');}
 .ob-service-card.pros::before{background:#ff4d9d;}
@@ -44,4 +52,5 @@
 
 @media(max-width:560px){
  .ob-service-card::after{width:90px;height:90px;}
+ .ob-family-hero-copy{padding-top:70px;}
 }
