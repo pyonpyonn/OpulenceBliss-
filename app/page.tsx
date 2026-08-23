@@ -41,6 +41,12 @@ export default function Home() {
     <main className="ob-home">
       <section className="ob-home-shell ob-home-shell-with-photo">
         <section className="ob-family-hero" aria-label="Premium home care">
+          <img
+            className="ob-family-hero-image"
+            src="/opulence-family-hero.webp"
+            alt="Family relaxing together at home"
+            loading="eager"
+          />
           <div className="ob-family-hero-shade" />
           <div className="ob-family-progress-wrap">
             <div className="ob-booking-progress" aria-label="Booking steps">
