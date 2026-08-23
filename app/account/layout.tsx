@@ -82,7 +82,7 @@ function Gate({
         <div style={{ fontSize: 38 }}>{emoji}</div>
         <h1 style={gateTitle}>{title}</h1>
         <p style={gateBody}>{body}</p>
-        <a href={href} style={btn}>
+        <a href={href} style={btn} data-ob-primary="true">
           {cta}
         </a>
         {altHref && (
@@ -100,7 +100,7 @@ const shell: React.CSSProperties = {
   display: "flex",
   alignItems: "stretch",
   minHeight: "100vh",
-  background: "var(--ob-page)",
+  background: "transparent",
   color: "var(--ob-text)",
   fontFamily: "'Nunito', system-ui, sans-serif",
 };
@@ -114,7 +114,7 @@ const main: React.CSSProperties = {
 };
 const gateWrap: React.CSSProperties = {
   minHeight: "80vh",
-  background: "var(--ob-page)",
+  background: "transparent",
   display: "grid",
   placeItems: "center",
   padding: 24,
@@ -123,16 +123,17 @@ const gateWrap: React.CSSProperties = {
 const gateCard: React.CSSProperties = {
   background: "var(--ob-surface-raised)",
   border: "1px solid var(--ob-border)",
-  borderRadius: 24,
-  padding: "34px 30px",
-  maxWidth: 420,
+  borderRadius: 28,
+  padding: "38px 34px",
+  maxWidth: 430,
   textAlign: "center",
-  boxShadow: "0 18px 50px var(--ob-shadow-soft)",
+  boxShadow: "var(--ob-glow)",
+  backdropFilter: "blur(24px) saturate(150%)",
 };
 const gateTitle: React.CSSProperties = {
-  fontSize: 25,
+  fontSize: 27,
   fontWeight: 900,
-  letterSpacing: "-0.02em",
+  letterSpacing: "-0.03em",
   margin: "10px 0 6px",
   color: "var(--ob-text)",
 };
@@ -144,13 +145,14 @@ const gateBody: React.CSSProperties = {
 };
 const btn: React.CSSProperties = {
   display: "inline-block",
-  background: "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)",
+  background: "linear-gradient(112deg,#FF7A22 0%,#FF3D4D 31%,#E72D84 61%,#7014D8 100%)",
   color: "#fff",
   padding: "13px 28px",
   borderRadius: 999,
   textDecoration: "none",
   fontWeight: 900,
   fontSize: 15.5,
+  boxShadow: "0 12px 28px rgba(176,39,129,.22)",
 };
 const quiet: React.CSSProperties = {
   color: "var(--ob-muted)",

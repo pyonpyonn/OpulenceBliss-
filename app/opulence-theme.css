@@ -1,0 +1,246 @@
+/* Opulence Bliss premium glass theme
+   Frontend-only visual layer. No application behaviour lives in this file. */
+
+:root {
+  --ob-page: #fff8f7;
+  --ob-surface: rgba(255,255,255,.70);
+  --ob-surface-soft: rgba(255,255,255,.48);
+  --ob-surface-raised: rgba(255,255,255,.78);
+  --ob-surface-glass: rgba(255,255,255,.66);
+  --ob-text: #142033;
+  --ob-muted: #667085;
+  --ob-border: rgba(255,255,255,.72);
+  --ob-border-strong: rgba(217,180,213,.62);
+  --ob-shadow: rgba(77,32,80,.15);
+  --ob-shadow-soft: rgba(77,32,80,.08);
+  --ob-purple: #7114d9;
+  --ob-purple-soft: rgba(113,20,217,.09);
+  --ob-mint: rgba(255,94,84,.09);
+  --ob-sky: rgba(122,26,220,.08);
+  --ob-butter: rgba(255,126,39,.11);
+  --ob-blush: rgba(250,40,104,.09);
+  --ob-success-text: #168462;
+  --ob-info-text: #6f2ac9;
+  --ob-warning-text: #bf5b11;
+  --ob-danger-text: #d52d58;
+  --ob-rating-text: #b55a12;
+  --ob-red: #ff3d4d;
+  --ob-orange: #ff7a22;
+  --ob-pink: #e72d84;
+  --ob-violet: #7014d8;
+  --ob-grad: linear-gradient(112deg,#ff7a22 0%,#ff3d4d 31%,#e72d84 61%,#7014d8 100%);
+  --ob-grad-soft: linear-gradient(125deg,rgba(255,122,34,.16),rgba(255,61,77,.10) 38%,rgba(231,45,132,.10) 66%,rgba(112,20,216,.13));
+  --ob-glow: 0 18px 55px rgba(135,41,137,.16);
+}
+
+.dark {
+  --ob-page: #150f1b;
+  --ob-surface: rgba(31,22,40,.76);
+  --ob-surface-soft: rgba(44,31,55,.62);
+  --ob-surface-raised: rgba(36,25,46,.86);
+  --ob-surface-glass: rgba(28,20,37,.70);
+  --ob-text: #fff8fb;
+  --ob-muted: #cabfce;
+  --ob-border: rgba(255,255,255,.12);
+  --ob-border-strong: rgba(255,117,159,.22);
+  --ob-shadow: rgba(0,0,0,.45);
+  --ob-shadow-soft: rgba(0,0,0,.24);
+  --ob-purple: #cc8cff;
+  --ob-purple-soft: rgba(204,140,255,.12);
+}
+
+html,
+body {
+  background: #f8eeef !important;
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+  color: var(--ob-text);
+  background:
+    radial-gradient(circle at 6% 17%, rgba(255,117,43,.25), transparent 24rem),
+    radial-gradient(circle at 82% 5%, rgba(132,39,224,.18), transparent 28rem),
+    radial-gradient(circle at 72% 72%, rgba(235,43,111,.15), transparent 31rem),
+    linear-gradient(135deg,#fbf3f2 0%,#fff9f7 42%,#f6effa 100%) !important;
+  background-attachment: fixed !important;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(28px);
+  opacity: .52;
+}
+body::before {
+  width: 28rem;
+  height: 28rem;
+  left: -11rem;
+  top: 18rem;
+  background: radial-gradient(circle,rgba(255,104,38,.28),rgba(255,104,38,0) 70%);
+}
+body::after {
+  width: 34rem;
+  height: 34rem;
+  right: -14rem;
+  top: 8rem;
+  background: radial-gradient(circle,rgba(119,25,220,.25),rgba(119,25,220,0) 70%);
+}
+
+::selection {
+  background: rgba(231,45,132,.78);
+  color: white;
+}
+
+:where(a,button,input,textarea,select):focus-visible {
+  outline: 3px solid rgba(231,45,132,.24) !important;
+  outline-offset: 3px;
+}
+
+/* Global glass primitives used by both the client and provider portals. */
+.portal-shell {
+  background: transparent !important;
+}
+.portal-main {
+  position: relative;
+  z-index: 1;
+}
+
+:where(
+  .card,.panel,.visit,.job,.thread,.modal,.toast,.status-box,.visit-notes,
+  .account-empty-booking,.booking-card,.membership-card,.summary-card,
+  .section-card,.details-card,.service-card,.serviceCard,.provider-card,
+  .availability-card,.earnings-card,.notification-card,.message-card
+) {
+  background: rgba(255,255,255,.64) !important;
+  border-color: rgba(255,255,255,.76) !important;
+  box-shadow: 0 16px 45px rgba(82,44,86,.10) !important;
+  backdrop-filter: blur(24px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(145%) !important;
+}
+
+:where(.side,.mtop,.tabs,.strip) {
+  background: rgba(255,255,255,.66) !important;
+  border-color: rgba(255,255,255,.72) !important;
+  backdrop-filter: blur(26px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(160%) !important;
+  box-shadow: 0 18px 55px rgba(79,34,81,.08) !important;
+}
+
+.side {
+  margin: 14px 0 14px 14px !important;
+  height: calc(100vh - 28px) !important;
+  border: 1px solid rgba(255,255,255,.78) !important;
+  border-radius: 24px !important;
+  overflow: auto !important;
+}
+
+.portal-main > :first-child {
+  margin-top: 0;
+}
+
+/* Make existing portal surfaces feel intentionally layered. */
+.portal-main :where(input,textarea,select) {
+  background: rgba(255,255,255,.70) !important;
+  border-color: rgba(126,78,125,.15) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+.portal-main :where(input,textarea,select):focus {
+  border-color: rgba(231,45,132,.48) !important;
+  box-shadow: 0 0 0 4px rgba(231,45,132,.08) !important;
+}
+
+/* Existing app action classes pick up the premium red/orange/purple gradient. */
+.worker-checkin-button,
+.book-service,
+.go,
+.ob-gradient-button,
+[data-ob-primary="true"] {
+  background: var(--ob-grad) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 12px 28px rgba(176,39,129,.23) !important;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease !important;
+}
+.worker-checkin-button:hover,
+.book-service:hover,
+.go:hover,
+.ob-gradient-button:hover,
+[data-ob-primary="true"]:hover {
+  transform: translateY(-1px) !important;
+  filter: saturate(1.06) brightness(1.02) !important;
+  box-shadow: 0 16px 34px rgba(176,39,129,.28) !important;
+}
+
+/* Public-site variables: preserve existing markup/logic and transform the look. */
+.site {
+  --cream: transparent !important;
+  --green: var(--ob-text) !important;
+  --green-mid: var(--ob-violet) !important;
+  --green-pale: rgba(255,255,255,.58) !important;
+  --apricot: #ff7a22 !important;
+  --apricot-deep: #ff3d4d !important;
+  --ink: var(--ob-text) !important;
+  --muted: var(--ob-muted) !important;
+  --line: rgba(255,255,255,.7) !important;
+  background: transparent !important;
+}
+
+.site :where(.hero,.service,.service-card,.serviceCard,.quote,.step,.feature,.trust,.cta,.price,.membership,.provider) {
+  border-color: rgba(255,255,255,.74) !important;
+  box-shadow: 0 16px 45px rgba(82,44,86,.09) !important;
+}
+.site :where(.hero,.service-card,.serviceCard,.quote,.feature,.trust,.price,.membership,.provider) {
+  backdrop-filter: blur(22px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(145%) !important;
+}
+
+/* Generic buttons on public pages: leave destructive/quiet buttons alone. */
+.site :where(a,button)[class*="btn"],
+.site :where(a,button)[class*="cta"],
+.site :where(a,button)[class*="primary"] {
+  border-radius: 999px !important;
+}
+
+/* Shared polish for overlays, drawers, alerts and floating chat. */
+:where([role="dialog"],.modal,.drawer,.popover,.dropdown,.menu) {
+  backdrop-filter: blur(26px) saturate(155%);
+  -webkit-backdrop-filter: blur(26px) saturate(155%);
+}
+
+/* Scrollbars stay subtle in the light, airy design. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(133,94,139,.30) transparent;
+}
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(133,94,139,.27);
+  background-clip: padding-box;
+}
+
+@media (max-width: 899px) {
+  body::before { left: -18rem; }
+  body::after { right: -22rem; }
+  .side { margin: 0 !important; height: auto !important; border-radius: 0 !important; }
+  .mtop { border-radius: 0 0 18px 18px; }
+  .tabs { border-radius: 22px 22px 0 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .portal-main,
+  .site main {
+    animation: ob-fade-up .35s ease both;
+  }
+  @keyframes ob-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}

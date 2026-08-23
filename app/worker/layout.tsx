@@ -17,7 +17,6 @@ export default async function WorkerLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Not signed in — one clean prompt, no portal chrome.
   if (!user) {
     return (
       <main style={gateWrap}>
@@ -25,7 +24,7 @@ export default async function WorkerLayout({
           <div style={{ fontSize: 38 }}>🔑</div>
           <h1 style={gateTitle}>Provider portal</h1>
           <p style={gateBody}>Log in to see your jobs, hours and earnings.</p>
-          <a href="/login" style={btn}>
+          <a href="/login" style={btn} data-ob-primary="true">
             Log in
           </a>
           <p style={{ marginTop: 16 }}>
@@ -44,7 +43,6 @@ export default async function WorkerLayout({
     .eq("id", user.id)
     .maybeSingle();
 
-  // A customer wandered in.
   if (prof?.role === "customer") {
     return (
       <main style={gateWrap}>
@@ -54,7 +52,7 @@ export default async function WorkerLayout({
           <p style={gateBody}>
             You&apos;re signed in as a customer. Fancy working with us instead?
           </p>
-          <a href="/provider/join" style={btn}>
+          <a href="/provider/join" style={btn} data-ob-primary="true">
             Become a provider
           </a>
           <p style={{ marginTop: 16 }}>
@@ -75,7 +73,6 @@ export default async function WorkerLayout({
     .eq("profile_id", user.id)
     .maybeSingle();
 
-  // The live-job shortcut exists only while a provider is actually checked in.
   let hasCurrentJob = false;
   if (prov?.id) {
     const { count: live } = await supabase
@@ -103,7 +100,6 @@ export default async function WorkerLayout({
       />
 
       <div className="portal-main" style={main}>
-        {/* One honest banner at the top of the portal */}
         {!registered && (
           <Banner
             tone="warn"
@@ -160,16 +156,16 @@ function Banner({
 }) {
   const c =
     tone === "warn"
-      ? { bg: "#FFF3D6", br: "#FFDF9E", fg: "#8A5A00" }
-      : { bg: "#E3F0FB", br: "#BBDCF5", fg: "#1B5E9E" };
+      ? { bg: "rgba(255,122,34,.10)", br: "rgba(255,122,34,.20)", fg: "#A84C0C" }
+      : { bg: "rgba(112,20,216,.08)", br: "rgba(112,20,216,.17)", fg: "#6321A4" };
 
   return (
     <div
       style={{
         background: c.bg,
-        border: `2px solid ${c.br}`,
+        border: `1px solid ${c.br}`,
         color: c.fg,
-        borderRadius: 18,
+        borderRadius: 20,
         padding: "18px 20px",
         marginBottom: 20,
         display: "flex",
@@ -177,6 +173,8 @@ function Banner({
         alignItems: "center",
         gap: 16,
         flexWrap: "wrap",
+        boxShadow: "0 14px 36px rgba(80,40,84,.06)",
+        backdropFilter: "blur(18px) saturate(140%)",
       }}
     >
       <div>
@@ -189,8 +187,9 @@ function Banner({
       {ctaHref && (
         <a
           href={ctaHref}
+          data-ob-primary="true"
           style={{
-            background: "#16202A",
+            background: "linear-gradient(112deg,#FF7A22 0%,#FF3D4D 31%,#E72D84 61%,#7014D8 100%)",
             color: "#fff",
             padding: "11px 20px",
             borderRadius: 999,
@@ -198,6 +197,7 @@ function Banner({
             fontWeight: 900,
             fontSize: 14.5,
             whiteSpace: "nowrap",
+            boxShadow: "0 10px 24px rgba(176,39,129,.20)",
           }}
         >
           {ctaText}
@@ -207,13 +207,11 @@ function Banner({
   );
 }
 
-/* ---------- styles ---------- */
-
 const shell: React.CSSProperties = {
   display: "flex",
   alignItems: "stretch",
   minHeight: "100vh",
-  background: "var(--ob-page)",
+  background: "transparent",
   color: "var(--ob-text)",
   fontFamily: "'Nunito', system-ui, sans-serif",
 };
@@ -229,7 +227,7 @@ const main: React.CSSProperties = {
 
 const gateWrap: React.CSSProperties = {
   minHeight: "80vh",
-  background: "var(--ob-page)",
+  background: "transparent",
   display: "grid",
   placeItems: "center",
   padding: 24,
@@ -239,17 +237,18 @@ const gateWrap: React.CSSProperties = {
 const gateCard: React.CSSProperties = {
   background: "var(--ob-surface-raised)",
   border: "1px solid var(--ob-border)",
-  borderRadius: 24,
-  padding: "34px 30px",
-  maxWidth: 420,
+  borderRadius: 28,
+  padding: "38px 34px",
+  maxWidth: 430,
   textAlign: "center",
-  boxShadow: "0 18px 50px var(--ob-shadow-soft)",
+  boxShadow: "var(--ob-glow)",
+  backdropFilter: "blur(24px) saturate(150%)",
 };
 
 const gateTitle: React.CSSProperties = {
-  fontSize: 25,
+  fontSize: 27,
   fontWeight: 900,
-  letterSpacing: "-0.02em",
+  letterSpacing: "-0.03em",
   margin: "10px 0 6px",
   color: "var(--ob-text)",
 };
@@ -263,13 +262,14 @@ const gateBody: React.CSSProperties = {
 
 const btn: React.CSSProperties = {
   display: "inline-block",
-  background: "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)",
+  background: "linear-gradient(112deg,#FF7A22 0%,#FF3D4D 31%,#E72D84 61%,#7014D8 100%)",
   color: "#fff",
   padding: "13px 28px",
   borderRadius: 999,
   textDecoration: "none",
   fontWeight: 900,
   fontSize: 15.5,
+  boxShadow: "0 12px 28px rgba(176,39,129,.22)",
 };
 
 const quiet: React.CSSProperties = {
