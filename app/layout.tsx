@@ -5,6 +5,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import "./opulence-theme.css";
 
 import TopBar from "@/components/TopBar";
 import SiteHeader from "@/components/SiteHeader";
