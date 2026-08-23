@@ -1,9 +1,5 @@
 "use client";
 
-// SETUP: code "components/SiteHeader.tsx"
-//
-// Inline styles on purpose — nothing in globals.css can override them.
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -11,14 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
-const CORAL = "#6D28D9";
-const GRAD = "linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)";
-const INK = "#16202A";
+const ACCENT = "#E72D84";
+const GRAD = "linear-gradient(112deg,#FF7A22 0%,#FF3D4D 31%,#E72D84 61%,#7014D8 100%)";
+const INK = "#142033";
 
 type NavLink = { href: string; label: string; match: string[] };
 
-// The same links for everyone, signed in or not. Anything role-specific
-// lives inside the portal, reached via "My account".
 const NAV: NavLink[] = [
   { href: "/services/cleaning", label: "Cleaning", match: ["/services/cleaning"] },
   { href: "/services/massage", label: "Massage", match: ["/services/massage"] },
@@ -91,7 +85,6 @@ export default function SiteHeader() {
           ? "/account"
           : "/login";
 
-  // The provider and admin portals have their own chrome.
   if (
     path.startsWith("/worker") ||
     path.startsWith("/admin") ||
@@ -100,51 +93,13 @@ export default function SiteHeader() {
     return null;
 
   return (
-    <header style={wrap}>
-      {/* ---------- row 1 ---------- */}
+    <header className="ob-public-header" style={wrap}>
       <div style={bar}>
         <Link href="/" style={logo}>
-          opulence<span style={{ color: CORAL }}>bliss</span>
+          opulence<span style={{ color: ACCENT }}>bliss</span>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link
-            href={accountHref}
-            style={{ ...ghostBtn, position: "relative" }}
-          >
-            {role ? "My account" : "Log in"}
-            {unread > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -6,
-                  minWidth: 20,
-                  height: 20,
-                  padding: "0 6px",
-                  borderRadius: 999,
-                  background: GRAD,
-                  color: "#fff",
-                  fontSize: 11,
-                  fontWeight: 900,
-                  display: "grid",
-                  placeItems: "center",
-                  boxShadow: "0 0 0 2px #fff",
-                }}
-              >
-                {unread}
-              </span>
-            )}
-          </Link>
-          <Link href="/book" style={cta}>
-            Book now
-          </Link>
-        </div>
-      </div>
-
-      {/* ---------- row 2 ---------- */}
-      <nav style={navRow} aria-label="Main">
-        <div style={navInner}>
+        <nav style={navInner} aria-label="Main">
           {NAV.map((l) => {
             const on = active === l.href;
             const hot = hover === l.href;
@@ -157,100 +112,142 @@ export default function SiteHeader() {
                 onMouseLeave={() => setHover(null)}
                 style={{
                   ...navItem,
-                  color: on || hot ? CORAL : INK,
-                  borderBottom: "4px solid transparent",
-                  borderImage: on ? `${GRAD} 1` : "none",
-                  backgroundImage: on ? GRAD : "none",
-                  backgroundSize: "100% 4px",
-                  backgroundPosition: "bottom",
-                  backgroundRepeat: "no-repeat",
+                  color: on || hot ? ACCENT : INK,
+                  background: on ? "rgba(231,45,132,.07)" : "transparent",
                 }}
               >
                 {l.label}
               </Link>
             );
           })}
+        </nav>
+
+        <div style={actions}>
+          <Link
+            href={accountHref}
+            style={{ ...ghostBtn, position: "relative" }}
+          >
+            <span style={{ fontSize: 15 }}>♙</span>
+            {role ? "My account" : "Log in"}
+            {unread > 0 && (
+              <span style={unreadPill}>{unread}</span>
+            )}
+          </Link>
+          <Link href="/book" style={cta} data-ob-primary="true">
+            Book now <span aria-hidden>→</span>
+          </Link>
         </div>
-      </nav>
+      </div>
     </header>
   );
 }
 
-/* ---------- styles ---------- */
-
 const wrap: React.CSSProperties = {
-  background: "#fff",
   position: "sticky",
   top: 0,
   zIndex: 40,
+  padding: "14px 18px 0",
+  background: "transparent",
   fontFamily: "'Nunito', system-ui, sans-serif",
-  boxShadow: "0 1px 0 rgba(22,32,42,0.06)",
 };
 
 const bar: React.CSSProperties = {
-  maxWidth: 1180,
+  width: "min(1240px, calc(100vw - 28px))",
   margin: "0 auto",
-  padding: "18px 26px 14px",
+  padding: "14px 18px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: 16,
+  border: "1px solid rgba(255,255,255,.76)",
+  borderRadius: 24,
+  background: "rgba(255,255,255,.68)",
+  boxShadow: "0 16px 44px rgba(82,44,86,.10)",
+  backdropFilter: "blur(26px) saturate(155%)",
+  WebkitBackdropFilter: "blur(26px) saturate(155%)",
 };
 
 const logo: React.CSSProperties = {
   fontFamily: "'Nunito', system-ui, sans-serif",
-  fontSize: "clamp(26px, 4vw, 34px)",
+  fontSize: "clamp(23px, 3vw, 31px)",
   fontWeight: 900,
   lineHeight: 1,
-  letterSpacing: "-0.035em",
+  letterSpacing: "-0.04em",
   color: INK,
   textDecoration: "none",
+  whiteSpace: "nowrap",
+};
+
+const navInner: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 5,
+  minWidth: 0,
+  overflowX: "auto",
+  scrollbarWidth: "none",
+};
+
+const navItem: React.CSSProperties = {
+  fontSize: 14.5,
+  fontWeight: 800,
+  textDecoration: "none",
+  padding: "9px 12px",
+  borderRadius: 999,
+  whiteSpace: "nowrap",
+  transition: "background .18s ease,color .18s ease",
+};
+
+const actions: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 9,
+  flexShrink: 0,
 };
 
 const ghostBtn: React.CSSProperties = {
-  fontSize: 15,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 7,
+  fontSize: 14,
   fontWeight: 800,
   color: INK,
   textDecoration: "none",
-  padding: "10px 16px",
+  padding: "10px 15px",
   borderRadius: 999,
-  border: "2px solid #EDEDEF",
+  border: "1px solid rgba(67,38,72,.12)",
+  background: "rgba(255,255,255,.42)",
   whiteSpace: "nowrap",
 };
 
 const cta: React.CSSProperties = {
-  fontSize: 15,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  fontSize: 14,
   fontWeight: 900,
   color: "#fff",
   textDecoration: "none",
-  padding: "12px 22px",
+  padding: "11px 18px",
   borderRadius: 999,
-  background: `linear-gradient(100deg,#F5C542,#C86FC9 55%,#7B2FF7)`,
+  background: GRAD,
   whiteSpace: "nowrap",
-  boxShadow: "0 6px 16px rgba(109,40,217,0.26)",
+  boxShadow: "0 10px 24px rgba(176,39,129,.24)",
 };
 
-const navRow: React.CSSProperties = {
-  background: "#F8F3FF",
-  borderTop: "1px solid #E8DCFA",
-  borderBottom: "1px solid #E8DCFA",
-};
-
-const navInner: React.CSSProperties = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: "0 26px",
-  display: "flex",
-  gap: 30,
-  overflowX: "auto",
-};
-
-const navItem: React.CSSProperties = {
-  fontSize: 16.5,
-  fontWeight: 800,
-  textDecoration: "none",
-  padding: "14px 0 11px",
-  borderBottom: "4px solid transparent",
-  marginBottom: -1,
-  whiteSpace: "nowrap",
+const unreadPill: React.CSSProperties = {
+  position: "absolute",
+  top: -7,
+  right: -5,
+  minWidth: 19,
+  height: 19,
+  padding: "0 5px",
+  borderRadius: 999,
+  background: GRAD,
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: 900,
+  display: "grid",
+  placeItems: "center",
+  boxShadow: "0 0 0 2px rgba(255,255,255,.9)",
 };
