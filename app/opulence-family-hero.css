@@ -24,17 +24,23 @@
   object-fit: cover;
   object-position: center center;
   pointer-events: none;
-  filter: brightness(.98) contrast(1.035) saturate(1.02);
+  filter: brightness(.97) contrast(1.07) saturate(1.05);
 }
 
+/* Keep only a very light veil behind the copy. The source image stays untouched. */
 .ob-family-hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
+  pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255, 248, 246, .68) 0%, rgba(255, 248, 246, .48) 31%, rgba(255, 246, 246, .16) 54%, rgba(105, 29, 95, .04) 100%),
-    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.01));
+    linear-gradient(90deg,
+      rgba(255, 248, 246, .30) 0%,
+      rgba(255, 248, 246, .18) 28%,
+      rgba(255, 248, 246, .055) 48%,
+      rgba(255, 248, 246, 0) 68%),
+    linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0));
 }
 
 .ob-family-hero-shade {
@@ -43,7 +49,7 @@
   z-index: 2;
   height: 46%;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(92, 30, 77, .12));
+  background: linear-gradient(180deg, transparent, rgba(92, 30, 77, .10));
 }
 
 .ob-family-progress-wrap {
@@ -92,7 +98,7 @@
 .ob-family-hero-copy > p:not(.ob-home-kicker) {
   max-width: 44ch;
   margin: 18px 0 0;
-  color: rgba(28, 36, 48, .72);
+  color: rgba(28, 36, 48, .76);
   font-size: clamp(14px, 1.5vw, 17px);
   line-height: 1.62;
   font-weight: 700;
@@ -133,7 +139,7 @@
   padding: 12px 16px;
   border: 1px solid rgba(64, 45, 70, .12);
   border-radius: 999px;
-  background: rgba(255,255,255,.50);
+  background: rgba(255,255,255,.42);
   color: var(--ob-text);
   text-decoration: none;
   font-size: 12px;
@@ -162,13 +168,19 @@
 
   .ob-family-hero-photo {
     object-position: 63% center;
-    filter: brightness(.98) contrast(1.035) saturate(1.02);
+    filter: brightness(.97) contrast(1.07) saturate(1.05);
   }
 
   .ob-family-hero::before {
     background:
-      linear-gradient(180deg, rgba(255,249,247,.38) 0%, rgba(255,249,247,.21) 34%, rgba(37,20,38,.10) 100%),
-      linear-gradient(90deg, rgba(255,248,246,.46), rgba(255,248,246,.09));
+      linear-gradient(180deg,
+        rgba(255,249,247,.14) 0%,
+        rgba(255,249,247,.055) 34%,
+        rgba(37,20,38,.08) 100%),
+      linear-gradient(90deg,
+        rgba(255,248,246,.22) 0%,
+        rgba(255,248,246,.08) 48%,
+        rgba(255,248,246,0) 78%);
   }
 
   .ob-family-progress-wrap {
@@ -204,13 +216,19 @@
 
   .ob-family-hero-photo {
     object-position: 65% center;
-    filter: brightness(.98) contrast(1.03) saturate(1.02);
+    filter: brightness(.97) contrast(1.065) saturate(1.05);
   }
 
   .ob-family-hero::before {
     background:
-      linear-gradient(180deg, rgba(255,249,247,.34) 0%, rgba(255,249,247,.16) 36%, rgba(37,20,38,.08) 100%),
-      linear-gradient(90deg, rgba(255,248,246,.40), rgba(255,248,246,.07));
+      linear-gradient(180deg,
+        rgba(255,249,247,.12) 0%,
+        rgba(255,249,247,.04) 36%,
+        rgba(37,20,38,.07) 100%),
+      linear-gradient(90deg,
+        rgba(255,248,246,.18) 0%,
+        rgba(255,248,246,.055) 50%,
+        rgba(255,248,246,0) 82%);
   }
 
   .ob-family-progress-wrap {
