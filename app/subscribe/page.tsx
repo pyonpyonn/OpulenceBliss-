@@ -43,6 +43,7 @@ export default function SubscribePage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [chosen, setChosen] = useState<Plan | null>(null);
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   const [postcode, setPostcode] = useState("");
   const [gate, setGate] = useState<null | { ok: boolean; area?: string }>(null);
   const [weekday, setWeekday] = useState(2);
@@ -135,6 +136,7 @@ export default function SubscribePage() {
           ) : (
             plans.map((p, i) => {
               const selected = chosen?.id === p.id;
+              const expanded = expandedPlanId === p.id;
               const notes =
                 p.good_to_know && p.good_to_know.length > 0
                   ? p.good_to_know
@@ -148,47 +150,67 @@ export default function SubscribePage() {
                     `tone-${i % 4}`,
                     i === 1 ? "featured" : "",
                     selected ? "on" : "",
+                    expanded ? "expanded" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  onClick={() =>
+                    setExpandedPlanId((current) =>
+                      current === p.id ? null : p.id
+                    )
+                  }
                 >
                   {i === 1 && <span className="pill">Most chosen</span>}
 
-                  <h2>{p.name}</h2>
-                  <p className="price">
-                    {money(p.price)} <span>/ month</span>
-                  </p>
-                  <p className="visits">
-                    {p.visits_per_month ?? 2} visits a month
-                  </p>
+                  <span className="mobile-chevron" aria-hidden="true">
+                    ↓
+                  </span>
 
-                  <div className="divider" />
-
-                  {p.inclusions && (
-                    <ul className="features">
-                      {p.inclusions.map((x) => (
-                        <li key={x}>{x}</li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="good-box">
-                    <p className="sub-head">Good to know</p>
-                    <ul className="know">
-                      {notes.map((x) => (
-                        <li key={x}>{x}</li>
-                      ))}
-                    </ul>
+                  <div className="plan-summary">
+                    <h2>{p.name}</h2>
+                    <p className="price">
+                      {money(p.price)} <span>/ month</span>
+                    </p>
+                    <p className="visits">
+                      {p.visits_per_month ?? 2} visits a month
+                    </p>
                   </div>
 
-                  <button
-                    type="button"
-                    className={i === 1 || selected ? "choose primary" : "choose"}
-                    onClick={() => setChosen(p)}
-                    aria-pressed={selected}
-                  >
-                    {selected ? "Selected ✓" : "Choose plan →"}
-                  </button>
+                  <div className={expanded ? "plan-body open" : "plan-body"}>
+                    <div className="divider" />
+
+                    {p.inclusions && (
+                      <ul className="features">
+                        {p.inclusions.map((x) => (
+                          <li key={x}>{x}</li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="good-box">
+                      <p className="sub-head">Good to know</p>
+                      <ul className="know">
+                        {notes.map((x) => (
+                          <li key={x}>{x}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      type="button"
+                      className={
+                        i === 1 || selected ? "choose primary" : "choose"
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChosen(p);
+                        setExpandedPlanId(p.id);
+                      }}
+                      aria-pressed={selected}
+                    >
+                      {selected ? "Selected ✓" : "Choose plan →"}
+                    </button>
+                  </div>
                 </article>
               );
             })
@@ -407,6 +429,12 @@ export default function SubscribePage() {
           white-space: nowrap;
           box-shadow: 0 6px 14px rgba(124, 58, 237, 0.16);
         }
+        .mobile-chevron {
+          display: none;
+        }
+        .plan-summary {
+          display: block;
+        }
         h2 {
           font-family: "Nunito", system-ui, sans-serif;
           font-weight: 900;
@@ -431,6 +459,11 @@ export default function SubscribePage() {
           font-weight: 800;
           color: var(--accent);
           margin: 0;
+        }
+        .plan-body {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
         }
         .divider {
           height: 1px;
@@ -695,33 +728,171 @@ export default function SubscribePage() {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
-        @media (max-width: 620px) {
+        @media (max-width: 720px) {
           .wrap {
-            padding-left: 14px;
-            padding-right: 14px;
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-bottom: 64px;
           }
           .inner {
-            padding-top: 34px;
+            padding-top: 26px;
           }
           .membership-head {
             text-align: left;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
+            padding: 0 4px;
+          }
+          .eyebrow {
+            font-size: 10px;
+            margin-bottom: 7px;
+          }
+          h1 {
+            font-size: clamp(29px, 9vw, 38px);
+            margin-bottom: 10px;
+          }
+          .lede {
+            font-size: 14px;
+            line-height: 1.5;
           }
           .lede br {
             display: none;
           }
           .grid {
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 11px;
           }
           .plan {
-            padding: 26px 20px 18px;
+            padding: 17px 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 9px 24px rgba(69, 39, 82, 0.055);
+            transform: none !important;
+          }
+          .plan.featured {
+            padding-top: 21px;
+          }
+          .pill {
+            top: -9px;
+            font-size: 8px;
+            padding: 4px 11px;
+          }
+          .mobile-chevron {
+            position: absolute;
+            top: 18px;
+            right: 17px;
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--accent-line);
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 15px;
+            font-weight: 900;
+            transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.2s ease;
+          }
+          .plan.expanded .mobile-chevron {
+            transform: rotate(180deg);
+            background: #fff;
+          }
+          .plan-summary {
+            padding-right: 48px;
+          }
+          .plan h2 {
+            font-size: 17px;
+            margin-bottom: 3px;
+          }
+          .price {
+            display: inline-block;
+            font-size: 25px;
+            margin: 0 7px 0 0;
+          }
+          .price span {
+            font-size: 11px;
+          }
+          .visits {
+            display: inline-block;
+            font-size: 11.5px;
+            margin: 0;
+          }
+          .plan-body {
+            flex: none;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-6px);
+            pointer-events: none;
+            transition:
+              max-height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.25s ease,
+              transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+          }
+          .plan-body.open {
+            max-height: 760px;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+          }
+          .divider {
+            margin: 15px 0 14px;
+          }
+          .features {
+            gap: 8px;
+            margin-bottom: 15px;
+          }
+          .features li {
+            font-size: 12px;
+            padding-left: 23px;
+          }
+          .features li::before {
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+          }
+          .good-box {
+            margin: 0 0 13px;
+            padding: 12px;
+          }
+          .sub-head {
+            font-size: 9.5px;
+          }
+          .know {
+            gap: 6px;
+          }
+          .know li {
+            font-size: 11px;
+          }
+          .choose {
+            min-height: 39px;
+            font-size: 12px;
           }
           .setup {
-            padding: 24px 18px;
+            padding: 22px 17px;
+            margin-top: 22px;
+            border-radius: 16px;
+          }
+          .setup h2 {
+            font-size: 21px;
           }
           .row {
             flex-direction: column;
+          }
+          .alt {
+            margin-top: 22px;
+            padding: 0 4px;
+            font-size: 13px;
+          }
+        }
+
+        @media (min-width: 721px) {
+          .plan-body {
+            max-height: none !important;
+            opacity: 1 !important;
+            overflow: visible !important;
+            transform: none !important;
+            pointer-events: auto !important;
           }
         }
       `}</style>
