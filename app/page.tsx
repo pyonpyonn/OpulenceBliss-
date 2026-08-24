@@ -49,8 +49,8 @@ export default function Home() {
             aria-hidden="true"
             fill
             priority
-            sizes="100vw"
-            unoptimized
+            quality={100}
+            sizes="(max-width: 560px) 100vw, (max-width: 1400px) 100vw, 1400px"
           />
           <div className="ob-family-hero-shade" />
           <div className="ob-family-progress-wrap">
