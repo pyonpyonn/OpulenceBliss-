@@ -27,7 +27,7 @@
   filter: brightness(.97) contrast(1.07) saturate(1.05);
 }
 
-/* Keep only a very light veil behind the copy. The source image stays untouched. */
+/* A tiny soft veil keeps the premium glow without washing out the photo. */
 .ob-family-hero::before {
   content: "";
   position: absolute;
@@ -36,11 +36,11 @@
   pointer-events: none;
   background:
     linear-gradient(90deg,
-      rgba(255, 248, 246, .30) 0%,
-      rgba(255, 248, 246, .18) 28%,
-      rgba(255, 248, 246, .055) 48%,
+      rgba(255, 248, 246, .36) 0%,
+      rgba(255, 248, 246, .22) 28%,
+      rgba(255, 248, 246, .07) 48%,
       rgba(255, 248, 246, 0) 68%),
-    linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0));
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
 }
 
 .ob-family-hero-shade {
@@ -174,12 +174,12 @@
   .ob-family-hero::before {
     background:
       linear-gradient(180deg,
-        rgba(255,249,247,.14) 0%,
-        rgba(255,249,247,.055) 34%,
+        rgba(255,249,247,.18) 0%,
+        rgba(255,249,247,.075) 34%,
         rgba(37,20,38,.08) 100%),
       linear-gradient(90deg,
-        rgba(255,248,246,.22) 0%,
-        rgba(255,248,246,.08) 48%,
+        rgba(255,248,246,.27) 0%,
+        rgba(255,248,246,.10) 48%,
         rgba(255,248,246,0) 78%);
   }
 
@@ -222,12 +222,12 @@
   .ob-family-hero::before {
     background:
       linear-gradient(180deg,
-        rgba(255,249,247,.12) 0%,
-        rgba(255,249,247,.04) 36%,
+        rgba(255,249,247,.15) 0%,
+        rgba(255,249,247,.055) 36%,
         rgba(37,20,38,.07) 100%),
       linear-gradient(90deg,
-        rgba(255,248,246,.18) 0%,
-        rgba(255,248,246,.055) 50%,
+        rgba(255,248,246,.22) 0%,
+        rgba(255,248,246,.07) 50%,
         rgba(255,248,246,0) 82%);
   }
 
