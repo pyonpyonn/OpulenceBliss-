@@ -24,7 +24,7 @@
   object-fit: cover;
   object-position: center center;
   pointer-events: none;
-  filter: brightness(.96) contrast(1.07) saturate(1.05);
+  filter: brightness(.98) contrast(1.035) saturate(1.02);
 }
 
 .ob-family-hero::before {
@@ -33,8 +33,8 @@
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(255, 248, 246, .56) 0%, rgba(255, 248, 246, .34) 31%, rgba(255, 246, 246, .11) 54%, rgba(105, 29, 95, .04) 100%),
-    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
+    linear-gradient(90deg, rgba(255, 248, 246, .68) 0%, rgba(255, 248, 246, .48) 31%, rgba(255, 246, 246, .16) 54%, rgba(105, 29, 95, .04) 100%),
+    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.01));
 }
 
 .ob-family-hero-shade {
@@ -162,13 +162,13 @@
 
   .ob-family-hero-photo {
     object-position: 63% center;
-    filter: brightness(.95) contrast(1.08) saturate(1.06);
+    filter: brightness(.98) contrast(1.035) saturate(1.02);
   }
 
   .ob-family-hero::before {
     background:
-      linear-gradient(180deg, rgba(255,249,247,.18) 0%, rgba(255,249,247,.08) 34%, rgba(37,20,38,.10) 100%),
-      linear-gradient(90deg, rgba(255,248,246,.30), rgba(255,248,246,.06));
+      linear-gradient(180deg, rgba(255,249,247,.38) 0%, rgba(255,249,247,.21) 34%, rgba(37,20,38,.10) 100%),
+      linear-gradient(90deg, rgba(255,248,246,.46), rgba(255,248,246,.09));
   }
 
   .ob-family-progress-wrap {
@@ -204,13 +204,13 @@
 
   .ob-family-hero-photo {
     object-position: 65% center;
-    filter: brightness(.94) contrast(1.09) saturate(1.07);
+    filter: brightness(.98) contrast(1.03) saturate(1.02);
   }
 
   .ob-family-hero::before {
     background:
-      linear-gradient(180deg, rgba(255,249,247,.10) 0%, rgba(255,249,247,.04) 36%, rgba(37,20,38,.08) 100%),
-      linear-gradient(90deg, rgba(255,248,246,.20), rgba(255,248,246,.03));
+      linear-gradient(180deg, rgba(255,249,247,.34) 0%, rgba(255,249,247,.16) 36%, rgba(37,20,38,.08) 100%),
+      linear-gradient(90deg, rgba(255,248,246,.40), rgba(255,248,246,.07));
   }
 
   .ob-family-progress-wrap {
