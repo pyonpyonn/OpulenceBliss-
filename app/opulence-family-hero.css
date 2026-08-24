@@ -24,6 +24,7 @@
   object-fit: cover;
   object-position: center center;
   pointer-events: none;
+  filter: brightness(.96) contrast(1.07) saturate(1.05);
 }
 
 .ob-family-hero::before {
@@ -32,8 +33,8 @@
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(255, 248, 246, .94) 0%, rgba(255, 248, 246, .82) 31%, rgba(255, 246, 246, .34) 54%, rgba(105, 29, 95, .08) 100%),
-    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.03));
+    linear-gradient(90deg, rgba(255, 248, 246, .56) 0%, rgba(255, 248, 246, .34) 31%, rgba(255, 246, 246, .11) 54%, rgba(105, 29, 95, .04) 100%),
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
 }
 
 .ob-family-hero-shade {
@@ -161,12 +162,13 @@
 
   .ob-family-hero-photo {
     object-position: 63% center;
+    filter: brightness(.95) contrast(1.08) saturate(1.06);
   }
 
   .ob-family-hero::before {
     background:
-      linear-gradient(180deg, rgba(255,249,247,.74) 0%, rgba(255,249,247,.45) 34%, rgba(37,20,38,.14) 100%),
-      linear-gradient(90deg, rgba(255,248,246,.78), rgba(255,248,246,.20));
+      linear-gradient(180deg, rgba(255,249,247,.18) 0%, rgba(255,249,247,.08) 34%, rgba(37,20,38,.10) 100%),
+      linear-gradient(90deg, rgba(255,248,246,.30), rgba(255,248,246,.06));
   }
 
   .ob-family-progress-wrap {
@@ -202,6 +204,13 @@
 
   .ob-family-hero-photo {
     object-position: 65% center;
+    filter: brightness(.94) contrast(1.09) saturate(1.07);
+  }
+
+  .ob-family-hero::before {
+    background:
+      linear-gradient(180deg, rgba(255,249,247,.10) 0%, rgba(255,249,247,.04) 36%, rgba(37,20,38,.08) 100%),
+      linear-gradient(90deg, rgba(255,248,246,.20), rgba(255,248,246,.03));
   }
 
   .ob-family-progress-wrap {
